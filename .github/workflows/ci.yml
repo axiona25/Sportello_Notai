@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install backend deps
+        run: |
+          if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
+      - name: Node setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Frontend build (skip if scaffold not present)
+        run: |
+          if [ -f frontend/package.json ]; then npm ci --prefix frontend && npm run build --prefix frontend; fi
+      - name: Lint placeholders
+        run: echo "Lint placeholders - add real linters later"

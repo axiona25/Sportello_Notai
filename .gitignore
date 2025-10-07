@@ -1,0 +1,37 @@
+# General
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+.env.*
+
+# Node
+node_modules/
+dist/
+.build/
+
+# Flutter
+.build/
+.dart_tool/
+ios/Pods/
+android/.gradle/
+.pub-cache/
+packages/
+
+# Secrets - never commit
+secrets/
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore
+token*
