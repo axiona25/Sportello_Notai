@@ -6,8 +6,14 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from .views import health_check, readiness_check, liveness_check
 
 urlpatterns = [
+    # Health Checks (per Load Balancer/Kubernetes)
+    path('health/', health_check, name='health'),
+    path('ready/', readiness_check, name='readiness'),
+    path('alive/', liveness_check, name='liveness'),
+    
     # Admin
     path('admin/', admin.site.urls),
     

@@ -27,12 +27,18 @@ class ActListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         
+        # Ottimizzato: select_related per evitare N+1 queries
+        base_queryset = Act.objects.select_related(
+            'notary__user',
+            'client__user'
+        ).prefetch_related('documents')
+        
         if user.role == UserRole.NOTAIO:
-            return Act.objects.filter(notary=user.notary_profile)
+            return base_queryset.filter(notary=user.notary_profile)
         elif user.role == UserRole.CLIENTE:
-            return Act.objects.filter(client=user.client_profile)
+            return base_queryset.filter(client=user.client_profile)
         elif user.role == UserRole.COLLABORATORE:
-            return Act.objects.filter(notary=user.collaborator_profile.notary)
+            return base_queryset.filter(notary=user.collaborator_profile.notary)
         
         return Act.objects.none()
 
@@ -46,12 +52,18 @@ class ActDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         user = self.request.user
         
+        # Ottimizzato: select_related per evitare N+1 queries
+        base_queryset = Act.objects.select_related(
+            'notary__user',
+            'client__user'
+        ).prefetch_related('documents')
+        
         if user.role == UserRole.NOTAIO:
-            return Act.objects.filter(notary=user.notary_profile)
+            return base_queryset.filter(notary=user.notary_profile)
         elif user.role == UserRole.CLIENTE:
-            return Act.objects.filter(client=user.client_profile)
+            return base_queryset.filter(client=user.client_profile)
         elif user.role == UserRole.COLLABORATORE:
-            return Act.objects.filter(notary=user.collaborator_profile.notary)
+            return base_queryset.filter(notary=user.collaborator_profile.notary)
         
         return Act.objects.none()
 

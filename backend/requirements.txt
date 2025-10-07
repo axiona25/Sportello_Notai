@@ -51,3 +51,10 @@ django-csp==3.8
 django-ratelimit==4.1.0
 django-defender==0.9.7
 dnspython==2.5.0
+
+# Performance & Scalability
+django-db-connection-pool==1.2.4
+locust==2.20.0
+django-prometheus==2.3.1
+gunicorn==21.2.0
+gevent==23.9.1

@@ -28,7 +28,8 @@ class NotaryListView(generics.ListAPIView):
     ordering = ['-average_rating']
     
     def get_queryset(self):
-        queryset = Notary.objects.all()
+        # Ottimizzato: select_related per evitare N+1 queries
+        queryset = Notary.objects.select_related('user').all()
         
         # Filter by city
         city = self.request.query_params.get('city')
