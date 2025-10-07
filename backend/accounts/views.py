@@ -53,6 +53,7 @@ class LoginView(APIView):
     """User login endpoint."""
     
     permission_classes = [permissions.AllowAny]
+    throttle_classes = ['core.throttles.LoginRateThrottle']
     
     @extend_schema(
         request=LoginSerializer,
@@ -266,6 +267,16 @@ class LogoutView(APIView):
         responses={200: OpenApiResponse(description="Logged out successfully")}
     )
     def post(self, request):
+        try:
+            # Blacklist refresh token
+            refresh_token = request.data.get("refresh_token")
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+        except Exception as e:
+            # Log error but don't fail logout
+            pass
+        
         # Log logout
         AuditLog.log(
             action=AuditAction.LOGOUT,
@@ -273,8 +284,6 @@ class LogoutView(APIView):
             description=f"User logged out: {request.user.email}",
             request=request
         )
-        
-        # TODO: Blacklist refresh token if using token blacklist
         
         return Response({'message': 'Logout effettuato con successo'})
 

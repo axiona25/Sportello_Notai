@@ -34,10 +34,12 @@ INSTALLED_APPS = [
     # Third party
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',  # JWT blacklist
     'corsheaders',
     'drf_spectacular',
     'django_redis',
     'storages',
+    'defender',  # Brute force protection
     
     # Local apps
     'accounts.apps.AccountsConfig',
@@ -62,6 +64,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'defender.middleware.FailedLoginMiddleware',  # Brute force protection
     'audit.middleware.AuditMiddleware',  # Custom middleware per audit logging
 ]
 
@@ -157,6 +160,16 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour',
+        'login': '10/minute',
+        'upload': '20/hour',
+    },
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
@@ -489,4 +502,25 @@ SESSION_TOKEN_RETENTION_DAYS = 90
 # Notifiche
 ENABLE_EMAIL_NOTIFICATIONS = True
 ENABLE_PUSH_NOTIFICATIONS = True
+
+# ============================================
+# DJANGO DEFENDER (Brute Force Protection)
+# ============================================
+
+DEFENDER_LOGIN_FAILURE_LIMIT = 5
+DEFENDER_LOCKOUT_TEMPLATE = 'defender/lockout.html'
+DEFENDER_COOLOFF_TIME = 300  # 5 minutes
+DEFENDER_BEHIND_REVERSE_PROXY = True
+DEFENDER_REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+
+# ============================================
+# ADDITIONAL SECURITY HEADERS
+# ============================================
+
+SECURE_REFERRER_POLICY = 'same-origin'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+
+# Session Security
+SESSION_SAVE_EVERY_REQUEST = True  # Rinnova sessione ad ogni richiesta
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
