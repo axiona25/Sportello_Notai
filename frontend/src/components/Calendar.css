@@ -1,0 +1,108 @@
+.calendar-card {
+  background-color: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  width: 456px;
+  height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+}
+
+.calendar-nav-btn {
+  background: none;
+  border: none;
+  padding: var(--spacing-xs);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.calendar-nav-btn:hover {
+  background-color: var(--color-bg-main);
+  color: var(--color-text-primary);
+}
+
+.calendar-month {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.calendar-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  flex: 1;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-xs);
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  padding: var(--spacing-xs);
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  gap: var(--spacing-xs);
+  flex: 1;
+}
+
+.calendar-day {
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  min-height: 0;
+}
+
+.calendar-day.current-month {
+  color: var(--color-text-primary);
+}
+
+.calendar-day.other-month {
+  color: var(--color-light-gray);
+}
+
+.calendar-day.current-month:hover {
+  background-color: var(--color-active-bg);
+}
+
+.calendar-day.selected {
+  background-color: #4FADFF;
+  color: var(--color-white);
+  font-weight: 600;
+}
+
+.calendar-day.selected:hover {
+  background-color: #3D9EEE;
+}
+

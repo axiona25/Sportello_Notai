@@ -1,0 +1,148 @@
+.sidebar {
+  width: 271px;
+  background-color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #E9ECEF;
+  padding: var(--spacing-xl) 0;
+}
+
+.sidebar-header {
+  padding: 0 var(--spacing-lg) 0 var(--spacing-xl);
+  margin-bottom: 40px;
+}
+
+.logo {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.2;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.logo-digital {
+  color: #4FADFF;
+}
+
+.logo-notary-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0px;
+}
+
+.logo-notary {
+  color: #B0BAD3;
+  line-height: 1.2;
+}
+
+.logo-underline {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 var(--spacing-lg);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: #60719B;
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.nav-item:hover:not(.logout) {
+  background-color: #F8F9FA;
+  color: var(--color-text-primary);
+}
+
+.nav-item.active {
+  color: #1668B0;
+  background-color: transparent;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to right, #83E0F7, #1668B0);
+  border-radius: 8px 0 0 8px;
+}
+
+.nav-item svg {
+  flex-shrink: 0;
+  color: #60719B;
+}
+
+.nav-item.active svg {
+  color: inherit;
+}
+
+.sidebar-footer {
+  padding: 0 var(--spacing-lg);
+  margin-top: auto;
+  padding-top: var(--spacing-xl);
+}
+
+.nav-item.logout {
+  color: #4FADFF;
+  font-weight: 500;
+}
+
+.nav-item.logout svg {
+  color: #4FADFF;
+}
+
+.nav-item.logout:hover {
+  background-color: #E3F2FD;
+  color: #3D9EEE;
+}
+
+.nav-item.logout:hover svg {
+  color: #3D9EEE;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 70px;
+  }
+  
+  .sidebar-header {
+    padding: 0 var(--spacing-md);
+  }
+  
+  .logo-digital,
+  .logo-notary {
+    font-size: 18px;
+  }
+  
+  .nav-item span {
+    display: none;
+  }
+  
+  .nav-item {
+    justify-content: center;
+    padding: 12px;
+  }
+}
+

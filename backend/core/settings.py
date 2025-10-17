@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'signatures.apps.SignaturesConfig',
     'conservation.apps.ConservationConfig',
     'audit.apps.AuditConfig',
+    'ui_elements.apps.UiElementsConfig',
 ]
 
 MIDDLEWARE = [

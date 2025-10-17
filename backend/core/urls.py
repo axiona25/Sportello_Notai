@@ -34,6 +34,7 @@ urlpatterns = [
     path('api/signatures/', include('signatures.urls')),
     path('api/conservation/', include('conservation.urls')),
     path('api/audit/', include('audit.urls')),
+    path('api/ui/', include('ui_elements.urls')),
 ]
 
 # Serve media files in development

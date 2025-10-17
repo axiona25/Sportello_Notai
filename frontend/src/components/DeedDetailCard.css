@@ -1,0 +1,194 @@
+.deed-card {
+  background-color: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px 10px 20px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 420px;
+  overflow: hidden;
+  position: relative;
+}
+
+.deed-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.deed-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.deed-section:last-of-type {
+  border-bottom: none;
+}
+
+.deed-section-notary {
+  border-bottom: none;
+  padding-bottom: 8px;
+  margin-bottom: 0;
+}
+
+.deed-notary {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.3;
+}
+
+.deed-notary-full {
+  line-height: 1.4;
+  font-family: 'Poppins', sans-serif;
+}
+
+.deed-notary-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #404143;
+}
+
+.deed-notary-address {
+  font-size: 13px;
+  font-weight: 400;
+  color: #939497;
+}
+
+.deed-address,
+.deed-property,
+.deed-details {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.deed-property {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.deed-property-full {
+  line-height: 1.4;
+  font-family: 'Poppins', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.deed-property-icon {
+  color: #1668B0;
+  flex-shrink: 0;
+}
+
+.deed-property-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #404143;
+}
+
+.deed-property-details {
+  font-size: 15px;
+  font-weight: 400;
+  color: #939497;
+}
+
+.deed-party {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+}
+
+.deed-section-parties {
+  border-bottom: none;
+  padding-bottom: 8px;
+}
+
+.deed-section-services {
+  padding-top: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.deed-services-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #404143;
+  line-height: 1.4;
+}
+
+.deed-services-icon {
+  color: #1668B0;
+  flex-shrink: 0;
+}
+
+.deed-status {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-item svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.status-text-gray {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-text-primary);
+  line-height: 1.3;
+}
+
+.status-text-blue {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-text-primary);
+  line-height: 1.3;
+}
+
+.status-item svg {
+  color: var(--color-text-secondary);
+}
+
+.deed-btn {
+  background: linear-gradient(to right, #4FADFF, #1668B0);
+  color: var(--color-white);
+  padding: 10px 24px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  position: absolute;
+  bottom: 24px;
+  right: 20px;
+  flex-shrink: 0;
+  border: none;
+  cursor: pointer;
+}
+
+.deed-btn:hover {
+  background: linear-gradient(to right, #3D9EEE, #1357A0);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+

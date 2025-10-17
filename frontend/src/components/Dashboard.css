@@ -1,0 +1,125 @@
+/* ⚠️ DASHBOARD LOCKED - DO NOT MODIFY WIDTH/OVERFLOW ⚠️ */
+/* Queste regole impediscono l'espansione orizzontale della pagina */
+.dashboard {
+  display: flex;
+  min-height: 100vh;
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: var(--color-bg-main);
+}
+
+.dashboard-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.dashboard-content {
+  padding: var(--spacing-xl);
+  padding-right: var(--spacing-xl);
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+.welcome-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.welcome-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.welcome-text-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.welcome-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 36px;
+  font-weight: 500;
+  color: #4FADFF;
+  line-height: 1.2;
+}
+
+.welcome-name-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0px;
+}
+
+.welcome-name {
+  color: #B0BAD3;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.welcome-underline {
+  display: block;
+  width: 100%;
+  height: 7px;
+  object-fit: fill;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 456px 1fr 1fr;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  align-items: start;
+}
+
+.dashboard-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  height: fit-content;
+}
+
+.dashboard-center {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 420px;
+}
+
+.dashboard-right {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.notary-section {
+  margin-top: var(--spacing-lg);
+}
+
+@media (max-width: 1400px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .dashboard-right {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-content {
+    padding: var(--spacing-md);
+  }
+}
+
