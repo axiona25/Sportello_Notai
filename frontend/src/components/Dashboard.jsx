@@ -136,7 +136,21 @@ function Dashboard() {
             </div>
 
             <div className="dashboard-center">
-              {currentAppointments.length > 0 ? (
+              {currentAppointments.length === 0 ? (
+                // Nessun appuntamento: 1 card vuota occupa tutto
+                <AppointmentCard type="empty" emptySlots={4} />
+              ) : currentAppointments.length === 4 ? (
+                // 4 appuntamenti: mostra tutte e 4 le card
+                currentAppointments.map((appointment, index) => (
+                  <AppointmentCard 
+                    key={appointment.id} 
+                    {...appointment}
+                    onClick={() => handleAppointmentSelect(appointment)}
+                    isSelected={selectedAppointment?.id === appointment.id}
+                  />
+                ))
+              ) : (
+                // 1-3 appuntamenti: mostra appuntamenti + 1 card vuota che occupa lo spazio rimanente
                 <>
                   {currentAppointments.map((appointment, index) => (
                     <AppointmentCard 
@@ -146,13 +160,12 @@ function Dashboard() {
                       isSelected={selectedAppointment?.id === appointment.id}
                     />
                   ))}
-                  {/* Riempi con card vuote fino a 4 totali */}
-                  {[...Array(Math.max(0, 4 - currentAppointments.length))].map((_, index) => (
-                    <AppointmentCard key={`empty-${index}`} type="empty" />
-                  ))}
+                  <AppointmentCard 
+                    key="empty" 
+                    type="empty" 
+                    emptySlots={4 - currentAppointments.length}
+                  />
                 </>
-              ) : (
-                <AppointmentCard type="empty" />
               )}
             </div>
 

@@ -2,10 +2,10 @@ import React from 'react'
 import { Clock, User, FileText, Phone, Video, Calendar as CalendarIcon } from 'lucide-react'
 import './AppointmentCard.css'
 
-function AppointmentCard({ type, title, description, location, time, deadline, isActive, onClick, isSelected }) {
+function AppointmentCard({ type, title, description, location, time, deadline, isActive, onClick, isSelected, emptySlots = 1 }) {
   if (type === 'empty') {
     return (
-      <div className="appointment-card empty">
+      <div className="appointment-card empty" style={{ flexGrow: emptySlots }}>
         <CalendarIcon size={48} className="empty-icon" />
         <p className="empty-text">Nessun altro Appuntamento</p>
       </div>
