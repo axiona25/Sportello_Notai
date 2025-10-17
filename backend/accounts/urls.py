@@ -1,13 +1,21 @@
 """
 URLs for authentication endpoints.
 """
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     RegisterView, LoginView, LogoutView,
     MFASetupView, MFAEnableView, MFADisableView, MFAVerifyView,
-    ChangePasswordView, UserProfileView
+    ChangePasswordView, UserProfileView,
+    ClienteViewSet, NotaioViewSet, PartnerViewSet
 )
+
+# Router per i ViewSets
+router = DefaultRouter()
+router.register(r'clienti', ClienteViewSet, basename='cliente')
+router.register(r'notai', NotaioViewSet, basename='notaio')
+router.register(r'partners', PartnerViewSet, basename='partner')
 
 urlpatterns = [
     # Authentication
@@ -25,5 +33,8 @@ urlpatterns = [
     # User management
     path('profile/', UserProfileView.as_view(), name='user-profile'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
+    
+    # Include router URLs per Clienti, Notai e Partners
+    path('', include(router.urls)),
 ]
 

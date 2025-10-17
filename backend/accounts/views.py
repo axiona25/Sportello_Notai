@@ -1,17 +1,21 @@
 """
 Views for authentication and user management.
 """
-from rest_framework import status, generics, permissions
+from rest_framework import status, generics, permissions, viewsets, filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
-from .models import User
+from .models import User, Cliente, Notaio, Partner
 from .serializers import (
     UserSerializer, RegisterSerializer, LoginSerializer,
-    MFASetupSerializer, MFAVerifySerializer, ChangePasswordSerializer
+    MFASetupSerializer, MFAVerifySerializer, ChangePasswordSerializer,
+    ClienteSerializer, ClienteCreateSerializer,
+    NotaioSerializer, NotaioCreateSerializer,
+    PartnerSerializer, PartnerCreateSerializer
 )
 from audit.models import AuditLog, AuditAction
 
@@ -329,4 +333,241 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     
     def get_object(self):
         return self.request.user
+
+
+# ============================================
+# VIEWSETS PER CLIENTI, NOTAI E PARTNERS
+# ============================================
+
+class ClienteViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet per la gestione dei Clienti.
+    
+    Fornisce operazioni CRUD complete per i profili clienti.
+    """
+    queryset = Cliente.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['nome', 'cognome', 'codice_fiscale', 'mail', 'cellulare']
+    filterset_fields = ['sesso', 'stato_civile', 'regime_patrimoniale', 'citta']
+    ordering_fields = ['cognome', 'nome', 'data_nascita', 'created_at']
+    ordering = ['cognome', 'nome']
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return ClienteCreateSerializer
+        return ClienteSerializer
+    
+    def get_queryset(self):
+        """
+        Filtra i clienti in base al ruolo dell'utente.
+        Gli admin vedono tutti, i clienti vedono solo il proprio profilo.
+        """
+        user = self.request.user
+        
+        if user.role in ['admin', 'notaio']:
+            return Cliente.objects.all()
+        elif user.role == 'cliente':
+            return Cliente.objects.filter(user=user)
+        
+        return Cliente.objects.none()
+    
+    def perform_create(self, serializer):
+        cliente = serializer.save()
+        
+        # Log creazione cliente
+        AuditLog.log(
+            action=AuditAction.CREATE,
+            user=self.request.user,
+            resource_type='cliente',
+            resource_id=cliente.id,
+            description=f"Cliente creato: {cliente.nome_completo}",
+            request=self.request
+        )
+    
+    def perform_update(self, serializer):
+        cliente = serializer.save()
+        
+        # Log aggiornamento cliente
+        AuditLog.log(
+            action=AuditAction.UPDATE,
+            user=self.request.user,
+            resource_type='cliente',
+            resource_id=cliente.id,
+            description=f"Cliente aggiornato: {cliente.nome_completo}",
+            request=self.request
+        )
+    
+    def perform_destroy(self, instance):
+        # Log eliminazione cliente
+        AuditLog.log(
+            action=AuditAction.DELETE,
+            user=self.request.user,
+            resource_type='cliente',
+            resource_id=instance.id,
+            description=f"Cliente eliminato: {instance.nome_completo}",
+            request=self.request
+        )
+        instance.delete()
+
+
+class NotaioViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet per la gestione dei Notai.
+    
+    Fornisce operazioni CRUD complete per i profili notai.
+    """
+    queryset = Notaio.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = [
+        'nome', 'cognome', 'codice_fiscale', 'numero_iscrizione_albo',
+        'denominazione_studio', 'partita_iva', 'email_studio', 'pec'
+    ]
+    filterset_fields = [
+        'sesso', 'distretto_notarile', 'sede_notarile', 'tipologia',
+        'citta', 'provincia', 'is_active', 'is_verified'
+    ]
+    ordering_fields = ['cognome', 'nome', 'distretto_notarile', 'created_at']
+    ordering = ['cognome', 'nome']
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return NotaioCreateSerializer
+        return NotaioSerializer
+    
+    def get_queryset(self):
+        """
+        Filtra i notai in base al ruolo dell'utente.
+        Gli admin vedono tutti, i notai vedono solo il proprio profilo.
+        """
+        user = self.request.user
+        
+        if user.role == 'admin':
+            return Notaio.objects.all()
+        elif user.role == 'notaio':
+            return Notaio.objects.filter(user=user)
+        elif user.role in ['cliente', 'partner']:
+            # Clienti e partner vedono solo notai attivi e verificati
+            return Notaio.objects.filter(is_active=True, is_verified=True)
+        
+        return Notaio.objects.none()
+    
+    def perform_create(self, serializer):
+        notaio = serializer.save()
+        
+        # Log creazione notaio
+        AuditLog.log(
+            action=AuditAction.CREATE,
+            user=self.request.user,
+            resource_type='notaio',
+            resource_id=notaio.id,
+            description=f"Notaio creato: {notaio.nome_completo}",
+            request=self.request
+        )
+    
+    def perform_update(self, serializer):
+        notaio = serializer.save()
+        
+        # Log aggiornamento notaio
+        AuditLog.log(
+            action=AuditAction.UPDATE,
+            user=self.request.user,
+            resource_type='notaio',
+            resource_id=notaio.id,
+            description=f"Notaio aggiornato: {notaio.nome_completo}",
+            request=self.request
+        )
+    
+    def perform_destroy(self, instance):
+        # Log eliminazione notaio
+        AuditLog.log(
+            action=AuditAction.DELETE,
+            user=self.request.user,
+            resource_type='notaio',
+            resource_id=instance.id,
+            description=f"Notaio eliminato: {instance.nome_completo}",
+            request=self.request
+        )
+        instance.delete()
+
+
+class PartnerViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet per la gestione dei Partners.
+    
+    Fornisce operazioni CRUD complete per i profili partner.
+    """
+    queryset = Partner.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = [
+        'ragione_sociale', 'partita_iva', 'codice_fiscale',
+        'nome_referente', 'cognome_referente', 'mail', 'pec', 'cellulare'
+    ]
+    filterset_fields = [
+        'tipologia', 'citta', 'provincia', 'is_active', 'is_verified'
+    ]
+    ordering_fields = ['ragione_sociale', 'tipologia', 'created_at']
+    ordering = ['ragione_sociale']
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return PartnerCreateSerializer
+        return PartnerSerializer
+    
+    def get_queryset(self):
+        """
+        Filtra i partner in base al ruolo dell'utente.
+        Gli admin e notai vedono tutti, i partner vedono solo il proprio profilo.
+        """
+        user = self.request.user
+        
+        if user.role in ['admin', 'notaio']:
+            return Partner.objects.all()
+        elif user.role == 'partner':
+            return Partner.objects.filter(user=user)
+        elif user.role == 'cliente':
+            # Clienti vedono solo partner attivi e verificati
+            return Partner.objects.filter(is_active=True, is_verified=True)
+        
+        return Partner.objects.none()
+    
+    def perform_create(self, serializer):
+        partner = serializer.save()
+        
+        # Log creazione partner
+        AuditLog.log(
+            action=AuditAction.CREATE,
+            user=self.request.user,
+            resource_type='partner',
+            resource_id=partner.id,
+            description=f"Partner creato: {partner.ragione_sociale}",
+            request=self.request
+        )
+    
+    def perform_update(self, serializer):
+        partner = serializer.save()
+        
+        # Log aggiornamento partner
+        AuditLog.log(
+            action=AuditAction.UPDATE,
+            user=self.request.user,
+            resource_type='partner',
+            resource_id=partner.id,
+            description=f"Partner aggiornato: {partner.ragione_sociale}",
+            request=self.request
+        )
+    
+    def perform_destroy(self, instance):
+        # Log eliminazione partner
+        AuditLog.log(
+            action=AuditAction.DELETE,
+            user=self.request.user,
+            resource_type='partner',
+            resource_id=instance.id,
+            description=f"Partner eliminato: {instance.ragione_sociale}",
+            request=self.request
+        )
+        instance.delete()
 
