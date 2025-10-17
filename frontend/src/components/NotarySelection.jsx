@@ -1,8 +1,21 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Star, FileText, Calendar, Phone, Mail, PenTool, UserX } from 'lucide-react'
+import NotaryModal from './NotaryModal'
 import './NotarySelection.css'
 
 function NotarySelection() {
+  const [selectedNotary, setSelectedNotary] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleNotaryClick = (notary) => {
+    setSelectedNotary(notary)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setTimeout(() => setSelectedNotary(null), 400) // Aspetta la fine dell'animazione
+  }
   const notaries = [
     {
       id: 1,
@@ -100,7 +113,11 @@ function NotarySelection() {
       <div className="notary-cards-wrapper">
         <div className="notary-cards-container">
           {notaries.map(notary => (
-            <div key={notary.id} className="notary-card">
+            <div 
+              key={notary.id} 
+              className="notary-card"
+              onClick={() => handleNotaryClick(notary)}
+            >
               <img src={notary.image} alt={notary.name} className="notary-image" />
               <div className="notary-name-rating">
                 <h3 className="notary-name">{notary.name}</h3>
@@ -136,6 +153,12 @@ function NotarySelection() {
           </div>
         </div>
       </div>
+
+      <NotaryModal 
+        notary={selectedNotary}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   )
 }

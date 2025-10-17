@@ -83,11 +83,16 @@
   transition: all 0.2s ease;
   scroll-snap-align: start;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .notary-card:hover {
   box-shadow: var(--shadow-lg);
   transform: translateY(-4px);
+}
+
+.notary-card:active {
+  transform: translateY(-2px);
 }
 
 .notary-image {

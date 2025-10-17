@@ -1,0 +1,250 @@
+/* Overlay semi-trasparente */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modale laterale */
+.notary-modal {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 450px;
+  height: 100vh;
+  background-color: var(--color-white);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  transform: translateX(100%);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 24px 0 0 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.notary-modal.open {
+  transform: translateX(0);
+}
+
+/* Header modale */
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  background-color: var(--color-white);
+  z-index: 10;
+}
+
+.modal-back-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.modal-back-btn:hover {
+  background-color: var(--color-bg-main);
+}
+
+.modal-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* Contenuto modale */
+.modal-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Profilo notaio */
+.modal-notary-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-notary-image {
+  width: 200px;
+  height: 150px;
+  border-radius: 20px;
+  object-fit: cover;
+  object-position: center top;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.modal-notary-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 8px 0;
+}
+
+.modal-notary-address {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  margin: 0 0 12px 0;
+}
+
+.modal-notary-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-stars {
+  display: flex;
+  gap: 4px;
+}
+
+.modal-rating-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* Sezioni */
+.modal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-section-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.modal-section-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Servizi */
+.modal-services {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-service-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: var(--color-bg-main);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.modal-service-item:hover {
+  background-color: #E9ECEF;
+}
+
+.modal-service-icon {
+  color: #1668B0;
+  flex-shrink: 0;
+}
+
+.modal-service-item span {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+/* Bottone Seleziona */
+.modal-select-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(to right, #4FADFF, #1668B0);
+  border: none;
+  border-radius: 12px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-white);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 12px;
+}
+
+.modal-select-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(22, 104, 176, 0.3);
+}
+
+.modal-select-btn:active {
+  transform: translateY(0);
+}
+
+/* Scrollbar modale */
+.notary-modal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notary-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notary-modal::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+.notary-modal::-webkit-scrollbar-thumb:hover {
+  background: var(--color-medium-gray);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .notary-modal {
+    width: 100%;
+    border-radius: 0;
+  }
+}
+
