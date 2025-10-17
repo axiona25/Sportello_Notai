@@ -11,7 +11,14 @@ const DashboardIconActive = () => (
   </svg>
 );
 
-function Sidebar() {
+function Sidebar({ onLogout }) {
+  const handleLogoutClick = (e) => {
+    e.preventDefault()
+    if (onLogout) {
+      onLogout()
+    }
+  }
+
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -40,7 +47,7 @@ function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <a href="#" className="nav-item logout">
+        <a href="#" className="nav-item logout" onClick={handleLogoutClick}>
           <LogOut size={20} strokeWidth={2} />
           <span>Logout</span>
         </a>

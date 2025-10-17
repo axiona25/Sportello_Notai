@@ -1,5 +1,42 @@
 from django.contrib import admin
-from .models import Act
+from .models import Act, NotarialActMainCategory, NotarialActCategory, DocumentType, NotarialActCategoryDocument
+
+
+@admin.register(NotarialActMainCategory)
+class NotarialActMainCategoryAdmin(admin.ModelAdmin):
+    list_display = ['name', 'code', 'order', 'is_active', 'created_at']
+    list_filter = ['is_active']
+    search_fields = ['name', 'code', 'description']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['order', 'name']
+
+
+@admin.register(NotarialActCategory)
+class NotarialActCategoryAdmin(admin.ModelAdmin):
+    list_display = ['name', 'main_category', 'code', 'order', 'requires_property', 'requires_bank', 'is_active']
+    list_filter = ['main_category', 'is_active', 'requires_property', 'requires_bank']
+    search_fields = ['name', 'code', 'description']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['main_category__order', 'order', 'name']
+
+
+@admin.register(DocumentType)
+class DocumentTypeAdmin(admin.ModelAdmin):
+    list_display = ['name', 'code', 'category', 'required_from', 'is_mandatory', 'is_active']
+    list_filter = ['category', 'required_from', 'is_mandatory', 'is_active']
+    search_fields = ['name', 'code', 'description']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['category', 'name']
+
+
+@admin.register(NotarialActCategoryDocument)
+class NotarialActCategoryDocumentAdmin(admin.ModelAdmin):
+    list_display = ['act_category', 'document_type', 'is_mandatory', 'order']
+    list_filter = ['is_mandatory', 'act_category__main_category']
+    search_fields = ['act_category__name', 'document_type__name']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['act_category__main_category__order', 'act_category__order', 'order']
+    autocomplete_fields = ['act_category', 'document_type']
 
 
 @admin.register(Act)

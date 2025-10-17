@@ -6,8 +6,65 @@ from django.db import models
 from notaries.models import Notary, Client
 
 
+class NotarialActMainCategory(models.Model):
+    """Main categories of notarial acts (Repubblica di San Marino)."""
+    
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100, unique=True)
+    code = models.CharField(max_length=50, unique=True)
+    description = models.TextField(blank=True)
+    order = models.IntegerField(default=0, help_text='Display order')
+    is_active = models.BooleanField(default=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'notarial_act_main_categories'
+        verbose_name = 'Main Category'
+        verbose_name_plural = 'Main Categories'
+        ordering = ['order', 'name']
+    
+    def __str__(self):
+        return self.name
+
+
+class NotarialActCategory(models.Model):
+    """Specific categories of notarial acts (Repubblica di San Marino)."""
+    
+    id = models.AutoField(primary_key=True)
+    main_category = models.ForeignKey(
+        NotarialActMainCategory, 
+        on_delete=models.CASCADE, 
+        related_name='subcategories'
+    )
+    name = models.CharField(max_length=200)
+    code = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    order = models.IntegerField(default=0, help_text='Display order within main category')
+    is_active = models.BooleanField(default=True)
+    
+    # Campi aggiuntivi per configurazione
+    requires_property = models.BooleanField(default=False, help_text='Requires property data')
+    requires_bank = models.BooleanField(default=False, help_text='Requires bank data')
+    requires_parties = models.BooleanField(default=True, help_text='Requires parties data')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'notarial_act_categories'
+        verbose_name = 'Notarial Act Category'
+        verbose_name_plural = 'Notarial Act Categories'
+        ordering = ['main_category__order', 'order', 'name']
+        unique_together = [['main_category', 'name']]
+    
+    def __str__(self):
+        return f"{self.main_category.name} - {self.name}"
+
+
 class ActCategory(models.TextChoices):
-    """Categories of notarial acts."""
+    """Categories of notarial acts (legacy - kept for compatibility)."""
     COMPRAVENDITA = 'compravendita', 'Compravendita'
     MUTUO = 'mutuo', 'Mutuo'
     TESTAMENTO = 'testamento', 'Testamento'
@@ -111,4 +168,95 @@ class Act(models.Model):
     def get_signed_documents(self):
         """Get number of signed documents."""
         return self.documents.filter(is_signed=True).count()
+
+
+class DocumentType(models.Model):
+    """Types of documents required for notarial acts."""
+    
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=200)
+    code = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    
+    # Categorizzazione
+    category = models.CharField(
+        max_length=50,
+        choices=[
+            ('identita', 'Documenti di Identità'),
+            ('immobile', 'Documenti Immobile'),
+            ('fiscale', 'Documenti Fiscali'),
+            ('stato_civile', 'Stato Civile'),
+            ('societario', 'Documenti Societari'),
+            ('finanziario', 'Documenti Finanziari'),
+            ('tecnico', 'Documenti Tecnici'),
+            ('altro', 'Altro'),
+        ],
+        default='altro'
+    )
+    
+    # Chi deve fornirlo
+    required_from = models.CharField(
+        max_length=50,
+        choices=[
+            ('cliente', 'Cliente'),
+            ('venditore', 'Venditore'),
+            ('acquirente', 'Acquirente'),
+            ('entrambi', 'Entrambe le parti'),
+            ('banca', 'Banca'),
+            ('professionista', 'Professionista'),
+            ('PA', 'Pubblica Amministrazione'),
+        ],
+        default='cliente'
+    )
+    
+    # Flag
+    is_mandatory = models.BooleanField(default=True, help_text='Se obbligatorio o facoltativo')
+    is_active = models.BooleanField(default=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'document_types'
+        verbose_name = 'Document Type'
+        verbose_name_plural = 'Document Types'
+        ordering = ['category', 'name']
+    
+    def __str__(self):
+        return self.name
+
+
+class NotarialActCategoryDocument(models.Model):
+    """Relation between notarial act categories and required documents."""
+    
+    id = models.AutoField(primary_key=True)
+    act_category = models.ForeignKey(
+        NotarialActCategory,
+        on_delete=models.CASCADE,
+        related_name='required_documents'
+    )
+    document_type = models.ForeignKey(
+        DocumentType,
+        on_delete=models.CASCADE,
+        related_name='act_categories'
+    )
+    
+    # Dettagli specifici per questa relazione
+    is_mandatory = models.BooleanField(default=True, help_text='Se il documento è obbligatorio per questo atto')
+    notes = models.TextField(blank=True, help_text='Note specifiche per questo documento in questo atto')
+    order = models.IntegerField(default=0, help_text='Ordine di visualizzazione')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'notarial_act_category_documents'
+        verbose_name = 'Act Category Document'
+        verbose_name_plural = 'Act Category Documents'
+        unique_together = [['act_category', 'document_type']]
+        ordering = ['order', 'document_type__name']
+    
+    def __str__(self):
+        return f"{self.act_category.name} - {self.document_type.name}"
 

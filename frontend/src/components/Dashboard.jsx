@@ -7,7 +7,7 @@ import DeedDetailCard from './DeedDetailCard'
 import NotarySelection from './NotarySelection'
 import './Dashboard.css'
 
-function Dashboard() {
+function Dashboard({ onLogout }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
 
@@ -111,7 +111,7 @@ function Dashboard() {
 
   return (
     <div className="dashboard">
-      <Sidebar />
+      <Sidebar onLogout={onLogout} />
       <div className="dashboard-main">
         <Header />
         <div className="dashboard-content">
