@@ -129,7 +129,7 @@
 .notary-section-right {
   display: flex;
   flex-direction: column;
-  padding-top: 52px;
+  padding-top: 40px;
 }
 
 .section-title {
@@ -138,8 +138,8 @@
   font-weight: 600;
   color: var(--color-text-primary);
   margin: 0;
-  margin-bottom: 0;
   line-height: 1.2;
+  height: 24px;
 }
 
 @media (max-width: 1400px) {
