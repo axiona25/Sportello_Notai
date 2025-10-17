@@ -29,7 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 'django.contrib.gis',  # Per supporto geospaziale (coordinates) - temporaneamente disabilitato
+    'django.contrib.gis',  # Per supporto geospaziale (coordinates) con PostGIS
     
     # Third party
     'rest_framework',
@@ -93,7 +93,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',  # PostgreSQL standard (PostGIS verrà abilitato dopo)
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',  # PostGIS per supporto geospaziale
         'NAME': os.getenv('DB_NAME', 'sportello_notai'),
         'USER': os.getenv('DB_USER', 'r.amoroso'),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
