@@ -100,7 +100,7 @@ function DashboardNotaio({ onLogout }) {
     ? Object.values(appointmentsByDate).flat() // Tutti gli appuntamenti dell'anno
     : (appointmentsByDate[selectedDate] || []) // Solo del giorno selezionato
   
-  // Filtra appuntamenti in base alla ricerca
+  // Filtra appuntamenti in base alla ricerca e limita a 4 risultati
   const currentAppointments = searchValue
     ? allAppointments.filter(appointment => {
         const searchLower = searchValue.toLowerCase()
@@ -110,7 +110,7 @@ function DashboardNotaio({ onLogout }) {
           appointment.description?.toLowerCase().includes(searchLower) ||
           appointment.time?.toLowerCase().includes(searchLower)
         )
-      })
+      }).slice(0, 4) // Limita a 4 risultati
     : allAppointments
 
   // Handler per cambio data
