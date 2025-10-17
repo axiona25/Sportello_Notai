@@ -1,5 +1,5 @@
 import React from 'react'
-import { Search, Bell, ChevronDown, MapPin } from 'lucide-react'
+import { Search, Bell, ChevronDown } from 'lucide-react'
 import './Header.css'
 
 function Header({ searchValue = '', onSearchChange }) {
@@ -21,7 +21,7 @@ function Header({ searchValue = '', onSearchChange }) {
           {formattedDate} - {time}
         </div>
         <div className="header-location">
-          <MapPin size={16} />
+          <img src="/assets/Logo_San_Marino.svg" alt="San Marino" className="san-marino-icon" />
           <span>Repubblica di San Marino</span>
         </div>
       </div>
