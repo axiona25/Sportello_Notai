@@ -2,7 +2,7 @@
 Serializers for notaries.
 """
 from rest_framework import serializers
-from rest_framework_gis.serializers import GeoFeatureModelSerializer
+# from rest_framework_gis.serializers import GeoFeatureModelSerializer  # Temporaneamente disabilitato
 from .models import Notary, Client, Collaborator, NotaryAvailability
 
 
@@ -31,14 +31,10 @@ class NotarySerializer(serializers.ModelSerializer):
                            'created_at', 'updated_at']
     
     def get_latitude(self, obj):
-        if obj.coordinates:
-            return obj.coordinates.y
-        return None
+        return obj.latitude  # Temporary: direct field access
     
     def get_longitude(self, obj):
-        if obj.coordinates:
-            return obj.coordinates.x
-        return None
+        return obj.longitude  # Temporary: direct field access
 
 
 class NotaryListSerializer(serializers.ModelSerializer):

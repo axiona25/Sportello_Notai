@@ -3,7 +3,7 @@ Models for notaries, clients, and collaborators.
 """
 import uuid
 from django.db import models
-from django.contrib.gis.db import models as gis_models
+# from django.contrib.gis.db import models as gis_models  # Temporaneamente disabilitato
 from accounts.models import User
 
 
@@ -29,7 +29,9 @@ class Notary(models.Model):
     address_province = models.CharField(max_length=50, blank=True)
     address_cap = models.CharField(max_length=10, blank=True)
     address_country = models.CharField(max_length=50, default='Italia')
-    coordinates = gis_models.PointField(blank=True, null=True)  # PostGIS point
+    # coordinates = gis_models.PointField(blank=True, null=True)  # PostGIS point - Temporaneamente disabilitato
+    latitude = models.FloatField(blank=True, null=True)  # Temporary replacement
+    longitude = models.FloatField(blank=True, null=True)  # Temporary replacement
     
     # Vetrina
     cover_image_url = models.TextField(blank=True)
