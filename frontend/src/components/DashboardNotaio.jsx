@@ -127,7 +127,6 @@ function DashboardNotaio({ onLogout }) {
                   <img src="/assets/element.png" alt="" className="welcome-underline" />
                 </div>
               </div>
-              <button className="btn-primary">Nuovo</button>
             </div>
           </div>
 
