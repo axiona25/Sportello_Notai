@@ -14,8 +14,8 @@
 }
 
 .header-date {
-  font-size: 14px;
-  color: var(--color-text-primary);
+  font-size: 13px;
+  color: var(--color-text-secondary);
   font-weight: 400;
 }
 
