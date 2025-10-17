@@ -2,26 +2,42 @@ import React, { useState } from 'react'
 import Login from './components/Login'
 import ForgotPassword from './components/ForgotPassword'
 import Dashboard from './components/Dashboard'
+import DashboardNotaio from './components/DashboardNotaio'
 import './App.css'
 
 function App() {
   const [currentView, setCurrentView] = useState('login') // 'login', 'forgot-password', 'dashboard'
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userRole, setUserRole] = useState(null) // 'cliente', 'notaio'
 
   const handleLogin = (credentials) => {
     console.log('Login attempt:', credentials)
     
-    // Credenziali demo
-    const DEMO_EMAIL = 'demo@digitalnotary.sm'
-    const DEMO_PASSWORD = 'Demo2024'
+    // Credenziali demo Cliente
+    const DEMO_CLIENTE_EMAIL = 'demo@digitalnotary.sm'
+    const DEMO_CLIENTE_PASSWORD = 'Demo2024'
     
-    // Verifica credenziali
-    if (credentials.email === DEMO_EMAIL && credentials.password === DEMO_PASSWORD) {
-      console.log('Login successful!')
+    // Credenziali demo Notaio
+    const DEMO_NOTAIO_EMAIL = 'notaio@digitalnotary.sm'
+    const DEMO_NOTAIO_PASSWORD = 'Notaio2024'
+    
+    // Verifica credenziali Cliente
+    if (credentials.email === DEMO_CLIENTE_EMAIL && credentials.password === DEMO_CLIENTE_PASSWORD) {
+      console.log('Login successful! Role: Cliente')
       setIsAuthenticated(true)
+      setUserRole('cliente')
       setCurrentView('dashboard')
       return { success: true }
-    } else {
+    } 
+    // Verifica credenziali Notaio
+    else if (credentials.email === DEMO_NOTAIO_EMAIL && credentials.password === DEMO_NOTAIO_PASSWORD) {
+      console.log('Login successful! Role: Notaio')
+      setIsAuthenticated(true)
+      setUserRole('notaio')
+      setCurrentView('dashboard')
+      return { success: true }
+    } 
+    else {
       console.log('Login failed: Invalid credentials')
       return { 
         success: false, 
@@ -46,14 +62,19 @@ function App() {
   const handleLogout = () => {
     console.log('Logout...')
     setIsAuthenticated(false)
+    setUserRole(null)
     setCurrentView('login')
   }
 
-  // Se autenticato, mostra la dashboard
+  // Se autenticato, mostra la dashboard appropriata in base al ruolo
   if (isAuthenticated && currentView === 'dashboard') {
     return (
       <div className="app">
-        <Dashboard onLogout={handleLogout} />
+        {userRole === 'notaio' ? (
+          <DashboardNotaio onLogout={handleLogout} />
+        ) : (
+          <Dashboard onLogout={handleLogout} />
+        )}
       </div>
     )
   }

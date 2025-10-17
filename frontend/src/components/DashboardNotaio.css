@@ -1,0 +1,170 @@
+/* ⚠️ DASHBOARD NOTAIO LOCKED - DO NOT MODIFY WIDTH/OVERFLOW ⚠️ */
+/* Stesse regole della dashboard cliente per consistenza */
+.dashboard-notaio {
+  display: flex;
+  height: 100vh;
+  max-width: 100vw;
+  overflow: hidden;
+  background-color: var(--color-bg-main);
+  position: fixed;
+  width: 100%;
+  overscroll-behavior: none;
+}
+
+.dashboard-notaio-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  overflow: hidden;
+  height: 100vh;
+}
+
+.dashboard-notaio-content {
+  padding: var(--spacing-xl);
+  padding-right: var(--spacing-xl);
+  overflow-y: auto;
+  max-width: 100%;
+  height: calc(100vh - 80px);
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Stili welcome section identici alla dashboard cliente */
+.welcome-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.welcome-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.welcome-text-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.welcome-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 36px;
+  font-weight: 500;
+  color: #4FADFF;
+  line-height: 1.2;
+}
+
+.welcome-name-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0px;
+}
+
+.welcome-name {
+  color: #B0BAD3;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.welcome-underline {
+  display: block;
+  width: 100%;
+  height: 7px;
+  object-fit: fill;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 456px 1fr 1fr;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  align-items: start;
+}
+
+.dashboard-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  height: fit-content;
+}
+
+.dashboard-center {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 420px;
+}
+
+.dashboard-right {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Sezione specifica Notaio */
+.notary-section {
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-xl);
+  border-top: 1px solid var(--color-border);
+}
+
+.notary-section-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+.notary-section-left {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.notary-section-right {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.section-title {
+  font-family: var(--font-family);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+@media (max-width: 1400px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .dashboard-right {
+    grid-column: 1 / -1;
+  }
+
+  .notary-section-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-notaio-content {
+    padding: var(--spacing-md);
+  }
+
+  .notary-section-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
