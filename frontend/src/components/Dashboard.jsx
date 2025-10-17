@@ -94,8 +94,10 @@ function Dashboard({ onLogout }) {
     ]
   }
 
-  // Ottieni gli appuntamenti per la data selezionata
-  const allAppointments = appointmentsByDate[selectedDate] || []
+  // Ottieni gli appuntamenti per la data selezionata o tutti se si sta cercando
+  const allAppointments = searchValue
+    ? Object.values(appointmentsByDate).flat() // Tutti gli appuntamenti dell'anno
+    : (appointmentsByDate[selectedDate] || []) // Solo del giorno selezionato
   
   // Filtra appuntamenti in base alla ricerca
   const currentAppointments = searchValue
