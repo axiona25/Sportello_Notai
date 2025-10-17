@@ -2,11 +2,17 @@ import React from 'react'
 import { Search, Bell, ChevronDown, MapPin } from 'lucide-react'
 import './Header.css'
 
-function Header() {
+function Header({ searchValue = '', onSearchChange }) {
   const currentDate = new Date()
   const options = { weekday: 'long', year: 'numeric', month: 'long', day: '2-digit' }
   const formattedDate = currentDate.toLocaleDateString('it-IT', options)
   const time = currentDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+
+  const handleSearchChange = (e) => {
+    if (onSearchChange) {
+      onSearchChange(e.target.value)
+    }
+  }
 
   return (
     <header className="header">
@@ -23,7 +29,12 @@ function Header() {
       <div className="header-center">
         <div className="search-box">
           <Search size={18} />
-          <input type="text" placeholder="Cerca" />
+          <input 
+            type="text" 
+            placeholder="Cerca appuntamenti..." 
+            value={searchValue}
+            onChange={handleSearchChange}
+          />
         </div>
       </div>
 

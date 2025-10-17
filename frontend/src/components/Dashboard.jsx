@@ -10,6 +10,7 @@ import './Dashboard.css'
 function Dashboard({ onLogout }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
+  const [searchValue, setSearchValue] = useState('')
 
   // Database degli appuntamenti per data
   const appointmentsByDate = {
@@ -94,7 +95,20 @@ function Dashboard({ onLogout }) {
   }
 
   // Ottieni gli appuntamenti per la data selezionata
-  const currentAppointments = appointmentsByDate[selectedDate] || []
+  const allAppointments = appointmentsByDate[selectedDate] || []
+  
+  // Filtra appuntamenti in base alla ricerca
+  const currentAppointments = searchValue
+    ? allAppointments.filter(appointment => {
+        const searchLower = searchValue.toLowerCase()
+        return (
+          appointment.title?.toLowerCase().includes(searchLower) ||
+          appointment.location?.toLowerCase().includes(searchLower) ||
+          appointment.description?.toLowerCase().includes(searchLower) ||
+          appointment.time?.toLowerCase().includes(searchLower)
+        )
+      })
+    : allAppointments
 
   // Handler per cambio data
   const handleDateSelect = (date) => {
@@ -109,11 +123,16 @@ function Dashboard({ onLogout }) {
     }
   }
 
+  // Handler per ricerca
+  const handleSearchChange = (value) => {
+    setSearchValue(value)
+  }
+
   return (
     <div className="dashboard">
       <Sidebar onLogout={onLogout} />
       <div className="dashboard-main">
-        <Header />
+        <Header searchValue={searchValue} onSearchChange={handleSearchChange} />
         <div className="dashboard-content">
           <div className="welcome-section">
             <div className="welcome-container">

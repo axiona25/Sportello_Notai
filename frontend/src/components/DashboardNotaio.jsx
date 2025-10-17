@@ -11,6 +11,7 @@ import './DashboardNotaio.css'
 function DashboardNotaio({ onLogout }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
+  const [searchValue, setSearchValue] = useState('')
 
   // Database degli appuntamenti per data (stessi del cliente, ma prospettiva notaio)
   const appointmentsByDate = {
@@ -95,7 +96,20 @@ function DashboardNotaio({ onLogout }) {
   }
 
   // Ottieni gli appuntamenti per la data selezionata
-  const currentAppointments = appointmentsByDate[selectedDate] || []
+  const allAppointments = appointmentsByDate[selectedDate] || []
+  
+  // Filtra appuntamenti in base alla ricerca
+  const currentAppointments = searchValue
+    ? allAppointments.filter(appointment => {
+        const searchLower = searchValue.toLowerCase()
+        return (
+          appointment.title?.toLowerCase().includes(searchLower) ||
+          appointment.location?.toLowerCase().includes(searchLower) ||
+          appointment.description?.toLowerCase().includes(searchLower) ||
+          appointment.time?.toLowerCase().includes(searchLower)
+        )
+      })
+    : allAppointments
 
   // Handler per cambio data
   const handleDateSelect = (date) => {
@@ -110,11 +124,16 @@ function DashboardNotaio({ onLogout }) {
     }
   }
 
+  // Handler per ricerca
+  const handleSearchChange = (value) => {
+    setSearchValue(value)
+  }
+
   return (
     <div className="dashboard-notaio">
       <Sidebar onLogout={onLogout} />
       <div className="dashboard-notaio-main">
-        <Header />
+        <Header searchValue={searchValue} onSearchChange={handleSearchChange} />
         <div className="dashboard-notaio-content">
           <div className="welcome-section">
             <div className="welcome-container">
