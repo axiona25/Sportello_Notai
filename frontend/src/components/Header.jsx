@@ -17,12 +17,12 @@ function Header({ searchValue = '', onSearchChange }) {
   return (
     <header className="header">
       <div className="header-left">
-        <div className="header-date">
-          {formattedDate} - {time}
-        </div>
         <div className="header-location">
           <img src="/assets/Logo_San_Marino.svg" alt="San Marino" className="san-marino-icon" />
           <span>Repubblica di San Marino</span>
+        </div>
+        <div className="header-date">
+          {formattedDate} - {time}
         </div>
       </div>
 
