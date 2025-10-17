@@ -6,6 +6,19 @@
   height: 368px;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.studio-activity::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to bottom, #83E0F7, #1668B0);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
 }
 
 .activity-header {
