@@ -12,21 +12,6 @@
   background-color: #F8F9FA;
 }
 
-.login-topbar {
-  position: absolute;
-  top: 32px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-}
-
-.san-marino-logo {
-  height: 90px;
-  width: auto;
-}
 
 .login-background {
   position: absolute;

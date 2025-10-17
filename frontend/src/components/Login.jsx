@@ -50,10 +50,6 @@ function Login({ onLogin, onForgotPassword }) {
         <div className="login-shape login-shape-3"></div>
       </div>
 
-      <div className="login-topbar">
-        <img src="/assets/Logo_San_Marino.svg" alt="Repubblica di San Marino" className="san-marino-logo" />
-      </div>
-
       <div className="login-content">
         <div className="login-header">
           <div className="login-logo">
