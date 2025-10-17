@@ -45,7 +45,7 @@ function DeedDetailCard({ appointment }) {
   const location = appointment.location || 'Piazza Cavour n.19 - Dogana (S. Marino)'
   
   return (
-    <div className="deed-card">
+    <div className="deed-card deed-card-active">
       <h3 className="deed-title">{appointment.title}</h3>
 
       <div className="deed-section deed-section-notary">
