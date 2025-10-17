@@ -1,5 +1,5 @@
 import React from 'react'
-import { FileText, Mail, PenTool, Video, Home, Building2, Gift, Briefcase, FileSignature, Scale, Settings } from 'lucide-react'
+import { FileText, User, Phone, Video, Home, Building2, Gift, Briefcase, FileSignature, Scale, Settings, Calendar as CalendarIcon } from 'lucide-react'
 import './DeedDetailCard.css'
 
 // Funzione per determinare l'icona in base al tipo di atto
@@ -23,18 +23,35 @@ const getActIcon = (description) => {
   }
 }
 
-function DeedDetailCard() {
-  const actType = "Immobile Via Novara 5"
+function DeedDetailCard({ appointment }) {
+  // Se non c'è appuntamento selezionato, mostra placeholder
+  if (!appointment) {
+    return (
+      <div className="deed-card deed-card-empty">
+        <div className="deed-empty-content">
+          <CalendarIcon size={64} className="deed-empty-icon" />
+          <p className="deed-empty-text">Seleziona un appuntamento per visualizzare i dettagli</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Mantieni sempre lo stesso layout, popola dinamicamente i dati disponibili
+  const actType = appointment.title
   const ActIcon = getActIcon(actType)
+  
+  // Estrai il nome del notaio dal titolo (se disponibile)
+  const notaryName = appointment.title.split(' - ')[1] || 'Notaio Francesco Spada'
+  const location = appointment.location || 'Piazza Cavour n.19 - Dogana (S. Marino)'
   
   return (
     <div className="deed-card">
-      <h3 className="deed-title">Atto Notarile - Rogito</h3>
+      <h3 className="deed-title">{appointment.title}</h3>
 
       <div className="deed-section deed-section-notary">
         <p className="deed-notary-full">
-          <span className="deed-notary-name">Notaio Francesco Spada</span>
-          <span className="deed-notary-address"> - Piazza Cavour n.19 - Dogana (S. Marino)</span>
+          <span className="deed-notary-name">{notaryName}</span>
+          <span className="deed-notary-address"> - {location}</span>
         </p>
       </div>
 
@@ -59,22 +76,29 @@ function DeedDetailCard() {
       </div>
 
       <div className="deed-status">
+        {/* Icone sempre presenti */}
+        <div className="status-item">
+          <User size={16} />
+          <span className="status-text-gray">Partecipanti Verificati (2/2)</span>
+        </div>
         <div className="status-item">
           <FileText size={16} />
           <span className="status-text-gray">Documenti Verificati (11/14)</span>
         </div>
-        <div className="status-item">
-          <Mail size={16} />
-          <span className="status-text-blue">PEC Attiva</span>
-        </div>
-        <div className="status-item">
-          <PenTool size={16} />
-          <span className="status-text-blue">Firma Digitale Attiva</span>
-        </div>
-        <div className="status-item">
-          <Video size={16} />
-          <span className="status-text-blue">Video Conferenza Attiva</span>
-        </div>
+        
+        {/* Icone solo per appuntamenti */}
+        {appointment.type === 'appointment' && (
+          <>
+            <div className="status-item">
+              <Phone size={16} />
+              <span className="status-text-blue">Chiamata Telefonica Attiva</span>
+            </div>
+            <div className="status-item">
+              <Video size={16} />
+              <span className="status-text-blue">Video Conferenza Attiva</span>
+            </div>
+          </>
+        )}
       </div>
 
       <button className="deed-btn">Entra</button>

@@ -2,7 +2,7 @@ import React from 'react'
 import { Clock, User, FileText, Phone, Video, Calendar as CalendarIcon } from 'lucide-react'
 import './AppointmentCard.css'
 
-function AppointmentCard({ type, title, description, location, time, deadline, isActive }) {
+function AppointmentCard({ type, title, description, location, time, deadline, isActive, onClick, isSelected }) {
   if (type === 'empty') {
     return (
       <div className="appointment-card empty">
@@ -13,7 +13,11 @@ function AppointmentCard({ type, title, description, location, time, deadline, i
   }
 
   return (
-    <div className={`appointment-card ${isActive ? 'active' : ''}`}>
+    <div 
+      className={`appointment-card ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+      onClick={onClick}
+      style={{ cursor: 'pointer' }}
+    >
       <h3 className="appointment-title">{title}</h3>
       
       {description && (

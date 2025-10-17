@@ -9,6 +9,105 @@ import './Dashboard.css'
 
 function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(2)
+  const [selectedAppointment, setSelectedAppointment] = useState(null)
+
+  // Database degli appuntamenti per data
+  const appointmentsByDate = {
+    2: [
+      {
+        id: 'doc-2-1',
+        type: 'document',
+        title: 'Documenti Catastali',
+        description: 'Revisionare i documenti allegati',
+        deadline: '19/09/25'
+      },
+      {
+        id: 'app-2-1',
+        type: 'appointment',
+        title: 'Rogito - Notaio Francesco Spada',
+        location: 'Piazza Cavour n.19 - Dogana (S. Marino)',
+        time: '11:15 - 12:30 AM'
+      },
+      {
+        id: 'doc-2-2',
+        type: 'document',
+        title: 'Contratto di Compravendita',
+        description: 'Verifica documenti preliminari',
+        deadline: '22/09/25'
+      }
+    ],
+    6: [
+      {
+        id: 'app-6-1',
+        type: 'appointment',
+        title: 'Consulenza - Notaio Dennis Beccari',
+        location: 'Via 28 Luglio n.212 - Borgo Maggiore',
+        time: '09:00 - 10:00 AM'
+      },
+      {
+        id: 'doc-6-1',
+        type: 'document',
+        title: 'Visura Camerale',
+        description: 'Controllo documenti societari',
+        deadline: '10/10/25'
+      }
+    ],
+    16: [
+      {
+        id: 'app-16-1',
+        type: 'appointment',
+        title: 'Atto Notarile - Notaio Chiara Benedettini',
+        location: 'Via 28 Luglio n.212 - Borgo Maggiore',
+        time: '14:30 - 16:00 PM'
+      },
+      {
+        id: 'doc-16-1',
+        type: 'document',
+        title: 'Certificato di Provenienza',
+        description: 'Verifica storico immobile',
+        deadline: '18/10/25'
+      },
+      {
+        id: 'doc-16-2',
+        type: 'document',
+        title: 'Planimetrie Catastali',
+        description: 'Aggiornamento planimetrie',
+        deadline: '20/10/25'
+      }
+    ],
+    22: [
+      {
+        id: 'app-22-1',
+        type: 'appointment',
+        title: 'Firma Atto - Notaio Monica Bernardi',
+        location: 'Piazza Marino Tini n.10 - Dogana',
+        time: '10:30 - 12:00 AM'
+      },
+      {
+        id: 'doc-22-1',
+        type: 'document',
+        title: 'Attestato di Prestazione Energetica',
+        description: 'Consegna APE aggiornato',
+        deadline: '25/10/25'
+      }
+    ]
+  }
+
+  // Ottieni gli appuntamenti per la data selezionata
+  const currentAppointments = appointmentsByDate[selectedDate] || []
+
+  // Handler per cambio data
+  const handleDateSelect = (date) => {
+    setSelectedDate(date)
+    setSelectedAppointment(null) // Reset appuntamento selezionato
+  }
+
+  // Handler per selezione appuntamento
+  const handleAppointmentSelect = (appointment) => {
+    if (appointment.type !== 'empty') {
+      setSelectedAppointment(appointment)
+    }
+  }
 
   return (
     <div className="dashboard">
@@ -33,34 +132,32 @@ function Dashboard() {
 
           <div className="dashboard-grid">
             <div className="dashboard-left">
-              <Calendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+              <Calendar selectedDate={selectedDate} onSelectDate={handleDateSelect} />
             </div>
 
             <div className="dashboard-center">
-              <AppointmentCard
-                type="document"
-                title="Documenti Catastali"
-                description="Revisionare i documenti allegati"
-                deadline="19/09/25"
-              />
-              <AppointmentCard
-                type="appointment"
-                title="Rogito - Notaio Francesco Spada"
-                location="Piazza Cavour n.19 - Dogana (S. Marino)"
-                time="11:15 - 12:30 AM"
-                isActive={true}
-              />
-              <AppointmentCard
-                type="document"
-                title="Contratto di Compravendita"
-                description="Verifica documenti preliminari"
-                deadline="22/09/25"
-              />
-              <AppointmentCard type="empty" />
+              {currentAppointments.length > 0 ? (
+                <>
+                  {currentAppointments.map((appointment, index) => (
+                    <AppointmentCard 
+                      key={appointment.id} 
+                      {...appointment}
+                      onClick={() => handleAppointmentSelect(appointment)}
+                      isSelected={selectedAppointment?.id === appointment.id}
+                    />
+                  ))}
+                  {/* Riempi con card vuote fino a 4 totali */}
+                  {[...Array(Math.max(0, 4 - currentAppointments.length))].map((_, index) => (
+                    <AppointmentCard key={`empty-${index}`} type="empty" />
+                  ))}
+                </>
+              ) : (
+                <AppointmentCard type="empty" />
+              )}
             </div>
 
             <div className="dashboard-right">
-              <DeedDetailCard />
+              <DeedDetailCard appointment={selectedAppointment} />
             </div>
           </div>
 

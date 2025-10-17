@@ -13,6 +13,9 @@ function Calendar({ selectedDate, onSelectDate }) {
 
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
+  // Giorni con appuntamenti (per il mese corrente)
+  const daysWithAppointments = [2, 6, 16, 22]
+
   const getDaysInMonth = (month, year) => {
     return new Date(year, month + 1, 0).getDate()
   }
@@ -101,17 +104,23 @@ function Calendar({ selectedDate, onSelectDate }) {
         </div>
 
         <div className="calendar-days">
-          {calendarDays.map((dayObj, index) => (
-            <button
-              key={index}
-              className={`calendar-day ${
-                dayObj.isCurrentMonth ? 'current-month' : 'other-month'
-              } ${dayObj.day === selectedDate && dayObj.isCurrentMonth ? 'selected' : ''}`}
-              onClick={() => dayObj.isCurrentMonth && onSelectDate(dayObj.day)}
-            >
-              {dayObj.day}
-            </button>
-          ))}
+          {calendarDays.map((dayObj, index) => {
+            const hasAppointment = dayObj.isCurrentMonth && daysWithAppointments.includes(dayObj.day)
+            return (
+              <button
+                key={index}
+                className={`calendar-day ${
+                  dayObj.isCurrentMonth ? 'current-month' : 'other-month'
+                } ${dayObj.day === selectedDate && dayObj.isCurrentMonth ? 'selected' : ''} ${
+                  hasAppointment ? 'has-appointment' : ''
+                }`}
+                onClick={() => dayObj.isCurrentMonth && onSelectDate(dayObj.day)}
+              >
+                {dayObj.day}
+                {hasAppointment && <span className="appointment-indicator"></span>}
+              </button>
+            )
+          })}
         </div>
       </div>
     </div>

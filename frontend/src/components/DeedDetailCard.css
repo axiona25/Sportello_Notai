@@ -11,6 +11,53 @@
   position: relative;
 }
 
+.deed-card-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.deed-empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.deed-empty-icon {
+  color: var(--color-light-gray);
+  opacity: 0.6;
+}
+
+.deed-empty-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.deed-empty-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+  max-width: 300px;
+}
+
+.deed-empty-deadline {
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1668B0;
+  margin: 8px 0 0 0;
+}
+
 .deed-title {
   font-size: 16px;
   font-weight: 600;
