@@ -192,6 +192,7 @@
 .form-input {
   width: 100%;
   padding: 14px 16px 14px 48px;
+  padding-left: 48px !important;
   font-family: 'Poppins', sans-serif;
   font-size: 15px;
   font-weight: 400;
@@ -206,6 +207,7 @@
 .form-input::placeholder {
   color: var(--color-text-secondary);
   opacity: 0.6;
+  padding-left: 8px;
 }
 
 .form-input:focus {

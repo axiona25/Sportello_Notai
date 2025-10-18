@@ -6,12 +6,14 @@ import AppointmentCard from './AppointmentCard'
 import DeedDetailCard from './DeedDetailCard'
 import NotaryMetrics from './NotaryMetrics'
 import StudioActivity from './StudioActivity'
+import Settings from './Settings'
 import './DashboardNotaio.css'
 
 function DashboardNotaio({ onLogout }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [searchValue, setSearchValue] = useState('')
+  const [currentView, setCurrentView] = useState('dashboard') // 'dashboard' o 'settings'
 
   // Database degli appuntamenti per data (stessi del cliente, ma prospettiva notaio)
   const appointmentsByDate = {
@@ -131,9 +133,45 @@ function DashboardNotaio({ onLogout }) {
     setSearchValue(value)
   }
 
+  // Handler per navigazione a Settings
+  const handleNavigateToSettings = () => {
+    setCurrentView('settings')
+  }
+
+  // Handler per tornare alla dashboard
+  const handleBackToDashboard = () => {
+    setCurrentView('dashboard')
+  }
+
+  // Se siamo nella vista Settings, mostra Settings
+  if (currentView === 'settings') {
+    return (
+      <div className="dashboard-notaio">
+        <Sidebar 
+          onLogout={onLogout} 
+          userRole="notaio" 
+          onNavigateToSettings={handleNavigateToSettings}
+          onNavigateToDashboard={handleBackToDashboard}
+          currentView={currentView}
+        />
+        <Settings 
+          searchValue={searchValue} 
+          onSearchChange={handleSearchChange}
+        />
+      </div>
+    )
+  }
+
+  // Altrimenti mostra la dashboard normale
   return (
     <div className="dashboard-notaio">
-      <Sidebar onLogout={onLogout} />
+      <Sidebar 
+        onLogout={onLogout} 
+        userRole="notaio" 
+        onNavigateToSettings={handleNavigateToSettings}
+        onNavigateToDashboard={handleBackToDashboard}
+        currentView={currentView}
+      />
       <div className="dashboard-notaio-main">
         <Header searchValue={searchValue} onSearchChange={handleSearchChange} />
         <div className="dashboard-notaio-content">

@@ -1,5 +1,5 @@
 import React from 'react'
-import { LayoutGrid, FileText, MessageSquare, LogOut } from 'lucide-react'
+import { LayoutGrid, FileText, MessageSquare, Settings, LogOut } from 'lucide-react'
 import './Sidebar.css'
 
 const DashboardIconActive = () => (
@@ -11,11 +11,25 @@ const DashboardIconActive = () => (
   </svg>
 );
 
-function Sidebar({ onLogout }) {
+function Sidebar({ onLogout, userRole, onNavigateToSettings, onNavigateToDashboard, currentView = 'dashboard' }) {
   const handleLogoutClick = (e) => {
     e.preventDefault()
     if (onLogout) {
       onLogout()
+    }
+  }
+
+  const handleSettingsClick = (e) => {
+    e.preventDefault()
+    if (onNavigateToSettings) {
+      onNavigateToSettings()
+    }
+  }
+
+  const handleDashboardClick = (e) => {
+    e.preventDefault()
+    if (onNavigateToDashboard) {
+      onNavigateToDashboard()
     }
   }
 
@@ -32,18 +46,54 @@ function Sidebar({ onLogout }) {
       </div>
 
       <nav className="sidebar-nav">
-        <a href="#" className="nav-item active">
-          <DashboardIconActive />
+        <a 
+          href="#" 
+          className={`nav-item ${currentView === 'dashboard' ? 'active' : ''}`}
+          onClick={handleDashboardClick}
+        >
+          {currentView === 'dashboard' ? (
+            <DashboardIconActive />
+          ) : (
+            <LayoutGrid size={22} strokeWidth={2} />
+          )}
           <span>Dashboard</span>
         </a>
-        <a href="#" className="nav-item">
+        <a 
+          href="#" 
+          className="nav-item"
+          onClick={(e) => {
+            e.preventDefault()
+            if (onNavigateToDashboard) {
+              onNavigateToDashboard()
+            }
+          }}
+        >
           <FileText size={22} strokeWidth={2} />
           <span>Documenti</span>
         </a>
-        <a href="#" className="nav-item">
+        <a 
+          href="#" 
+          className="nav-item"
+          onClick={(e) => {
+            e.preventDefault()
+            if (onNavigateToDashboard) {
+              onNavigateToDashboard()
+            }
+          }}
+        >
           <MessageSquare size={22} strokeWidth={2} />
           <span>Messaggi</span>
         </a>
+        {userRole === 'notaio' && (
+          <a 
+            href="#" 
+            className={`nav-item ${currentView === 'settings' ? 'active' : ''}`}
+            onClick={handleSettingsClick}
+          >
+            <Settings size={22} strokeWidth={2} />
+            <span>Impostazioni</span>
+          </a>
+        )}
       </nav>
 
       <div className="sidebar-footer">

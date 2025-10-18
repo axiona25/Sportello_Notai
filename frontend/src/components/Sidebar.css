@@ -69,7 +69,11 @@
 
 .nav-item:hover:not(.logout) {
   background-color: #F8F9FA;
-  color: var(--color-text-primary);
+  color: #1668B0;
+}
+
+.nav-item:hover:not(.logout) svg {
+  color: #1668B0;
 }
 
 .nav-item.active {

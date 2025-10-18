@@ -132,7 +132,7 @@ function Dashboard({ onLogout }) {
 
   return (
     <div className="dashboard">
-      <Sidebar onLogout={onLogout} />
+      <Sidebar onLogout={onLogout} userRole="cliente" />
       <div className="dashboard-main">
         <Header searchValue={searchValue} onSearchChange={handleSearchChange} />
         <div className="dashboard-content">
