@@ -191,10 +191,11 @@ REST_FRAMEWORK = {
 # ============================================
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('JWT_ACCESS_TOKEN_EXPIRE_MINUTES', 30))),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('JWT_REFRESH_TOKEN_EXPIRE_DAYS', 7))),
+    # Token valido fino al logout (24 ore per sicurezza, ma blacklist gestisce logout)
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=int(os.getenv('JWT_ACCESS_TOKEN_EXPIRE_HOURS', 24))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('JWT_REFRESH_TOKEN_EXPIRE_DAYS', 30))),
     'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
+    'BLACKLIST_AFTER_ROTATION': True,  # Token invalidato al logout
     'UPDATE_LAST_LOGIN': True,
     
     'ALGORITHM': os.getenv('JWT_ALGORITHM', 'HS256'),

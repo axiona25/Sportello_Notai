@@ -1,47 +1,42 @@
 import React, { useState } from 'react'
+import { AuthProvider, useAuth } from './hooks/useAuth.jsx'
 import Login from './components/Login'
 import ForgotPassword from './components/ForgotPassword'
 import Dashboard from './components/Dashboard'
 import DashboardNotaio from './components/DashboardNotaio'
+import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
-function App() {
+function AppContent() {
   const [currentView, setCurrentView] = useState('login') // 'login', 'forgot-password', 'dashboard'
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [userRole, setUserRole] = useState(null) // 'cliente', 'notaio'
+  const { isAuthenticated, user, login, logout } = useAuth()
 
-  const handleLogin = (credentials) => {
+  const handleLogin = async (credentials) => {
     console.log('Login attempt:', credentials)
     
-    // Credenziali demo Cliente
-    const DEMO_CLIENTE_EMAIL = 'demo@digitalnotary.sm'
-    const DEMO_CLIENTE_PASSWORD = 'Demo2024'
-    
-    // Credenziali demo Notaio
-    const DEMO_NOTAIO_EMAIL = 'notaio@digitalnotary.sm'
-    const DEMO_NOTAIO_PASSWORD = 'Notaio2024'
-    
-    // Verifica credenziali Cliente
-    if (credentials.email === DEMO_CLIENTE_EMAIL && credentials.password === DEMO_CLIENTE_PASSWORD) {
-      console.log('Login successful! Role: Cliente')
-      setIsAuthenticated(true)
-      setUserRole('cliente')
+    try {
+      const data = await login(credentials.email, credentials.password)
+      
+      // Se MFA richiesto, gestisci separatamente
+      if (data.mfa_required) {
+        console.log('MFA required')
+        return { 
+          success: false, 
+          mfa_required: true,
+          user_id: data.user_id,
+          message: data.message 
+        }
+      }
+
+      // Login successfull
+      console.log('Login successful! Role:', data.user.role)
       setCurrentView('dashboard')
       return { success: true }
-    } 
-    // Verifica credenziali Notaio
-    else if (credentials.email === DEMO_NOTAIO_EMAIL && credentials.password === DEMO_NOTAIO_PASSWORD) {
-      console.log('Login successful! Role: Notaio')
-      setIsAuthenticated(true)
-      setUserRole('notaio')
-      setCurrentView('dashboard')
-      return { success: true }
-    } 
-    else {
-      console.log('Login failed: Invalid credentials')
+    } catch (error) {
+      console.error('Login failed:', error)
       return { 
         success: false, 
-        error: 'Email o password non corrette. Usa le credenziali demo.' 
+        error: error.message || 'Email o password non corrette.' 
       }
     }
   }
@@ -59,10 +54,9 @@ function App() {
     // Qui andrà la logica per inviare email di reset
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     console.log('Logout...')
-    setIsAuthenticated(false)
-    setUserRole(null)
+    await logout()
     setCurrentView('login')
   }
 
@@ -70,11 +64,13 @@ function App() {
   if (isAuthenticated && currentView === 'dashboard') {
     return (
       <div className="app">
-        {userRole === 'notaio' ? (
-          <DashboardNotaio onLogout={handleLogout} />
-        ) : (
-          <Dashboard onLogout={handleLogout} />
-        )}
+        <ProtectedRoute>
+          {user?.role === 'notaio' ? (
+            <DashboardNotaio onLogout={handleLogout} />
+          ) : (
+            <Dashboard onLogout={handleLogout} />
+          )}
+        </ProtectedRoute>
       </div>
     )
   }
@@ -95,6 +91,15 @@ function App() {
       onLogin={handleLogin}
       onForgotPassword={handleForgotPassword}
     />
+  )
+}
+
+// App principale con AuthProvider
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 

@@ -57,7 +57,7 @@ class LoginView(APIView):
     """User login endpoint."""
     
     permission_classes = [permissions.AllowAny]
-    throttle_classes = ['core.throttles.LoginRateThrottle']
+    # throttle_classes = []  # Disabilitato temporaneamente per development
     
     @extend_schema(
         request=LoginSerializer,
