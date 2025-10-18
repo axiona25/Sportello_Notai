@@ -7,6 +7,7 @@ import DeedDetailCard from './DeedDetailCard'
 import NotaryMetrics from './NotaryMetrics'
 import StudioActivity from './StudioActivity'
 import Settings from './Settings'
+import ProtectedRoute from './ProtectedRoute'
 import './DashboardNotaio.css'
 
 function DashboardNotaio({ onLogout }) {
@@ -143,7 +144,7 @@ function DashboardNotaio({ onLogout }) {
     setCurrentView('dashboard')
   }
 
-  // Se siamo nella vista Settings, mostra Settings
+  // Se siamo nella vista Settings, mostra Settings (protetto solo per notai)
   if (currentView === 'settings') {
     return (
       <div className="dashboard-notaio">
@@ -154,10 +155,12 @@ function DashboardNotaio({ onLogout }) {
           onNavigateToDashboard={handleBackToDashboard}
           currentView={currentView}
         />
-        <Settings 
-          searchValue={searchValue} 
-          onSearchChange={handleSearchChange}
-        />
+        <ProtectedRoute allowedRoles={['notaio']}>
+          <Settings 
+            searchValue={searchValue} 
+            onSearchChange={handleSearchChange}
+          />
+        </ProtectedRoute>
       </div>
     )
   }

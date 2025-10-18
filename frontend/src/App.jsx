@@ -8,8 +8,8 @@ import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
 function AppContent() {
-  const [currentView, setCurrentView] = useState('login') // 'login', 'forgot-password', 'dashboard'
-  const { isAuthenticated, user, login, logout } = useAuth()
+  const [currentView, setCurrentView] = useState('forgot-password') // 'forgot-password' per gestire forgot password
+  const { isAuthenticated, user, login, logout, loading } = useAuth()
 
   const handleLogin = async (credentials) => {
     console.log('Login attempt:', credentials)
@@ -28,9 +28,8 @@ function AppContent() {
         }
       }
 
-      // Login successfull
+      // Login successful - non serve più setCurrentView, isAuthenticated gestisce tutto
       console.log('Login successful! Role:', data.user.role)
-      setCurrentView('dashboard')
       return { success: true }
     } catch (error) {
       console.error('Login failed:', error)
@@ -57,11 +56,33 @@ function AppContent() {
   const handleLogout = async () => {
     console.log('Logout...')
     await logout()
-    setCurrentView('login')
+    // Non serve più setCurrentView, ProtectedRoute gestisce redirect
+  }
+
+  // Mostra loading mentre controlla autenticazione
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        backgroundColor: '#F8F9FA'
+      }}>
+        <div style={{
+          fontFamily: 'Poppins, sans-serif',
+          fontSize: '18px',
+          color: '#6B7280'
+        }}>
+          Caricamento...
+        </div>
+      </div>
+    )
   }
 
   // Se autenticato, mostra la dashboard appropriata in base al ruolo
-  if (isAuthenticated && currentView === 'dashboard') {
+  // ProtectedRoute gestisce la protezione e redirect se non autenticato
+  if (isAuthenticated) {
     return (
       <div className="app">
         <ProtectedRoute>
@@ -85,7 +106,7 @@ function AppContent() {
     )
   }
 
-  // Altrimenti mostra il login
+  // Non autenticato - mostra login
   return (
     <Login
       onLogin={handleLogin}
