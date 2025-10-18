@@ -241,6 +241,7 @@ function DashboardNotaio({ onLogout }) {
                 <NotaryMetrics />
               </div>
               <div className="notary-section-right">
+                <h2 className="section-title">Attività di Studio</h2>
                 <StudioActivity />
               </div>
             </div>

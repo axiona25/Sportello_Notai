@@ -110,7 +110,7 @@
 .notary-section {
   margin-top: var(--spacing-xl);
   padding-top: var(--spacing-md);
-  border-top: 1px solid var(--color-border);
+  /* border-top: 1px solid var(--color-border); */ /* Rimossa riga grigia */
 }
 
 .notary-section-grid {
@@ -123,15 +123,28 @@
 .notary-section-left {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0px; /* Card restano dove sono */
   grid-column: 1 / 3;
+}
+
+/* Far salire SOLO il titolo e aggiungere spazio sotto */
+.notary-section-left .section-title {
+  margin-top: -24px; /* Titolo sale */
+  margin-bottom: 24px; /* Spazio tra titolo e card */
 }
 
 .notary-section-right {
   display: flex;
   flex-direction: column;
-  padding-top: 40px;
+  padding-top: 0px;
+  gap: 0px; /* Stesso stile della sezione sinistra */
   grid-column: 3;
+}
+
+/* Stesso stile del titolo a sinistra per allineamento perfetto */
+.notary-section-right .section-title {
+  margin-top: -24px; /* Titolo sale */
+  margin-bottom: 24px; /* Spazio tra titolo e card */
 }
 
 .section-title {

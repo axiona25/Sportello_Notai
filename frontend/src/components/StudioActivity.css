@@ -8,6 +8,7 @@
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  /* margin-top rimosso - lo spazio è gestito dal titolo sopra */
 }
 
 .studio-activity::before {
@@ -22,12 +23,7 @@
 }
 
 .activity-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--color-border);
+  display: none; /* Nascosto - il titolo è ora fuori dalla card */
 }
 
 .activity-title {
