@@ -5,7 +5,7 @@ import Header from './Header'
 import adminService from '../services/adminService'
 import './NotariesManagement.css'
 
-function NotariesManagement({ onLogout, onBack }) {
+function NotariesManagement({ onLogout, onBack, onNavigateToDashboard, onNavigateToNotaries, onNavigateToPartners }) {
   const [searchValue, setSearchValue] = useState('')
   const [notaries, setNotaries] = useState([])
   const [loading, setLoading] = useState(true)
@@ -118,7 +118,14 @@ function NotariesManagement({ onLogout, onBack }) {
 
   return (
     <div className="notaries-management-container">
-      <Sidebar onLogout={onLogout} />
+      <Sidebar 
+        onLogout={onLogout}
+        userRole="admin"
+        currentView="notaries"
+        onNavigateToDashboard={onNavigateToDashboard}
+        onNavigateToNotaries={onNavigateToNotaries}
+        onNavigateToPartners={onNavigateToPartners}
+      />
       <div className="notaries-management-main">
         <Header 
           searchValue={searchValue} 

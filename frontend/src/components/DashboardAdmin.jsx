@@ -151,11 +151,27 @@ function DashboardAdmin({ onLogout }) {
 
   // Render sottopagine
   if (currentView === 'notaries') {
-    return <NotariesManagement onLogout={onLogout} onBack={handleBackToDashboard} />
+    return (
+      <NotariesManagement 
+        onLogout={onLogout} 
+        onBack={handleBackToDashboard}
+        onNavigateToDashboard={handleBackToDashboard}
+        onNavigateToNotaries={handleNavigateToNotaries}
+        onNavigateToPartners={handleNavigateToPartners}
+      />
+    )
   }
 
   if (currentView === 'partners') {
-    return <PartnersManagement onLogout={onLogout} onBack={handleBackToDashboard} />
+    return (
+      <PartnersManagement 
+        onLogout={onLogout} 
+        onBack={handleBackToDashboard}
+        onNavigateToDashboard={handleBackToDashboard}
+        onNavigateToNotaries={handleNavigateToNotaries}
+        onNavigateToPartners={handleNavigateToPartners}
+      />
+    )
   }
 
   // Dashboard principale
