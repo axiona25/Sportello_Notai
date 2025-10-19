@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react'
 import Sidebar from './Sidebar'
 import Header from './Header'
+import Calendar from './Calendar'
+import AppointmentCard from './AppointmentCard'
+import DeedDetailCard from './DeedDetailCard'
 import AdminMetrics from './AdminMetrics'
-import AdminQuickActions from './AdminQuickActions'
 import NotariesManagement from './NotariesManagement'
 import PartnersManagement from './PartnersManagement'
 import adminService from '../services/adminService'
 import './DashboardAdmin.css'
 
 function DashboardAdmin({ onLogout }) {
-  const [currentView, setCurrentView] = useState('dashboard')
+  const [selectedDate, setSelectedDate] = useState(2)
+  const [selectedStat, setSelectedStat] = useState(null)
   const [searchValue, setSearchValue] = useState('')
+  const [currentView, setCurrentView] = useState('dashboard')
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -29,6 +33,110 @@ function DashboardAdmin({ onLogout }) {
     setLoading(false)
   }
 
+  // Database delle statistiche per "data" (simula calendario appuntamenti)
+  const statsByDate = {
+    2: [
+      {
+        id: 'stat-2-1',
+        type: 'stat',
+        title: 'Licenze Attive',
+        description: `${stats?.notaries.active_licenses || 0} licenze attive`,
+        deadline: 'Aggiornato ora'
+      },
+      {
+        id: 'stat-2-2',
+        type: 'stat',
+        title: 'Revenue Mensile',
+        description: `€${(stats?.revenue.monthly || 0).toLocaleString('it-IT')}`,
+        deadline: 'Proiezione'
+      },
+      {
+        id: 'stat-2-3',
+        type: 'stat',
+        title: 'Appuntamenti Pending',
+        description: `${stats?.appointments.pending || 0} in attesa`,
+        deadline: 'Da gestire'
+      },
+      {
+        id: 'stat-2-4',
+        type: 'stat',
+        title: 'Licenze in Scadenza',
+        description: `${stats?.notaries.expiring_soon || 0} entro 30 giorni`,
+        deadline: 'Alert'
+      }
+    ],
+    6: [
+      {
+        id: 'stat-6-1',
+        type: 'stat',
+        title: 'Notai Totali',
+        description: `${stats?.notaries.total || 0} registrati`,
+        deadline: 'Database'
+      },
+      {
+        id: 'stat-6-2',
+        type: 'stat',
+        title: 'Licenze Scadute',
+        description: `${stats?.notaries.expired_licenses || 0} da rinnovare`,
+        deadline: 'Urgente'
+      }
+    ],
+    16: [
+      {
+        id: 'stat-16-1',
+        type: 'stat',
+        title: 'Revenue Annuale',
+        description: `€${(stats?.revenue.annual || 0).toLocaleString('it-IT')}`,
+        deadline: 'Contratti attivi'
+      },
+      {
+        id: 'stat-16-2',
+        type: 'stat',
+        title: 'Appuntamenti Completati',
+        description: `${stats?.appointments.completed || 0} totali`,
+        deadline: 'Storico'
+      }
+    ],
+    22: [
+      {
+        id: 'stat-22-1',
+        type: 'stat',
+        title: 'Proiezione Revenue',
+        description: `€${(stats?.revenue.projected_annual || 0).toLocaleString('it-IT')}`,
+        deadline: 'Anno corrente'
+      }
+    ]
+  }
+
+  const allStats = searchValue
+    ? Object.values(statsByDate).flat()
+    : (statsByDate[selectedDate] || [])
+  
+  const currentStats = searchValue
+    ? allStats.filter(stat => {
+        const searchLower = searchValue.toLowerCase()
+        return (
+          stat.title?.toLowerCase().includes(searchLower) ||
+          stat.description?.toLowerCase().includes(searchLower)
+        )
+      }).slice(0, 4)
+    : allStats
+
+  const handleDateSelect = (date) => {
+    setSelectedDate(date)
+    setSelectedStat(null)
+  }
+
+  const handleStatSelect = (stat) => {
+    if (stat.type !== 'empty') {
+      setSelectedStat(stat)
+    }
+  }
+
+  const handleSearchChange = (value) => {
+    setSearchValue(value)
+  }
+
   const handleNavigateToNotaries = () => {
     setCurrentView('notaries')
   }
@@ -41,11 +149,7 @@ function DashboardAdmin({ onLogout }) {
     setCurrentView('dashboard')
   }
 
-  const handleSearchChange = (value) => {
-    setSearchValue(value)
-  }
-
-  // Render condizionale per sottopagine
+  // Render sottopagine
   if (currentView === 'notaries') {
     return <NotariesManagement searchValue={searchValue} onBack={handleBackToDashboard} />
   }
@@ -67,14 +171,10 @@ function DashboardAdmin({ onLogout }) {
       />
       
       <div className="dashboard-admin-main">
-        <Header 
-          searchValue={searchValue}
-          onSearchChange={handleSearchChange}
-          userRole="admin"
-        />
+        <Header searchValue={searchValue} onSearchChange={handleSearchChange} />
         
         <div className="dashboard-admin-content">
-          {/* Welcome Section - Stile identico alle altre dashboard */}
+          {/* Welcome Section - IDENTICA */}
           <div className="welcome-section">
             <div className="welcome-container">
               <div className="welcome-text-group">
@@ -89,125 +189,88 @@ function DashboardAdmin({ onLogout }) {
             </div>
           </div>
 
-          {/* Dashboard Grid - Stile identico */}
+          {/* Dashboard Grid - IDENTICA */}
           <div className="dashboard-grid">
             <div className="dashboard-left">
-              <AdminQuickActions 
-                onNavigateToNotaries={handleNavigateToNotaries}
-                onNavigateToPartners={handleNavigateToPartners}
-                onRefresh={loadStats}
-              />
+              <Calendar selectedDate={selectedDate} onSelectDate={handleDateSelect} />
             </div>
 
             <div className="dashboard-center">
               {loading ? (
-                <div className="admin-loading-state">
-                  <div className="loading-spinner"></div>
-                  <p>Caricamento statistiche...</p>
-                </div>
-              ) : !stats ? (
-                <div className="admin-error-state">
-                  <p>Errore nel caricamento delle statistiche</p>
-                  <button onClick={loadStats} className="btn-retry">Riprova</button>
-                </div>
+                <>
+                  <AppointmentCard type="empty" emptySlots={4} />
+                </>
+              ) : currentStats.length === 0 ? (
+                <AppointmentCard type="empty" emptySlots={4} />
+              ) : currentStats.length === 4 ? (
+                currentStats.map((stat) => (
+                  <AppointmentCard 
+                    key={stat.id} 
+                    {...stat}
+                    type="document"
+                    onClick={() => handleStatSelect(stat)}
+                    isSelected={selectedStat?.id === stat.id}
+                  />
+                ))
               ) : (
-                <div className="admin-stats-info">
-                  <div className="stats-summary-card">
-                    <h3>Riepilogo Sistema</h3>
-                    <div className="stats-summary-content">
-                      <div className="summary-item">
-                        <span className="summary-label">Notai Totali</span>
-                        <span className="summary-value">{stats.notaries.total}</span>
-                      </div>
-                      <div className="summary-item">
-                        <span className="summary-label">Licenze Attive</span>
-                        <span className="summary-value success">{stats.notaries.active_licenses}</span>
-                      </div>
-                      <div className="summary-item">
-                        <span className="summary-label">In Scadenza</span>
-                        <span className="summary-value warning">{stats.notaries.expiring_soon}</span>
-                      </div>
-                      <div className="summary-item">
-                        <span className="summary-label">Scadute</span>
-                        <span className="summary-value danger">{stats.notaries.expired_licenses}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="stats-summary-card">
-                    <h3>Revenue</h3>
-                    <div className="stats-summary-content">
-                      <div className="summary-item">
-                        <span className="summary-label">Mensile</span>
-                        <span className="summary-value">
-                          €{stats.revenue.monthly.toLocaleString('it-IT')}
-                        </span>
-                      </div>
-                      <div className="summary-item">
-                        <span className="summary-label">Annuale</span>
-                        <span className="summary-value">
-                          €{stats.revenue.annual.toLocaleString('it-IT')}
-                        </span>
-                      </div>
-                      <div className="summary-item full-width">
-                        <span className="summary-label">Proiezione Totale</span>
-                        <span className="summary-value success large">
-                          €{stats.revenue.projected_annual.toLocaleString('it-IT')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Alert per licenze in scadenza/scadute */}
-                  {(stats.notaries.expiring_soon > 0 || stats.notaries.expired_licenses > 0) && (
-                    <div className="stats-alerts">
-                      {stats.notaries.expiring_soon > 0 && (
-                        <div className="alert-card warning">
-                          <span className="alert-icon">⚠️</span>
-                          <div className="alert-content">
-                            <strong>{stats.notaries.expiring_soon}</strong> licenze scadranno nei prossimi 30 giorni
-                          </div>
-                        </div>
-                      )}
-                      {stats.notaries.expired_licenses > 0 && (
-                        <div className="alert-card danger">
-                          <span className="alert-icon">❌</span>
-                          <div className="alert-content">
-                            <strong>{stats.notaries.expired_licenses}</strong> licenze sono scadute
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <>
+                  {currentStats.map((stat) => (
+                    <AppointmentCard 
+                      key={stat.id} 
+                      {...stat}
+                      type="document"
+                      onClick={() => handleStatSelect(stat)}
+                      isSelected={selectedStat?.id === stat.id}
+                    />
+                  ))}
+                  <AppointmentCard 
+                    key="empty" 
+                    type="empty" 
+                    emptySlots={4 - currentStats.length}
+                  />
+                </>
               )}
             </div>
 
             <div className="dashboard-right">
-              <div className="stats-summary-card appointments-card">
-                <h3>Appuntamenti</h3>
-                <div className="stats-summary-content">
-                  <div className="summary-item">
-                    <span className="summary-label">Totali</span>
-                    <span className="summary-value">{stats?.appointments.total || 0}</span>
-                  </div>
-                  <div className="summary-item">
-                    <span className="summary-label">In Attesa</span>
-                    <span className="summary-value warning">{stats?.appointments.pending || 0}</span>
-                  </div>
-                  <div className="summary-item">
-                    <span className="summary-label">Completati</span>
-                    <span className="summary-value success">{stats?.appointments.completed || 0}</span>
-                  </div>
-                </div>
-              </div>
+              <DeedDetailCard appointment={selectedStat} />
             </div>
           </div>
 
-          {/* Sezione Metriche - Stile identico a NotarySection */}
+          {/* Sezione Admin (identica a notary-section) */}
           <div className="admin-section">
-            <h2 className="section-title">Metriche Dettagliate</h2>
-            <AdminMetrics stats={stats} />
+            <div className="admin-section-grid">
+              <div className="admin-section-left">
+                <h2 className="section-title">Riepilogo Gestione Sistema</h2>
+                <AdminMetrics stats={stats} />
+              </div>
+              <div className="admin-section-right">
+                <h2 className="section-title">Azioni Rapide</h2>
+                <div className="admin-quick-actions-card">
+                  <button 
+                    className="admin-action-button" 
+                    onClick={handleNavigateToNotaries}
+                  >
+                    <span className="action-icon">👥</span>
+                    <span className="action-text">Gestisci Notai</span>
+                  </button>
+                  <button 
+                    className="admin-action-button"
+                    onClick={handleNavigateToPartners}
+                  >
+                    <span className="action-icon">🏢</span>
+                    <span className="action-text">Gestisci Partners</span>
+                  </button>
+                  <button 
+                    className="admin-action-button"
+                    onClick={loadStats}
+                  >
+                    <span className="action-icon">🔄</span>
+                    <span className="action-text">Aggiorna Stats</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
