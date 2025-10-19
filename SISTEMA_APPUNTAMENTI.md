@@ -33,7 +33,7 @@ Sistema completo di prenotazione appuntamenti tra clienti e notai con gestione i
 #### 3. **Logica di Business**
 - ✅ Calcolo slot disponibili basato su:
   - Orari di lavoro del notaio (`NotaryAvailability`)
-  - Appuntamenti già prenotati
+     - Appuntamenti già prenotati
   - Durata slot configurabile
 - ✅ **Protezione concorrente** con `SELECT FOR UPDATE`
 - ✅ Prevenzione doppia prenotazione stesso slot

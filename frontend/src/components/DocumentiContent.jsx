@@ -46,11 +46,6 @@ function DocumentiContent() {
 
   return (
     <div className="documenti-content-main">
-      {/* Header */}
-      <div className="documenti-content-header">
-        <h2 className="documenti-content-title">I miei Files</h2>
-      </div>
-
       {/* Categories Cards */}
       <div className="documenti-categories">
         {categories.map((category, index) => {
