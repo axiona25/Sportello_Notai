@@ -25,7 +25,8 @@
 
 .notaries-management-content {
   padding: var(--spacing-xl);
-  padding-right: var(--spacing-xl);
+  padding-left: var(--spacing-xl);
+  padding-right: var(--spacing-md);
   overflow-y: auto;
   max-width: 100%;
   height: calc(100vh - 80px);
