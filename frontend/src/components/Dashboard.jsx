@@ -236,8 +236,14 @@ function Dashboard({ onLogout, user }) {
                   </div>
                 </div>
               </div>
-              <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
-                <p>Sezione in costruzione - Qui verranno mostrati tutti gli atti di <strong>{getUserName()}</strong></p>
+              <div className="atti-container">
+                <div className="atti-card">
+                  <div className="atti-content-placeholder">
+                    <p style={{ textAlign: 'center', color: '#666', margin: 0 }}>
+                      Sezione in costruzione - Qui verranno mostrati tutti gli atti di <strong>{getUserName()}</strong>
+                    </p>
+                  </div>
+                </div>
               </div>
             </>
           ) : currentView === 'documenti' ? (
