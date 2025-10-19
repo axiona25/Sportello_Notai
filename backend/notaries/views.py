@@ -8,7 +8,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Sum
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from datetime import datetime, timedelta, time
 from collections import defaultdict
@@ -839,14 +839,14 @@ class AdminNotaryStatsView(APIView):
             license_active=True,
             license_payment_frequency='monthly'
         ).aggregate(
-            total=transaction.models.Sum('license_payment_amount')
+            total=Sum('license_payment_amount')
         )['total'] or 0
         
         annual_revenue = Notary.objects.filter(
             license_active=True,
             license_payment_frequency='annual'
         ).aggregate(
-            total=transaction.models.Sum('license_payment_amount')
+            total=Sum('license_payment_amount')
         )['total'] or 0
         
         return Response({
