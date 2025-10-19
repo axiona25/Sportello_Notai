@@ -191,11 +191,6 @@
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-right: 1px solid var(--color-border);
-}
-
-.notaries-table th:last-child {
-  border-right: none;
 }
 
 .notaries-table th:nth-child(4),
