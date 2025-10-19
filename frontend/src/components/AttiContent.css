@@ -114,15 +114,26 @@
   background-color: #E3F2FD;
 }
 
-/* Stato Badge */
-.atti-stato-badge {
+/* Stato Dot */
+.atti-stato-dot-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  padding: 4px;
+}
+
+.atti-stato-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
   display: inline-block;
-  padding: 6px 12px;
-  border-radius: 12px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease;
+}
+
+.atti-stato-dot-container:hover .atti-stato-dot {
+  transform: scale(1.2);
 }
 
 /* Actions */

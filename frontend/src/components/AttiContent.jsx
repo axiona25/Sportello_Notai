@@ -90,7 +90,7 @@ function AttiContent() {
               <th style={{ textAlign: 'left', width: '150px' }}>SOGGETTI COINVOLTI</th>
               <th style={{ textAlign: 'left', width: '120px' }}>VALORE</th>
               <th style={{ textAlign: 'center', width: '100px' }}>DOCUMENTI</th>
-              <th style={{ textAlign: 'center', width: '130px' }}>STATO</th>
+              <th style={{ textAlign: 'center', width: '80px' }}>STATO</th>
               <th style={{ textAlign: 'center', width: '100px' }}>AZIONI</th>
             </tr>
           </thead>
@@ -122,15 +122,14 @@ function AttiContent() {
                   </button>
                 </td>
                 <td style={{ textAlign: 'center' }}>
-                  <span 
-                    className="atti-stato-badge" 
-                    style={{ 
-                      backgroundColor: atto.statoColor + '15',
-                      color: atto.statoColor
-                    }}
-                  >
-                    {atto.stato}
-                  </span>
+                  <div className="atti-stato-dot-container" title={atto.stato}>
+                    <span 
+                      className="atti-stato-dot" 
+                      style={{ 
+                        backgroundColor: atto.statoColor
+                      }}
+                    ></span>
+                  </div>
                 </td>
                 <td>
                   <div className="atti-actions">
