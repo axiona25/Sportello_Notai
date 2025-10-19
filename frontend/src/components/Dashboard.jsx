@@ -215,10 +215,10 @@ function Dashboard({ onLogout }) {
               <div className="welcome-container">
                 <div className="welcome-text-group">
                   <h1 className="welcome-title">
-                    I miei Atti
+                    I Miei
                   </h1>
                   <div className="welcome-name-container">
-                    <span className="welcome-name">Antonio Rossi</span>
+                    <span className="welcome-name">Atti</span>
                     <img src="/assets/element.png" alt="" className="welcome-underline" />
                   </div>
                 </div>
