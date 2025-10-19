@@ -7,6 +7,7 @@ import DeedDetailCard from './DeedDetailCard'
 import NotarySelection from './NotarySelection'
 import NotaryCards from './NotaryCards'
 import DocumentiSidebar from './DocumentiSidebar'
+import DocumentiContent from './DocumentiContent'
 import './Dashboard.css'
 
 function Dashboard({ onLogout, user }) {
@@ -260,9 +261,7 @@ function Dashboard({ onLogout, user }) {
                   <DocumentiSidebar />
                   <div className="documenti-separator-vertical"></div>
                   <div className="documenti-content">
-                    <p style={{ textAlign: 'center', color: '#666', margin: 0 }}>
-                      Sezione in costruzione - Qui verranno mostrati tutti i documenti di <strong>{getUserName()}</strong>
-                    </p>
+                    <DocumentiContent />
                   </div>
                 </div>
               </div>
