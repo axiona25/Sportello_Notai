@@ -1,0 +1,122 @@
+/* Atti Sidebar */
+.atti-sidebar {
+  width: 280px;
+  min-width: 280px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--spacing-lg);
+  background-color: transparent;
+}
+
+/* Menu Item */
+.atti-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-primary);
+}
+
+.atti-menu-item:hover {
+  background-color: #F8F9FA;
+}
+
+.atti-menu-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.atti-menu-item svg {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+/* Notaio Avatar */
+.atti-notaio-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+}
+
+/* Section Header */
+.atti-section-header {
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.5px;
+  padding: 16px 12px 8px 12px;
+  margin-top: 8px;
+}
+
+/* Separator */
+.atti-separator {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 8px 0;
+}
+
+/* Totale Atti Section */
+.atti-total {
+  margin-top: auto;
+  padding: 16px 12px;
+  border-radius: 12px;
+  background-color: #F8F9FA;
+}
+
+.atti-total-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: 12px;
+}
+
+.atti-total-header svg {
+  color: var(--color-text-secondary);
+}
+
+.atti-total-bar {
+  width: 100%;
+  height: 6px;
+  background-color: #E5E7EB;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.atti-total-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4FADFF 0%, #1668B0 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.atti-total-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+

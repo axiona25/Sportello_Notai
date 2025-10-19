@@ -8,6 +8,8 @@ import NotarySelection from './NotarySelection'
 import NotaryCards from './NotaryCards'
 import DocumentiSidebar from './DocumentiSidebar'
 import DocumentiContent from './DocumentiContent'
+import AttiSidebar from './AttiSidebar'
+import AttiContent from './AttiContent'
 import './Dashboard.css'
 
 function Dashboard({ onLogout, user }) {
@@ -238,10 +240,10 @@ function Dashboard({ onLogout, user }) {
               </div>
               <div className="atti-container">
                 <div className="atti-card">
-                  <div className="atti-content-placeholder">
-                    <p style={{ textAlign: 'center', color: '#666', margin: 0 }}>
-                      Sezione in costruzione - Qui verranno mostrati tutti gli atti di <strong>{getUserName()}</strong>
-                    </p>
+                  <AttiSidebar />
+                  <div className="atti-separator-vertical"></div>
+                  <div className="atti-content">
+                    <AttiContent />
                   </div>
                 </div>
               </div>
