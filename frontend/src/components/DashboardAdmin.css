@@ -1,280 +1,108 @@
 /* ========================================
-   DASHBOARD ADMIN - MAIN STYLES
+   DASHBOARD ADMIN - Stile identico alle altre dashboard
    ======================================== */
 
-.admin-dashboard-content {
-  padding: var(--spacing-xl);
-  max-width: 1600px;
-  margin: 0 auto;
+.dashboard-admin {
+  display: flex;
+  height: 100vh;
+  background: var(--color-bg-main);
 }
 
-/* Welcome Section */
-.admin-welcome-section {
-  margin-bottom: var(--spacing-xl);
+.dashboard-admin-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.admin-main-title {
+.dashboard-admin-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px;
+}
+
+/* ========================================
+   WELCOME SECTION - Identico
+   ======================================== */
+
+.welcome-section {
+  margin-bottom: 32px;
+}
+
+.welcome-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.welcome-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.welcome-title {
   font-family: 'Poppins', sans-serif;
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0 0 8px 0;
-}
-
-.admin-subtitle {
-  font-family: 'Poppins', sans-serif;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 400;
   color: var(--color-text-secondary);
   margin: 0;
 }
 
-/* ========================================
-   STATISTICS GRID
-   ======================================== */
-
-.admin-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
+.welcome-name-container {
+  position: relative;
+  display: inline-block;
 }
 
-.admin-stat-card {
-  background: var(--color-white);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  gap: var(--spacing-md);
-  transition: all 0.3s ease;
-  border-left: 4px solid;
-}
-
-.admin-stat-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-.admin-card-primary {
-  border-left-color: var(--color-primary);
-}
-
-.admin-card-success {
-  border-left-color: #27ae60;
-}
-
-.admin-card-info {
-  border-left-color: #3498db;
-}
-
-.admin-card-warning {
-  border-left-color: #f39c12;
-}
-
-.admin-card-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.admin-card-primary .admin-card-icon {
-  background: rgba(22, 104, 176, 0.1);
-  color: var(--color-primary);
-}
-
-.admin-card-success .admin-card-icon {
-  background: rgba(39, 174, 96, 0.1);
-  color: #27ae60;
-}
-
-.admin-card-info .admin-card-icon {
-  background: rgba(52, 152, 219, 0.1);
-  color: #3498db;
-}
-
-.admin-card-warning .admin-card-icon {
-  background: rgba(243, 156, 18, 0.1);
-  color: #f39c12;
-}
-
-.admin-card-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
-
-.admin-card-content h3 {
+.welcome-name {
   font-family: 'Poppins', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.admin-card-number {
-  font-family: 'Poppins', sans-serif;
-  font-size: 36px;
+  font-size: 32px;
   font-weight: 700;
   color: var(--color-text-primary);
-  line-height: 1;
+  line-height: 1.2;
 }
 
-.admin-card-details {
+.welcome-underline {
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 100%;
+  height: auto;
+}
+
+/* ========================================
+   DASHBOARD GRID - Identico
+   ======================================== */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr 320px;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.dashboard-left,
+.dashboard-center,
+.dashboard-right {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: auto;
-}
-
-.admin-detail-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 13px;
-  color: var(--color-text-secondary);
-}
-
-.admin-card-action {
-  margin-top: var(--spacing-sm);
-  padding: 8px 16px;
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-family: 'Poppins', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-primary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.admin-card-action:hover {
-  background: var(--color-primary);
-  color: var(--color-white);
-  border-color: var(--color-primary);
-}
-
-/* ========================================
-   ALERTS SECTION
-   ======================================== */
-
-.admin-alert-section {
-  margin-bottom: var(--spacing-lg);
-}
-
-.admin-alert {
-  display: flex;
-  gap: var(--spacing-md);
-  padding: var(--spacing-lg);
-  border-radius: var(--radius-lg);
-  border-left: 4px solid;
-}
-
-.admin-alert-warning {
-  background: rgba(243, 156, 18, 0.1);
-  border-left-color: #f39c12;
-  color: #d68910;
-}
-
-.admin-alert-danger {
-  background: rgba(231, 76, 60, 0.1);
-  border-left-color: #e74c3c;
-  color: #c0392b;
-}
-
-.admin-alert svg {
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.admin-alert-content {
-  flex: 1;
-}
-
-.admin-alert-content h4 {
-  font-family: 'Poppins', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-}
-
-.admin-alert-content p {
-  font-family: 'Poppins', sans-serif;
-  font-size: 14px;
-  margin: 0 0 12px 0;
-  line-height: 1.5;
-}
-
-.admin-alert-content strong {
-  font-weight: 600;
-}
-
-/* ========================================
-   QUICK ACTIONS
-   ======================================== */
-
-.admin-quick-actions {
-  margin-top: var(--spacing-xl);
-}
-
-.admin-quick-actions h2 {
-  font-family: 'Poppins', sans-serif;
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 0 0 var(--spacing-md) 0;
-}
-
-.admin-actions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--spacing-md);
-}
-
-.admin-action-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: var(--color-white);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-family: 'Poppins', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text-primary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.admin-action-btn:hover {
-  background: var(--color-primary);
-  color: var(--color-white);
-  border-color: var(--color-primary);
+  gap: 16px;
 }
 
 /* ========================================
    LOADING & ERROR STATES
    ======================================== */
 
-.admin-loading,
-.admin-error {
+.admin-loading-state,
+.admin-error-state {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-xxl);
+  gap: 16px;
   text-align: center;
 }
 
@@ -293,15 +121,15 @@
   }
 }
 
-.admin-loading p,
-.admin-error p {
+.admin-loading-state p,
+.admin-error-state p {
   font-family: 'Poppins', sans-serif;
   font-size: 16px;
   color: var(--color-text-secondary);
   margin: 0;
 }
 
-.btn-reload {
+.btn-retry {
   padding: 10px 20px;
   background: var(--color-primary);
   color: var(--color-white);
@@ -314,40 +142,197 @@
   transition: all 0.2s ease;
 }
 
-.btn-reload:hover {
+.btn-retry:hover {
   background: var(--color-primary-dark);
+}
+
+/* ========================================
+   STATS INFO - Cards stile AppointmentCard
+   ======================================== */
+
+.admin-stats-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stats-summary-card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.stats-summary-card h3 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 16px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.stats-summary-content {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summary-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.summary-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-value {
+  font-family: 'Poppins', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.summary-value.large {
+  font-size: 32px;
+}
+
+.summary-value.success {
+  color: #27ae60;
+}
+
+.summary-value.warning {
+  color: #f39c12;
+}
+
+.summary-value.danger {
+  color: #e74c3c;
+}
+
+/* Appointments Card (dashboard-right) */
+.appointments-card .stats-summary-content {
+  grid-template-columns: 1fr;
+}
+
+/* ========================================
+   ALERTS
+   ======================================== */
+
+.stats-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alert-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.alert-card.warning {
+  background: rgba(243, 156, 18, 0.1);
+  border-left: 4px solid #f39c12;
+  color: #d68910;
+}
+
+.alert-card.danger {
+  background: rgba(231, 76, 60, 0.1);
+  border-left: 4px solid #e74c3c;
+  color: #c0392b;
+}
+
+.alert-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.alert-content {
+  flex: 1;
+}
+
+.alert-content strong {
+  font-weight: 600;
+}
+
+/* ========================================
+   ADMIN SECTION - Identico a notary-section
+   ======================================== */
+
+.admin-section {
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border);
+}
+
+.section-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 24px 0;
 }
 
 /* ========================================
    RESPONSIVE
    ======================================== */
 
-@media (max-width: 768px) {
-  .admin-dashboard-content {
-    padding: var(--spacing-md);
-  }
-
-  .admin-main-title {
-    font-size: 24px;
-  }
-
-  .admin-stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-stat-card {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .admin-card-icon {
-    width: 56px;
-    height: 56px;
-    margin: 0 auto;
-  }
-
-  .admin-actions-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 1400px) {
+  .dashboard-grid {
+    grid-template-columns: 280px 1fr 280px;
+    gap: 20px;
   }
 }
 
+@media (max-width: 1200px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .dashboard-right {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-admin-content {
+    padding: 20px;
+  }
+
+  .welcome-name {
+    font-size: 24px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .dashboard-left,
+  .dashboard-center,
+  .dashboard-right {
+    grid-column: 1;
+  }
+
+  .stats-summary-content {
+    grid-template-columns: 1fr;
+  }
+}
