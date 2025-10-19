@@ -21,25 +21,13 @@
   overflow-y: hidden;
   padding-bottom: 16px;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
 }
 
-/* Scrollbar styling */
+/* Nascondi scrollbar per Chrome, Safari e Opera */
 .notary-cards-grid::-webkit-scrollbar {
-  height: 8px;
-}
-
-.notary-cards-grid::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-.notary-cards-grid::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
-}
-
-.notary-cards-grid::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  display: none;
 }
 
 /* Notary Card - IDENTICA AL MOCK */
