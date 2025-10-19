@@ -221,9 +221,7 @@ function NotariesManagement({ onLogout, onBack, onNavigateToDashboard, onNavigat
                     <td className="notary-email">{notary.user_email}</td>
                     <td>{notary.address_city || '-'}</td>
                     <td>
-                      {notary.license_payment_frequency === 'monthly' ? 'Mensile' : 'Annuale'}
-                      <br />
-                      <small>€{notary.license_payment_amount || 0}</small>
+                      {notary.license_payment_frequency === 'monthly' ? 'Mensile' : 'Annuale'} - €{notary.license_payment_amount || 0}
                     </td>
                     <td>
                       {notary.license_expiry_date 
