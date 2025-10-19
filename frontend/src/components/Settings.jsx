@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   Settings as SettingsIcon, 
   Calendar, 
@@ -8,6 +8,7 @@ import {
   Archive, 
   FileText,
   Save,
+  User,
   Store,
   Upload,
   Image,
@@ -19,7 +20,11 @@ import {
   ShieldCheck
 } from 'lucide-react'
 import Header from './Header'
+import notaryProfileService from '../services/notaryProfileService'
 import './Settings.css'
+
+// Logo placeholder per profili senza immagine
+const DEFAULT_PROFILE_PHOTO = 'data:image/png;base64,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'
 
 function Settings({ searchValue, onSearchChange }) {
   const [activeTab, setActiveTab] = useState(0)
@@ -36,6 +41,97 @@ function Settings({ searchValue, onSearchChange }) {
     7: 'saved'
   })
 
+  // State per i dati generali
+  const [generaliData, setGeneraliData] = useState({
+    studioName: 'Studio Notarile Francesco Spada',
+    partitaIva: 'SM23456789',
+    address: 'Piazza Cavour n.19 - Dogana (SM)',
+    telefono: '+378 0549 987654',
+    email: 'notaio@digitalnotary.sm',
+    sitoWeb: '',
+    codiceFiscale: 'SPDFRN70A01H501Z'
+  })
+
+  // State per i dati della vetrina
+  const [vetrinaData, setVetrinaData] = useState({
+    photo: DEFAULT_PROFILE_PHOTO,
+    name: 'Francesco Spada',
+    title: 'Notaio - Diritto Immobiliare',
+    address: 'Piazza Cavour n.19 - Dogana (SM)',
+    rating: 4.7,
+    experience: 15,
+    languages: 'Italiano, Inglese',
+    description: 'Consulenza notarile specializzata in compravendite immobiliari e diritto societario.',
+    services: {
+      documents: true,
+      agenda: true,
+      chat: true,
+      acts: true,
+      signature: true,
+      pec: true,
+      conservation: true
+    },
+    availability: {
+      enabled: true,
+      hours: 'Lun-Ven 9:00-18:00'
+    }
+  })
+
+  // Carica i dati esistenti al mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      console.log('📥 Caricamento dati dal backend...')
+      
+      // Carica dati Generali
+      const generalData = await notaryProfileService.getGeneralData()
+      if (generalData) {
+        console.log('✅ Dati Generali caricati:', generalData)
+        setGeneraliData({
+          studioName: generalData.studio_name || '',
+          partitaIva: generalData.fiscal_code || '',
+          address: generalData.address_street || '',
+          telefono: generalData.phone || '',
+          email: generalData.pec_address || '',
+          sitoWeb: generalData.website || '',
+          codiceFiscale: generalData.fiscal_code || ''
+        })
+      }
+      
+      // Carica dati Vetrina
+      const existingProfile = await notaryProfileService.getMyProfile()
+      if (existingProfile) {
+        console.log('✅ Profilo Vetrina caricato:', existingProfile)
+        console.log('🔧 Servizi caricati dal profilo:', JSON.stringify(existingProfile.services, null, 2))
+        
+        // Aggiorna vetrinaData con i dati dal backend
+        setVetrinaData({
+          photo: existingProfile.photo || DEFAULT_PROFILE_PHOTO,
+          name: existingProfile.name,
+          title: existingProfile.title,
+          address: existingProfile.address,
+          rating: existingProfile.rating,
+          experience: existingProfile.experience,
+          languages: existingProfile.languages,
+          description: existingProfile.description,
+          services: existingProfile.services || {
+            documents: true,
+            agenda: true,
+            chat: true,
+            acts: true,
+            signature: true,
+            pec: true,
+            conservation: true
+          },
+          availability: existingProfile.availability
+        })
+      } else {
+        console.log('⚠️ Nessun profilo trovato, usando valori di default')
+      }
+    }
+    
+    loadProfile()
+  }, [])
+
   const tabs = [
     { id: 0, label: 'Generali', icon: SettingsIcon },
     { id: 1, label: 'Vetrina', icon: Store },
@@ -47,15 +143,151 @@ function Settings({ searchValue, onSearchChange }) {
     { id: 7, label: 'Modelli', icon: FileText }
   ]
 
-  const handleSaveOrEdit = () => {
+  const handleSaveOrEdit = async () => {
     const currentState = tabStates[activeTab]
     if (currentState === 'editing') {
-      // Salva le modifiche
+      // Salva le modifiche sul backend a seconda della tab attiva
+      let result = null
+      
+      switch (activeTab) {
+        case 0: // Tab Generali
+          console.log('💾 Salvando dati tab Generali...')
+          result = await notaryProfileService.saveGeneralData(generaliData)
+          
+          if (result.success) {
+            console.log('✅ Dati Generali salvati sul backend:', result.data)
+            
+            // Aggiorna vetrinaData con i campi read-only sincronizzati
+            if (result.data) {
+              setVetrinaData(prev => ({
+                ...prev,
+                name: result.data.studio_name,
+                address: result.data.address_street
+              }))
+            }
+            
+            // Forza invalidazione cache
+            notaryProfileService.clearCache()
+          } else {
+            console.error('❌ Errore nel salvare i dati Generali:', result.error)
+            alert('Errore nel salvare le impostazioni. Riprova.')
+            return
+          }
+          break
+          
+        case 1: // Tab Vetrina
+          console.log('💾 Salvando dati tab Vetrina...')
+          result = await notaryProfileService.saveProfile(vetrinaData)
+          
+          if (result.success) {
+            console.log('✅ Dati Vetrina salvati sul backend:', result.data)
+            
+            // Aggiorna lo stato locale con i dati ricevuti dal backend
+            if (result.data) {
+              console.log('🔄 Aggiornando stato locale con dati dal backend...')
+              setVetrinaData({
+                photo: result.data.photo || DEFAULT_PROFILE_PHOTO,
+                name: result.data.name,
+                title: result.data.title,
+                address: result.data.address,
+                rating: result.data.rating,
+                experience: result.data.experience,
+                languages: result.data.languages,
+                description: result.data.description,
+                services: result.data.services || vetrinaData.services,
+                availability: result.data.availability || vetrinaData.availability
+              })
+            }
+            
+            console.log('📡 Forzo invalidazione cache globale...')
+            
+            // Forza invalidazione cache e aggiornamento immediato
+            notaryProfileService.clearCache()
+            
+            console.log('📢 Emettendo evento notaryProfileUpdated con forceRefresh...')
+            
+            // Notifica l'aggiornamento del profilo per aggiornare la dashboard clienti in tempo reale
+            window.dispatchEvent(new CustomEvent('notaryProfileUpdated', { 
+              detail: { forceRefresh: true }
+            }))
+            
+            console.log('✅ Evento emesso correttamente')
+          } else {
+            console.error('❌ Errore nel salvare i dati Vetrina:', result.error)
+            alert('Errore nel salvare le impostazioni. Riprova.')
+            return
+          }
+          break
+          
+        // Altre tab: per ora solo stato locale, TODO: implementare salvataggio backend
+        case 2: // Imposta Agenda
+        case 3: // Staff
+        case 4: // Firma Digitale
+        case 5: // PEC
+        case 6: // Conservazione
+        case 7: // Modelli
+          console.log(`ℹ️ Tab ${activeTab}: salvataggio locale (backend TODO)`)
+          // TODO: implementare salvataggio backend per queste tab
+          break
+      }
+      
       setTabStates(prev => ({ ...prev, [activeTab]: 'saved' }))
     } else {
       // Entra in modalità editing
       setTabStates(prev => ({ ...prev, [activeTab]: 'editing' }))
     }
+  }
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      // Limita a 5MB
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Immagine troppo grande. Max 5MB.')
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setVetrinaData(prev => ({ ...prev, photo: reader.result }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleGeneraliFieldChange = (field, value) => {
+    setGeneraliData(prev => ({ ...prev, [field]: value }))
+    
+    // Sincronizza i campi read-only con la vetrina in tempo reale
+    if (field === 'studioName') {
+      setVetrinaData(prev => ({ ...prev, name: value }))
+    }
+    if (field === 'address') {
+      setVetrinaData(prev => ({ ...prev, address: value }))
+    }
+  }
+
+  const handleVetrinaFieldChange = (field, value) => {
+    console.log(`✏️ Modifica campo "${field}":`, value)
+    setVetrinaData(prev => {
+      const updated = { ...prev, [field]: value }
+      console.log('📝 Nuovo stato vetrinaData:', updated)
+      return updated
+    })
+  }
+
+  const handleServiceToggle = (serviceKey) => {
+    setVetrinaData(prev => {
+      const newValue = !prev.services[serviceKey]
+      console.log(`🔄 Toggle servizio ${serviceKey}: ${prev.services[serviceKey]} -> ${newValue}`)
+      return {
+        ...prev,
+        services: {
+          ...prev.services,
+          [serviceKey]: newValue
+        }
+      }
+    })
   }
 
   const handleCancel = () => {
@@ -68,9 +300,15 @@ function Settings({ searchValue, onSearchChange }) {
   const renderTabContent = () => {
     switch (activeTab) {
       case 0:
-        return <GeneraliTab isEditing={isEditing} />
+        return <GeneraliTab isEditing={isEditing} data={generaliData} onFieldChange={handleGeneraliFieldChange} />
       case 1:
-        return <VetrinaTab isEditing={isEditing} />
+        return <VetrinaTab 
+          isEditing={isEditing} 
+          data={vetrinaData}
+          onPhotoUpload={handlePhotoUpload}
+          onFieldChange={handleVetrinaFieldChange}
+          onServiceToggle={handleServiceToggle}
+        />
       case 2:
         return <AgendaTab isEditing={isEditing} />
       case 3:
@@ -143,7 +381,7 @@ function Settings({ searchValue, onSearchChange }) {
 }
 
 // Tab 0: Generali
-function GeneraliTab({ isEditing }) {
+function GeneraliTab({ isEditing, data, onFieldChange }) {
   return (
     <div className="settings-tab two-columns">
       <div className="settings-section">
@@ -155,7 +393,9 @@ function GeneraliTab({ isEditing }) {
               type="text" 
               className="form-input" 
               placeholder="Studio Notarile Francesco Spada"
-              defaultValue="Studio Notarile Francesco Spada" disabled={!isEditing}
+              value={data.studioName} 
+              onChange={(e) => onFieldChange('studioName', e.target.value)}
+              disabled={!isEditing}
             />
           </div>
           <div className="form-group">
@@ -164,7 +404,9 @@ function GeneraliTab({ isEditing }) {
               type="text" 
               className="form-input" 
               placeholder="IT12345678901"
-              defaultValue="SM23456789" disabled={!isEditing}
+              value={data.partitaIva}
+              onChange={(e) => onFieldChange('partitaIva', e.target.value)}
+              disabled={!isEditing}
             />
           </div>
           <div className="form-group full-width">
@@ -172,8 +414,10 @@ function GeneraliTab({ isEditing }) {
             <input 
               type="text" 
               className="form-input" 
-              placeholder="Piazza Cavour n.19 - Dogana (S. Marino)"
-              defaultValue="Piazza Cavour n.19 - Dogana (S. Marino)" disabled={!isEditing}
+              placeholder="Piazza Cavour n.19 - Dogana (SM)"
+              value={data.address}
+              onChange={(e) => onFieldChange('address', e.target.value)}
+              disabled={!isEditing}
             />
           </div>
           <div className="form-group">
@@ -182,7 +426,9 @@ function GeneraliTab({ isEditing }) {
               type="tel" 
               className="form-input" 
               placeholder="+378 0549 123456"
-              defaultValue="+378 0549 987654" disabled={!isEditing}
+              value={data.telefono}
+              onChange={(e) => onFieldChange('telefono', e.target.value)}
+              disabled={!isEditing}
             />
           </div>
           <div className="form-group">
@@ -191,7 +437,9 @@ function GeneraliTab({ isEditing }) {
               type="email" 
               className="form-input" 
               placeholder="info@studionotarile.sm"
-              defaultValue="notaio@digitalnotary.sm" disabled={!isEditing}
+              value={data.email}
+              onChange={(e) => onFieldChange('email', e.target.value)}
+              disabled={!isEditing}
             />
           </div>
           <div className="form-group">
@@ -200,7 +448,9 @@ function GeneraliTab({ isEditing }) {
               type="url" 
               className="form-input" 
               placeholder="https://www.studionotarile.sm"
-              defaultValue="" disabled={!isEditing}
+              value={data.sitoWeb}
+              onChange={(e) => onFieldChange('sitoWeb', e.target.value)}
+              disabled={!isEditing}
             />
           </div>
           <div className="form-group">
@@ -209,7 +459,9 @@ function GeneraliTab({ isEditing }) {
               type="text" 
               className="form-input" 
               placeholder="SPDFRN70A01H501Z"
-              defaultValue="SPDFRN70A01H501Z" disabled={!isEditing}
+              value={data.codiceFiscale}
+              onChange={(e) => onFieldChange('codiceFiscale', e.target.value)}
+              disabled={!isEditing}
             />
           </div>
         </div>
@@ -277,62 +529,105 @@ function GeneraliTab({ isEditing }) {
 }
 
 // Tab 1: Vetrina
-function VetrinaTab({ isEditing }) {
+function VetrinaTab({ isEditing, data, onPhotoUpload, onFieldChange, onServiceToggle }) {
+  const fileInputRef = React.useRef(null)
+
+  // Debug: verifica i dati ricevuti
+  React.useEffect(() => {
+    console.log('🎨 VetrinaTab render con isEditing:', isEditing)
+    console.log('📊 Dati completi VetrinaTab:', {
+      experience: data.experience,
+      languages: data.languages,
+      description: data.description,
+      services: data.services
+    })
+  }, [isEditing, data.experience, data.languages, data.description, data.services])
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click()
+  }
+
   return (
     <div className="settings-tab three-columns">
       <div className="settings-section">
         <h3 className="section-title">Profilo Pubblico</h3>
         <div className="photo-upload-compact">
-          <div className="photo-preview-compact">
-            <Image size={32} />
+          <div className={`photo-preview-compact ${(!data.photo || data.photo === DEFAULT_PROFILE_PHOTO) ? 'placeholder' : ''}`}>
+            {data.photo && data.photo !== DEFAULT_PROFILE_PHOTO ? (
+              <img src={data.photo} alt="Foto profilo" className="photo-preview-img" />
+            ) : (
+              <User 
+                size={40} 
+                color="white" 
+                strokeWidth={1.5}
+                style={{ opacity: 0.9 }}
+              />
+            )}
           </div>
           <div className="photo-upload-info">
-            <button className="btn-outline-sm" disabled={!isEditing}>
+            <input 
+              ref={fileInputRef}
+              type="file" 
+              accept="image/jpeg,image/png"
+              onChange={onPhotoUpload}
+              style={{ display: 'none' }}
+            />
+            <button 
+              className="btn-outline-sm" 
+              disabled={!isEditing}
+              onClick={handleUploadClick}
+            >
               <Upload size={14} />
               Carica
             </button>
-            <span className="upload-hint-sm">JPG/PNG, max 5MB</span>
+            <span className="upload-hint-sm">JPG/PNG, max 5MB<br/>Consigliato: 440x280px</span>
           </div>
         </div>
 
         <div className="form-grid" style={{marginTop: '16px'}}>
           <div className="form-group full-width">
-            <label className="form-label">Nome Pubblico</label>
+            <label className="form-label">Nome Pubblico <span style={{fontSize: '12px', color: '#6b7280'}}>(da tab Generali)</span></label>
             <input 
               type="text" 
-              className="form-input" 
+              className="form-input form-input-readonly" 
               placeholder="Notaio Francesco Spada"
-              defaultValue="Notaio Francesco Spada"
-              disabled={!isEditing}
+              value={data.name}
+              onChange={(e) => onFieldChange('name', e.target.value)}
+              disabled={true}
+              readOnly
             />
           </div>
           <div className="form-group full-width">
-            <label className="form-label">Titolo Professionale</label>
+            <label className="form-label">Titolo Professionale <span style={{fontSize: '12px', color: '#6b7280'}}>(da tab Generali)</span></label>
             <input 
               type="text" 
-              className="form-input" 
+              className="form-input form-input-readonly" 
               placeholder="Specializzazione"
-              defaultValue="Notaio - Diritto Immobiliare"
-              disabled={!isEditing}
+              value={data.title}
+              onChange={(e) => onFieldChange('title', e.target.value)}
+              disabled={true}
+              readOnly
             />
           </div>
-          <div className="form-group">
+          <div className="form-group form-group-narrow">
             <label className="form-label">Anni Esperienza</label>
             <input 
               type="number" 
               className="form-input" 
               placeholder="15"
-              defaultValue="15"
+              value={data.experience}
+              onChange={(e) => onFieldChange('experience', parseInt(e.target.value))}
               disabled={!isEditing}
             />
           </div>
-          <div className="form-group">
+          <div className="form-group form-group-wide">
             <label className="form-label">Lingue</label>
             <input 
               type="text" 
               className="form-input" 
-              placeholder="Italiano, Inglese"
-              defaultValue="Italiano, Inglese"
+              placeholder="Italiano, Inglese, Francese"
+              value={data.languages}
+              onChange={(e) => onFieldChange('languages', e.target.value)}
               disabled={!isEditing}
             />
           </div>
@@ -340,9 +635,10 @@ function VetrinaTab({ isEditing }) {
             <label className="form-label">Descrizione</label>
             <textarea 
               className="form-textarea-compact" 
-              rows="3" disabled={!isEditing}
+              rows="3"
               placeholder="Breve presentazione dello studio..."
-              defaultValue="Consulenza notarile specializzata in compravendite immobiliari e diritto societario."
+              value={data.description}
+              onChange={(e) => onFieldChange('description', e.target.value)}
               disabled={!isEditing}
             />
           </div>
@@ -353,37 +649,79 @@ function VetrinaTab({ isEditing }) {
         <h3 className="section-title">Servizi Offerti</h3>
         <div className="services-checklist-compact">
           <label className="service-item-compact">
-            <input type="checkbox" className="form-checkbox" defaultChecked disabled={!isEditing} />
+            <input 
+              type="checkbox" 
+              className="form-checkbox" 
+              checked={data.services.documents}
+              onChange={() => onServiceToggle('documents')}
+              disabled={!isEditing} 
+            />
             <FolderOpen size={16} className="service-icon" />
             <span className="service-name-compact">Documenti Condivisi</span>
           </label>
           <label className="service-item-compact">
-            <input type="checkbox" className="form-checkbox" defaultChecked disabled={!isEditing} />
+            <input 
+              type="checkbox" 
+              className="form-checkbox" 
+              checked={data.services.agenda}
+              onChange={() => onServiceToggle('agenda')}
+              disabled={!isEditing} 
+            />
             <CalendarCheck size={16} className="service-icon" />
             <span className="service-name-compact">Agenda Automatica</span>
           </label>
           <label className="service-item-compact">
-            <input type="checkbox" className="form-checkbox" defaultChecked disabled={!isEditing} />
+            <input 
+              type="checkbox" 
+              className="form-checkbox" 
+              checked={data.services.chat}
+              onChange={() => onServiceToggle('chat')}
+              disabled={!isEditing} 
+            />
             <Video size={16} className="service-icon" />
             <span className="service-name-compact">Chat, Audio e Video</span>
           </label>
           <label className="service-item-compact">
-            <input type="checkbox" className="form-checkbox" defaultChecked disabled={!isEditing} />
+            <input 
+              type="checkbox" 
+              className="form-checkbox" 
+              checked={data.services.acts}
+              onChange={() => onServiceToggle('acts')}
+              disabled={!isEditing} 
+            />
             <FileCheck size={16} className="service-icon" />
             <span className="service-name-compact">Atti Presenza/Digitali</span>
           </label>
           <label className="service-item-compact">
-            <input type="checkbox" className="form-checkbox" defaultChecked disabled={!isEditing} />
+            <input 
+              type="checkbox" 
+              className="form-checkbox" 
+              checked={data.services.signature}
+              onChange={() => onServiceToggle('signature')}
+              disabled={!isEditing} 
+            />
             <FileSignature size={16} className="service-icon" />
             <span className="service-name-compact">Firma Digitale</span>
           </label>
           <label className="service-item-compact">
-            <input type="checkbox" className="form-checkbox" defaultChecked disabled={!isEditing} />
+            <input 
+              type="checkbox" 
+              className="form-checkbox" 
+              checked={data.services.pec}
+              onChange={() => onServiceToggle('pec')}
+              disabled={!isEditing} 
+            />
             <Mail size={16} className="service-icon" />
             <span className="service-name-compact">PEC</span>
           </label>
           <label className="service-item-compact">
-            <input type="checkbox" className="form-checkbox" defaultChecked disabled={!isEditing} />
+            <input 
+              type="checkbox" 
+              className="form-checkbox" 
+              checked={data.services.conservation}
+              onChange={() => onServiceToggle('conservation')}
+              disabled={!isEditing} 
+            />
             <Archive size={16} className="service-icon" />
             <span className="service-name-compact">Conservazione</span>
           </label>
@@ -833,15 +1171,19 @@ function PECTab({ isEditing }) {
           )}
         </div>
         <div className="filter-list">
-          <div className="filter-item">
-            <span className="filter-name">Atti Notarili</span>
-            <span className="filter-condition">Oggetto contiene "Rogito" o "Atto"</span>
-            {isEditing && <button className="btn-text">Modifica</button>}
+          <div className="filter-group">
+            <label className="form-label">Atti Notarili</label>
+            <div className="filter-item">
+              <span className="filter-condition">Oggetto contiene "Rogito" o "Atto"</span>
+              {isEditing && <button className="btn-text">Modifica</button>}
+            </div>
           </div>
-          <div className="filter-item">
-            <span className="filter-name">Conservazione</span>
-            <span className="filter-condition">Da: conservazione@*</span>
-            {isEditing && <button className="btn-text">Modifica</button>}
+          <div className="filter-group">
+            <label className="form-label">Conservazione</label>
+            <div className="filter-item">
+              <span className="filter-condition">Da: conservazione@*</span>
+              {isEditing && <button className="btn-text">Modifica</button>}
+            </div>
           </div>
         </div>
       </div>

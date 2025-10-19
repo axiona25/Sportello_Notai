@@ -5,6 +5,7 @@ import Calendar from './Calendar'
 import AppointmentCard from './AppointmentCard'
 import DeedDetailCard from './DeedDetailCard'
 import NotarySelection from './NotarySelection'
+import NotaryCards from './NotaryCards'
 import './Dashboard.css'
 
 function Dashboard({ onLogout }) {
@@ -196,7 +197,7 @@ function Dashboard({ onLogout }) {
           </div>
 
           <div className="notary-section">
-            <NotarySelection />
+            <NotaryCards />
           </div>
         </div>
       </div>

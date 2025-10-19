@@ -106,6 +106,15 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+/* Placeholder per notai senza foto */
+.modal-notary-placeholder {
+  background: linear-gradient(135deg, #4FADFF 0%, #1668B0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  object-fit: unset;
+}
+
 .modal-notary-name {
   font-family: 'Poppins', sans-serif;
   font-size: 22px;

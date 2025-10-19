@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Notary Profiles</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        button { padding: 10px; margin: 5px; font-size: 16px; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Debug Notary Profiles</h1>
+    <button onclick="showData()">Mostra Dati</button>
+    <button onclick="clearData()">Cancella Dati</button>
+    <button onclick="showServices()">Mostra Solo Servizi</button>
+    <div id="output"></div>
+    
+    <script>
+        function showData() {
+            const data = localStorage.getItem('notary_profiles')
+            const output = document.getElementById('output')
+            if (data) {
+                const parsed = JSON.parse(data)
+                output.innerHTML = '<pre>' + JSON.stringify(parsed, null, 2) + '</pre>'
+            } else {
+                output.innerHTML = '<p>Nessun dato trovato</p>'
+            }
+        }
+        
+        function showServices() {
+            const data = localStorage.getItem('notary_profiles')
+            const output = document.getElementById('output')
+            if (data) {
+                const parsed = JSON.parse(data)
+                const services = {}
+                Object.keys(parsed).forEach(key => {
+                    services[key] = parsed[key].services
+                })
+                output.innerHTML = '<h3>Servizi per notaio:</h3><pre>' + JSON.stringify(services, null, 2) + '</pre>'
+            } else {
+                output.innerHTML = '<p>Nessun dato trovato</p>'
+            }
+        }
+        
+        function clearData() {
+            localStorage.removeItem('notary_profiles')
+            alert('Dati cancellati! Ricarica la pagina.')
+        }
+    </script>
+</body>
+</html>

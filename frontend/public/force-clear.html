@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Force Clear All Data</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f44336; color: white; }
+        h1 { font-size: 32px; }
+        button { padding: 20px 40px; font-size: 20px; background: white; color: #f44336; border: none; cursor: pointer; border-radius: 8px; }
+        button:hover { background: #ffebee; }
+        .success { background: #4caf50; padding: 20px; margin-top: 20px; border-radius: 8px; display: none; }
+    </style>
+</head>
+<body>
+    <h1>⚠️ FORCE CLEAR ALL DATA</h1>
+    <p>Questo cancellerà TUTTO:</p>
+    <ul>
+        <li>localStorage</li>
+        <li>sessionStorage</li>
+        <li>Cookies</li>
+        <li>Cache</li>
+    </ul>
+    <button onclick="clearAll()">🔥 CANCELLA TUTTO</button>
+    <div class="success" id="success">
+        <h2>✅ TUTTO CANCELLATO!</h2>
+        <p>Chiudi TUTTE le finestre del browser e riapri.</p>
+    </div>
+    
+    <script>
+        function clearAll() {
+            // Clear localStorage
+            localStorage.clear()
+            
+            // Clear sessionStorage
+            sessionStorage.clear()
+            
+            // Clear cookies
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            
+            // Clear cache
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    names.forEach(function(name) {
+                        caches.delete(name);
+                    });
+                });
+            }
+            
+            console.log('🔥 TUTTO CANCELLATO!')
+            document.getElementById('success').style.display = 'block'
+        }
+    </script>
+</body>
+</html>

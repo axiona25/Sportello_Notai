@@ -37,6 +37,19 @@ class Notary(models.Model):
     cover_image_url = models.TextField(blank=True)
     profile_image_url = models.TextField(blank=True)
     
+    # Vetrina Pubblica (configurabile dal notaio)
+    showcase_photo = models.TextField(blank=True, help_text='Base64 encoded photo for public showcase')
+    showcase_experience = models.IntegerField(default=0, help_text='Years of experience')
+    showcase_languages = models.CharField(max_length=255, blank=True, default='Italiano')
+    showcase_description = models.TextField(blank=True)
+    showcase_services = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text='{"documents": true, "agenda": true, "chat": true, "acts": true, "signature": true, "pec": true, "conservation": true}'
+    )
+    showcase_availability_enabled = models.BooleanField(default=True)
+    showcase_availability_hours = models.CharField(max_length=100, blank=True, default='Lun-Ven 9:00-18:00')
+    
     # Servizi e tariffe (JSON flessibile)
     services = models.JSONField(
         default=list, 
@@ -57,6 +70,41 @@ class Notary(models.Model):
         help_text='{"monday": {"start": "09:00", "end": "18:00"}, ...}'
     )
     
+    # Gestione Licenza (Admin)
+    license_active = models.BooleanField(
+        default=True,
+        help_text='Se False, il notaio può solo visualizzare dati esistenti, non creare nuovi appuntamenti'
+    )
+    license_start_date = models.DateField(
+        blank=True,
+        null=True,
+        help_text='Data di attivazione della licenza'
+    )
+    license_expiry_date = models.DateField(
+        blank=True,
+        null=True,
+        help_text='Data di scadenza della licenza'
+    )
+    license_payment_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.0,
+        help_text='Importo del canone (es. 99.00 per mensile, 990.00 per annuale)'
+    )
+    license_payment_frequency = models.CharField(
+        max_length=20,
+        choices=[
+            ('monthly', 'Mensile'),
+            ('annual', 'Annuale'),
+        ],
+        default='annual',
+        help_text='Frequenza di pagamento della licenza'
+    )
+    license_notes = models.TextField(
+        blank=True,
+        help_text='Note amministrative sulla licenza (rinnovi, comunicazioni, etc.)'
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -68,6 +116,29 @@ class Notary(models.Model):
     
     def __str__(self):
         return f"{self.studio_name}"
+    
+    def is_license_valid(self):
+        """
+        Verifica se la licenza è valida.
+        Returns True se:
+        - license_active è True
+        - license_expiry_date non è impostata OPPURE non è scaduta
+        """
+        if not self.license_active:
+            return False
+        
+        if self.license_expiry_date:
+            from django.utils import timezone
+            today = timezone.now().date()
+            return today <= self.license_expiry_date
+        
+        return True
+    
+    def can_accept_new_appointments(self):
+        """
+        Il notaio può accettare nuovi appuntamenti solo se la licenza è valida.
+        """
+        return self.is_license_valid()
     
     def update_rating(self):
         """Update average rating from reviews."""
@@ -193,4 +264,57 @@ class NotaryAvailability(models.Model):
     
     def __str__(self):
         return f"{self.notary.studio_name} - {self.get_day_of_week_display()} {self.start_time}-{self.end_time}"
+
+
+class Appointment(models.Model):
+    """Appointment between a client and a notary."""
+    
+    STATUS_CHOICES = [
+        ('pending', 'In attesa di conferma'),
+        ('accepted', 'Confermato'),
+        ('rejected', 'Rifiutato'),
+        ('cancelled', 'Annullato'),
+        ('completed', 'Completato'),
+    ]
+    
+    TYPE_CHOICES = [
+        ('rogito', 'Rogito Notarile'),
+        ('consulenza', 'Consulenza'),
+        ('revisione', 'Revisione Documenti'),
+        ('altro', 'Altro'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    notary = models.ForeignKey(Notary, on_delete=models.CASCADE, related_name='appointments')
+    client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='appointments')
+    
+    # Dettagli appuntamento
+    appointment_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='consulenza')
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    duration_minutes = models.IntegerField(help_text='Durata in minuti')
+    
+    # Stato
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    notes = models.TextField(blank=True, help_text='Note del cliente')
+    notary_notes = models.TextField(blank=True, help_text='Note del notaio')
+    rejection_reason = models.TextField(blank=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'appointments'
+        verbose_name = 'Appuntamento'
+        verbose_name_plural = 'Appuntamenti'
+        ordering = ['date', 'start_time']
+        indexes = [
+            models.Index(fields=['notary', 'date', 'status']),
+            models.Index(fields=['client', 'status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.client.email} → {self.notary.studio_name} - {self.date} {self.start_time}"
 

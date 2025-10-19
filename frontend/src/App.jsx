@@ -4,11 +4,12 @@ import Login from './components/Login'
 import ForgotPassword from './components/ForgotPassword'
 import Dashboard from './components/Dashboard'
 import DashboardNotaio from './components/DashboardNotaio'
+import DashboardAdmin from './components/DashboardAdmin'
 import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
 function AppContent() {
-  const [currentView, setCurrentView] = useState('forgot-password') // 'forgot-password' per gestire forgot password
+  const [currentView, setCurrentView] = useState('login') // 'login' o 'forgot-password'
   const { isAuthenticated, user, login, logout, loading } = useAuth()
 
   const handleLogin = async (credentials) => {
@@ -56,7 +57,8 @@ function AppContent() {
   const handleLogout = async () => {
     console.log('Logout...')
     await logout()
-    // Non serve più setCurrentView, ProtectedRoute gestisce redirect
+    // Torna alla pagina di login dopo il logout
+    setCurrentView('login')
   }
 
   // Mostra loading mentre controlla autenticazione
@@ -86,7 +88,9 @@ function AppContent() {
     return (
       <div className="app">
         <ProtectedRoute>
-          {user?.role === 'notaio' ? (
+          {user?.role === 'admin' ? (
+            <DashboardAdmin onLogout={handleLogout} />
+          ) : user?.role === 'notaio' ? (
             <DashboardNotaio onLogout={handleLogout} />
           ) : (
             <Dashboard onLogout={handleLogout} />
