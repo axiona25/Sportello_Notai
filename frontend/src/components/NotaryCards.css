@@ -14,9 +14,32 @@
 }
 
 .notary-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 280px));
-  gap: var(--spacing-md);
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Scrollbar styling */
+.notary-cards-grid::-webkit-scrollbar {
+  height: 8px;
+}
+
+.notary-cards-grid::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.notary-cards-grid::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.notary-cards-grid::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 /* Notary Card - IDENTICA AL MOCK */
@@ -26,7 +49,9 @@
   padding: 20px;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.08) !important;
   border: none !important;
-  width: 100%;
+  min-width: 280px;
+  max-width: 280px;
+  width: 280px;
   height: 310px;
   display: flex;
   flex-direction: column;
@@ -34,6 +59,7 @@
   gap: 8px;
   transition: all 0.2s ease;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .notary-card:hover {
@@ -43,49 +69,6 @@
 
 .notary-card:active {
   transform: translateY(-2px);
-}
-
-/* Placeholder Card */
-.notary-card-placeholder {
-  background: linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%);
-  border: 2px dashed var(--color-border);
-  cursor: default;
-  opacity: 0.6;
-  justify-content: center;
-  align-items: center;
-  gap: 16px;
-}
-
-.notary-card-placeholder:hover {
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.08) !important;
-  transform: none;
-}
-
-.placeholder-icon {
-  color: var(--color-text-secondary);
-  opacity: 0.5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.placeholder-text {
-  font-family: 'Poppins', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  text-align: center;
-  margin: 0;
-}
-
-.placeholder-subtext {
-  font-family: 'Poppins', sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--color-text-secondary);
-  text-align: center;
-  margin: 0;
-  opacity: 0.7;
 }
 
 /* Foto Notaio - IDENTICA AL MOCK */

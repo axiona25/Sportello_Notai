@@ -8,8 +8,7 @@ import {
   Mail, 
   Archive,
   Star,
-  User,
-  UserPlus
+  User
 } from 'lucide-react'
 import notaryProfileService from '../services/notaryProfileService'
 import NotaryModal from './NotaryModal'
@@ -235,24 +234,6 @@ function NotaryCards() {
             </div>
           </div>
         ))}
-
-        {/* Card placeholder per riempire lo spazio vuoto */}
-        {(() => {
-          // Calcola quante card servono per riempire la riga
-          const cardsPerRow = Math.floor((window.innerWidth - 300) / (280 + 16)) // sidebar + card width + gap
-          const totalCards = profiles.length
-          const placeholdersNeeded = cardsPerRow > 0 ? (cardsPerRow - (totalCards % cardsPerRow)) % cardsPerRow : 0
-          
-          return Array.from({ length: placeholdersNeeded }).map((_, index) => (
-            <div key={`placeholder-${index}`} className="notary-card notary-card-placeholder">
-              <div className="placeholder-icon">
-                <UserPlus size={48} strokeWidth={1.5} />
-              </div>
-              <p className="placeholder-text">Nessun altro notaio disponibile</p>
-              <p className="placeholder-subtext">Nuovi notai appariranno qui</p>
-            </div>
-          ))
-        })()}
       </div>
     </div>
 
