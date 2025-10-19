@@ -89,11 +89,11 @@ function AppContent() {
       <div className="app">
         <ProtectedRoute>
           {user?.role === 'admin' ? (
-            <DashboardAdmin onLogout={handleLogout} />
+            <DashboardAdmin onLogout={handleLogout} user={user} />
           ) : user?.role === 'notaio' ? (
-            <DashboardNotaio onLogout={handleLogout} />
+            <DashboardNotaio onLogout={handleLogout} user={user} />
           ) : (
-            <Dashboard onLogout={handleLogout} />
+            <Dashboard onLogout={handleLogout} user={user} />
           )}
         </ProtectedRoute>
       </div>

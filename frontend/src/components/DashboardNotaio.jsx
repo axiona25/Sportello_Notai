@@ -10,11 +10,19 @@ import Settings from './Settings'
 import ProtectedRoute from './ProtectedRoute'
 import './DashboardNotaio.css'
 
-function DashboardNotaio({ onLogout }) {
+function DashboardNotaio({ onLogout, user }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [searchValue, setSearchValue] = useState('')
   const [currentView, setCurrentView] = useState('dashboard') // 'dashboard' o 'settings'
+  
+  // Ottieni nome del notaio
+  const getNotaryName = () => {
+    if (user?.notary_profile?.studio_name) {
+      return user.notary_profile.studio_name
+    }
+    return user?.email?.split('@')[0] || 'Notaio'
+  }
 
   // Database degli appuntamenti per data (stessi del cliente, ma prospettiva notaio)
   const appointmentsByDate = {
@@ -159,6 +167,7 @@ function DashboardNotaio({ onLogout }) {
           <Settings 
             searchValue={searchValue} 
             onSearchChange={handleSearchChange}
+            user={user}
           />
         </ProtectedRoute>
       </div>
@@ -185,7 +194,7 @@ function DashboardNotaio({ onLogout }) {
                   Benvenuto 
                 </h1>
                 <div className="welcome-name-container">
-                  <span className="welcome-name">Francesco Spada</span>
+                  <span className="welcome-name">{getNotaryName()}</span>
                   <img src="/assets/element.png" alt="" className="welcome-underline" />
                 </div>
               </div>

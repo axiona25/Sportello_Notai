@@ -8,11 +8,19 @@ import NotarySelection from './NotarySelection'
 import NotaryCards from './NotaryCards'
 import './Dashboard.css'
 
-function Dashboard({ onLogout }) {
+function Dashboard({ onLogout, user }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [searchValue, setSearchValue] = useState('')
   const [currentView, setCurrentView] = useState('dashboard') // 'dashboard', 'atti', o 'documenti'
+  
+  // Ottieni nome e cognome dell'utente
+  const getUserName = () => {
+    if (user?.cliente_profile) {
+      return `${user.cliente_profile.nome} ${user.cliente_profile.cognome}`
+    }
+    return user?.email?.split('@')[0] || 'Utente'
+  }
 
   // Database degli appuntamenti per data
   const appointmentsByDate = {
@@ -154,7 +162,7 @@ function Dashboard({ onLogout }) {
                       Benvenuto 
                     </h1>
                     <div className="welcome-name-container">
-                      <span className="welcome-name">Antonio Rossi</span>
+                      <span className="welcome-name">{getUserName()}</span>
                       <img src="/assets/element.png" alt="" className="welcome-underline" />
                     </div>
                   </div>
@@ -212,40 +220,48 @@ function Dashboard({ onLogout }) {
             </>
           ) : currentView === 'atti' ? (
             /* Pagina I miei Atti */
-            <div className="welcome-section">
-              <div className="welcome-container">
-                <div className="welcome-text-group">
-                  <h1 className="welcome-title">
-                    I Miei
-                  </h1>
-                  <div className="welcome-name-container">
-                    <span className="welcome-name">Atti</span>
-                    <img src="/assets/element.png" alt="" className="welcome-underline" />
+            <>
+              <div className="welcome-section">
+                <div className="welcome-container">
+                  <div className="welcome-text-group">
+                    <h1 className="welcome-title">
+                      I Miei
+                    </h1>
+                    <div className="welcome-name-container">
+                      <span className="welcome-name">Atti</span>
+                      <img src="/assets/element.png" alt="" className="welcome-underline" />
+                    </div>
                   </div>
                 </div>
               </div>
               <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
-                <p>Sezione in costruzione - Qui verranno mostrati tutti i tuoi atti notarili</p>
+                <p>Sezione in costruzione - Qui verranno mostrati tutti gli atti di <strong>{getUserName()}</strong></p>
               </div>
-            </div>
+            </>
           ) : currentView === 'documenti' ? (
             /* Pagina I miei Documenti */
-            <div className="welcome-section">
-              <div className="welcome-container">
-                <div className="welcome-text-group">
-                  <h1 className="welcome-title">
-                    I Miei
-                  </h1>
-                  <div className="welcome-name-container">
-                    <span className="welcome-name">Documenti</span>
-                    <img src="/assets/element.png" alt="" className="welcome-underline" />
+            <>
+              <div className="welcome-section">
+                <div className="welcome-container">
+                  <div className="welcome-text-group">
+                    <h1 className="welcome-title">
+                      I Miei
+                    </h1>
+                    <div className="welcome-name-container">
+                      <span className="welcome-name">Documenti</span>
+                      <img src="/assets/element.png" alt="" className="welcome-underline" />
+                    </div>
                   </div>
                 </div>
               </div>
-              <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
-                <p>Sezione in costruzione - Qui verranno mostrati tutti i tuoi documenti</p>
+              <div className="documenti-container">
+                <div className="documenti-card">
+                  <p style={{ textAlign: 'center', color: '#666', margin: 0 }}>
+                    Sezione in costruzione - Qui verranno mostrati tutti i documenti di <strong>{getUserName()}</strong>
+                  </p>
+                </div>
               </div>
-            </div>
+            </>
           ) : null}
         </div>
       </div>

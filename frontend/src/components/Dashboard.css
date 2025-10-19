@@ -129,3 +129,25 @@
   }
 }
 
+/* Pagina Documenti */
+.documenti-container {
+  width: 100%;
+  height: calc(100vh - 80px - 120px - var(--spacing-xl) * 2);
+  /* 80px header, 120px welcome-section, spacing-xl padding top/bottom */
+  display: flex;
+  flex-direction: column;
+}
+
+.documenti-card {
+  background-color: var(--color-white);
+  border-radius: 24px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
+  padding: var(--spacing-xl);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
