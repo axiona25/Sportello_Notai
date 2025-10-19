@@ -2,7 +2,7 @@
 .notary-cards-section {
   width: 100%;
   max-width: 100%;
-  margin-top: 32px;
+  margin-top: var(--spacing-md);
   overflow: hidden;
 }
 
@@ -10,7 +10,7 @@
   font-size: 20px;
   font-weight: 600;
   color: #1668B0;
-  margin: 0 0 var(--spacing-lg) 0;
+  margin: 0 0 var(--spacing-md) 0;
 }
 
 .notary-cards-grid {
