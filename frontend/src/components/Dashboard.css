@@ -95,7 +95,7 @@
 .dashboard-center {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--spacing-md);
   height: 420px;
 }
 
