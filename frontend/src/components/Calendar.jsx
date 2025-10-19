@@ -48,8 +48,8 @@ function Calendar({ selectedDate, onSelectDate }) {
       })
     }
 
-    // Next month days to fill the grid
-    const remainingDays = 42 - days.length
+    // Next month days to fill the grid (5 settimane = 35 giorni invece di 42)
+    const remainingDays = 35 - days.length
     for (let i = 1; i <= remainingDays; i++) {
       days.push({
         day: i,
@@ -57,7 +57,7 @@ function Calendar({ selectedDate, onSelectDate }) {
       })
     }
 
-    return days
+    return days.slice(0, 35) // Limita a 35 giorni (5 settimane)
   }
 
   const handlePrevMonth = () => {

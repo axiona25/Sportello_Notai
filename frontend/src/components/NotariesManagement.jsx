@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Search, Plus, Edit, Trash2, Shield, AlertCircle, CheckCircle, XCircle, Clock } from 'lucide-react'
+import Sidebar from './Sidebar'
+import Header from './Header'
 import adminService from '../services/adminService'
 import './NotariesManagement.css'
 
-function NotariesManagement({ searchValue, onBack }) {
+function NotariesManagement({ onLogout, onBack }) {
+  const [searchValue, setSearchValue] = useState('')
   const [notaries, setNotaries] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all') // all, active, expiring_soon, expired, disabled
@@ -114,14 +117,21 @@ function NotariesManagement({ searchValue, onBack }) {
   )
 
   return (
-    <div className="notaries-management">
-      {/* Header */}
-      <div className="management-header">
-        <div className="header-left">
-          <button className="btn-back" onClick={onBack}>← Dashboard</button>
-          <h1>Gestione Notai</h1>
-        </div>
-      </div>
+    <div className="notaries-management-container">
+      <Sidebar onLogout={onLogout} />
+      <div className="notaries-management-main">
+        <Header 
+          searchValue={searchValue} 
+          onSearchChange={setSearchValue}
+        />
+        <div className="notaries-management-content">
+          {/* Header */}
+          <div className="management-header">
+            <div className="header-left">
+              <button className="btn-back" onClick={onBack}>← Dashboard</button>
+              <h1>Gestione Notai</h1>
+            </div>
+          </div>
 
       {/* Filtri */}
       <div className="management-filters">
@@ -313,6 +323,8 @@ function NotariesManagement({ searchValue, onBack }) {
           </div>
         </>
       )}
+        </div>
+      </div>
     </div>
   )
 }

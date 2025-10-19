@@ -4,7 +4,7 @@ import Header from './Header'
 import Calendar from './Calendar'
 import AppointmentCard from './AppointmentCard'
 import DeedDetailCard from './DeedDetailCard'
-import AdminMetrics from './AdminMetrics'
+import AdminSystemSummary from './AdminSystemSummary'
 import NotariesManagement from './NotariesManagement'
 import PartnersManagement from './PartnersManagement'
 import adminService from '../services/adminService'
@@ -151,11 +151,11 @@ function DashboardAdmin({ onLogout }) {
 
   // Render sottopagine
   if (currentView === 'notaries') {
-    return <NotariesManagement searchValue={searchValue} onBack={handleBackToDashboard} />
+    return <NotariesManagement onLogout={onLogout} onBack={handleBackToDashboard} />
   }
 
   if (currentView === 'partners') {
-    return <PartnersManagement searchValue={searchValue} onBack={handleBackToDashboard} />
+    return <PartnersManagement onLogout={onLogout} onBack={handleBackToDashboard} />
   }
 
   // Dashboard principale
@@ -242,7 +242,7 @@ function DashboardAdmin({ onLogout }) {
             <div className="admin-section-grid">
               <div className="admin-section-left">
                 <h2 className="section-title">Riepilogo Gestione Sistema</h2>
-                <AdminMetrics stats={stats} />
+                <AdminSystemSummary stats={stats} />
               </div>
               <div className="admin-section-right">
                 <h2 className="section-title">Azioni Rapide</h2>

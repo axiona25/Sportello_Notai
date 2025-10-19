@@ -1,11 +1,30 @@
 /* ========================================
-   NOTARIES MANAGEMENT
+   NOTARIES MANAGEMENT - Layout Dashboard Identico
    ======================================== */
 
-.notaries-management {
+/* Layout principale identico a Dashboard */
+.notaries-management-container {
+  display: flex;
+  height: 100vh;
+  background-color: var(--color-bg-main);
+  overflow: hidden;
+  font-family: 'Poppins', sans-serif;
+}
+
+.notaries-management-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.notaries-management-content {
+  flex: 1;
+  overflow-y: auto;
   padding: var(--spacing-xl);
   max-width: 1600px;
   margin: 0 auto;
+  width: 100%;
 }
 
 /* Header */
@@ -405,7 +424,11 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .notaries-management {
+  .notaries-management-container {
+    flex-direction: column;
+  }
+
+  .notaries-management-content {
     padding: var(--spacing-md);
   }
 
