@@ -12,6 +12,7 @@ function Dashboard({ onLogout }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [searchValue, setSearchValue] = useState('')
+  const [currentView, setCurrentView] = useState('dashboard') // 'dashboard' o 'atti'
 
   // Database degli appuntamenti per data
   const appointmentsByDate = {
@@ -133,26 +134,34 @@ function Dashboard({ onLogout }) {
 
   return (
     <div className="dashboard">
-      <Sidebar onLogout={onLogout} userRole="cliente" />
+      <Sidebar 
+        onLogout={onLogout} 
+        userRole="cliente" 
+        currentView={currentView}
+        onNavigateToDashboard={() => setCurrentView('dashboard')}
+        onNavigateToAtti={() => setCurrentView('atti')}
+      />
       <div className="dashboard-main">
         <Header searchValue={searchValue} onSearchChange={handleSearchChange} />
         <div className="dashboard-content">
-          <div className="welcome-section">
-            <div className="welcome-container">
-              <div className="welcome-text-group">
-                <h1 className="welcome-title">
-                  Benvenuto 
-                </h1>
-                <div className="welcome-name-container">
-                  <span className="welcome-name">Antonio Rossi</span>
-                  <img src="/assets/element.png" alt="" className="welcome-underline" />
+          {currentView === 'dashboard' ? (
+            <>
+              <div className="welcome-section">
+                <div className="welcome-container">
+                  <div className="welcome-text-group">
+                    <h1 className="welcome-title">
+                      Benvenuto 
+                    </h1>
+                    <div className="welcome-name-container">
+                      <span className="welcome-name">Antonio Rossi</span>
+                      <img src="/assets/element.png" alt="" className="welcome-underline" />
+                    </div>
+                  </div>
+                  <button className="btn-primary">Nuovo</button>
                 </div>
               </div>
-              <button className="btn-primary">Nuovo</button>
-            </div>
-          </div>
 
-          <div className="dashboard-grid">
+              <div className="dashboard-grid">
             <div className="dashboard-left">
               <Calendar selectedDate={selectedDate} onSelectDate={handleDateSelect} />
             </div>
@@ -196,9 +205,29 @@ function Dashboard({ onLogout }) {
             </div>
           </div>
 
-          <div className="notary-section">
-            <NotaryCards />
-          </div>
+              <div className="notary-section">
+                <NotaryCards />
+              </div>
+            </>
+          ) : (
+            /* Pagina I miei Atti */
+            <div className="welcome-section">
+              <div className="welcome-container">
+                <div className="welcome-text-group">
+                  <h1 className="welcome-title">
+                    I miei Atti
+                  </h1>
+                  <div className="welcome-name-container">
+                    <span className="welcome-name">Antonio Rossi</span>
+                    <img src="/assets/element.png" alt="" className="welcome-underline" />
+                  </div>
+                </div>
+              </div>
+              <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+                <p>Sezione in costruzione - Qui verranno mostrati tutti i tuoi atti notarili</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

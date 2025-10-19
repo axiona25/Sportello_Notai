@@ -1,5 +1,5 @@
 import React from 'react'
-import { LayoutGrid, FileText, MessageSquare, Settings, LogOut, Users, Building2 } from 'lucide-react'
+import { LayoutGrid, FileText, Settings, LogOut, Users, Building2, FileCheck } from 'lucide-react'
 import './Sidebar.css'
 
 const DashboardIconActive = () => (
@@ -11,7 +11,7 @@ const DashboardIconActive = () => (
   </svg>
 );
 
-function Sidebar({ onLogout, userRole, onNavigateToSettings, onNavigateToDashboard, onNavigateToNotaries, onNavigateToPartners, currentView = 'dashboard' }) {
+function Sidebar({ onLogout, userRole, onNavigateToSettings, onNavigateToDashboard, onNavigateToNotaries, onNavigateToPartners, onNavigateToAtti, currentView = 'dashboard' }) {
   const handleLogoutClick = (e) => {
     e.preventDefault()
     if (onLogout) {
@@ -44,6 +44,13 @@ function Sidebar({ onLogout, userRole, onNavigateToSettings, onNavigateToDashboa
     e.preventDefault()
     if (onNavigateToPartners) {
       onNavigateToPartners()
+    }
+  }
+
+  const handleAttiClick = (e) => {
+    e.preventDefault()
+    if (onNavigateToAtti) {
+      onNavigateToAtti()
     }
   }
 
@@ -95,36 +102,33 @@ function Sidebar({ onLogout, userRole, onNavigateToSettings, onNavigateToDashboa
           </>
         )}
 
+        {/* Cliente-specific navigation */}
+        {userRole === 'cliente' && (
+          <a 
+            href="#" 
+            className={`nav-item ${currentView === 'atti' ? 'active' : ''}`}
+            onClick={handleAttiClick}
+          >
+            <FileCheck size={22} strokeWidth={2} />
+            <span>I miei Atti</span>
+          </a>
+        )}
+
         {/* Cliente/Notaio navigation */}
         {userRole !== 'admin' && (
-          <>
-            <a 
-              href="#" 
-              className="nav-item"
-              onClick={(e) => {
-                e.preventDefault()
-                if (onNavigateToDashboard) {
-                  onNavigateToDashboard()
-                }
-              }}
-            >
-              <FileText size={22} strokeWidth={2} />
-              <span>Documenti</span>
-            </a>
-            <a 
-              href="#" 
-              className="nav-item"
-              onClick={(e) => {
-                e.preventDefault()
-                if (onNavigateToDashboard) {
-                  onNavigateToDashboard()
-                }
-              }}
-            >
-              <MessageSquare size={22} strokeWidth={2} />
-              <span>Messaggi</span>
-            </a>
-          </>
+          <a 
+            href="#" 
+            className="nav-item"
+            onClick={(e) => {
+              e.preventDefault()
+              if (onNavigateToDashboard) {
+                onNavigateToDashboard()
+              }
+            }}
+          >
+            <FileText size={22} strokeWidth={2} />
+            <span>Documenti</span>
+          </a>
         )}
 
         {/* Notaio-specific settings */}
