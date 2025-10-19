@@ -146,10 +146,9 @@
   flex-shrink: 0;
 }
 
-/* Content - IDENTICO a Settings.css */
+/* Content - Full width senza limitazioni */
 .settings-content {
   flex: 1;
-  max-width: 1400px;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -160,19 +159,22 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
-/* Table */
+/* Table - Full width */
 .table-container {
   background: var(--color-white);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  width: 100%;
 }
 
 .notaries-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
 
 .notaries-table thead {
@@ -192,8 +194,15 @@
 
 .notaries-table th:nth-child(4),
 .notaries-table td:nth-child(4) {
-  min-width: 140px;
+  min-width: 100px;
   white-space: nowrap;
+}
+
+.notaries-table th:nth-child(5),
+.notaries-table td:nth-child(5) {
+  min-width: 120px;
+  white-space: nowrap;
+  text-align: right;
 }
 
 .notaries-table td {

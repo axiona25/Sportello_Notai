@@ -110,6 +110,26 @@ function NotariesManagement({ onLogout, onBack, onNavigateToDashboard, onNavigat
     }
   }
 
+  // Calcola durata licenza in mesi
+  const getLicenseDuration = (notary) => {
+    if (notary.license_start_date && notary.license_expiry_date) {
+      const start = new Date(notary.license_start_date)
+      const end = new Date(notary.license_expiry_date)
+      const months = Math.round((end - start) / (1000 * 60 * 60 * 24 * 30))
+      return `${months} ${months === 1 ? 'Mese' : 'Mesi'}`
+    }
+    return notary.license_payment_frequency === 'monthly' ? 'Mensile' : 'Annuale'
+  }
+
+  // Calcola canone annuo
+  const getAnnualFee = (notary) => {
+    const amount = notary.license_payment_amount || 0
+    if (notary.license_payment_frequency === 'monthly') {
+      return amount * 12
+    }
+    return amount
+  }
+
   const filteredNotaries = notaries.filter(notary => 
     notary.studio_name?.toLowerCase().includes(searchValue.toLowerCase()) ||
     notary.user_email?.toLowerCase().includes(searchValue.toLowerCase()) ||
@@ -202,6 +222,7 @@ function NotariesManagement({ onLogout, onBack, onNavigateToDashboard, onNavigat
                 <th>Email</th>
                 <th>Città</th>
                 <th>Licenza</th>
+                <th>Canone Annuo</th>
                 <th>Scadenza</th>
                 <th>Stato</th>
                 <th>Azioni</th>
@@ -210,7 +231,7 @@ function NotariesManagement({ onLogout, onBack, onNavigateToDashboard, onNavigat
             <tbody>
               {filteredNotaries.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="no-results">
+                  <td colSpan="8" className="no-results">
                     Nessun notaio trovato
                   </td>
                 </tr>
@@ -220,9 +241,8 @@ function NotariesManagement({ onLogout, onBack, onNavigateToDashboard, onNavigat
                     <td className="notary-name">{notary.studio_name}</td>
                     <td className="notary-email">{notary.user_email}</td>
                     <td>{notary.address_city || '-'}</td>
-                    <td>
-                      {notary.license_payment_frequency === 'monthly' ? 'Mensile' : 'Annuale'} - €{notary.license_payment_amount || 0}
-                    </td>
+                    <td>{getLicenseDuration(notary)}</td>
+                    <td>€{getAnnualFee(notary).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td>
                       {notary.license_expiry_date 
                         ? new Date(notary.license_expiry_date).toLocaleDateString('it-IT')
