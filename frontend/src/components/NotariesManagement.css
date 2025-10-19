@@ -161,13 +161,13 @@
   width: 100%;
 }
 
-/* Table - Allargata fino al bordo destro */
+/* Table - Allargata AL MASSIMO fino al bordo destro */
 .table-container {
   background: var(--color-white);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
-  width: calc(100% + var(--spacing-xl));
+  width: calc(100vw - 300px - var(--spacing-xl));
   margin-right: calc(-1 * var(--spacing-xl));
 }
 
