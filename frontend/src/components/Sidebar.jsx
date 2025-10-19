@@ -11,7 +11,7 @@ const DashboardIconActive = () => (
   </svg>
 );
 
-function Sidebar({ onLogout, userRole, onNavigateToSettings, onNavigateToDashboard, onNavigateToNotaries, onNavigateToPartners, onNavigateToAtti, currentView = 'dashboard' }) {
+function Sidebar({ onLogout, userRole, onNavigateToSettings, onNavigateToDashboard, onNavigateToNotaries, onNavigateToPartners, onNavigateToAtti, onNavigateToDocumenti, currentView = 'dashboard' }) {
   const handleLogoutClick = (e) => {
     e.preventDefault()
     if (onLogout) {
@@ -51,6 +51,13 @@ function Sidebar({ onLogout, userRole, onNavigateToSettings, onNavigateToDashboa
     e.preventDefault()
     if (onNavigateToAtti) {
       onNavigateToAtti()
+    }
+  }
+
+  const handleDocumentiClick = (e) => {
+    e.preventDefault()
+    if (onNavigateToDocumenti) {
+      onNavigateToDocumenti()
     }
   }
 
@@ -118,13 +125,8 @@ function Sidebar({ onLogout, userRole, onNavigateToSettings, onNavigateToDashboa
         {userRole !== 'admin' && (
           <a 
             href="#" 
-            className="nav-item"
-            onClick={(e) => {
-              e.preventDefault()
-              if (onNavigateToDashboard) {
-                onNavigateToDashboard()
-              }
-            }}
+            className={`nav-item ${currentView === 'documenti' ? 'active' : ''}`}
+            onClick={handleDocumentiClick}
           >
             <FileText size={22} strokeWidth={2} />
             <span>Documenti</span>

@@ -12,7 +12,7 @@ function Dashboard({ onLogout }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [searchValue, setSearchValue] = useState('')
-  const [currentView, setCurrentView] = useState('dashboard') // 'dashboard' o 'atti'
+  const [currentView, setCurrentView] = useState('dashboard') // 'dashboard', 'atti', o 'documenti'
 
   // Database degli appuntamenti per data
   const appointmentsByDate = {
@@ -140,6 +140,7 @@ function Dashboard({ onLogout }) {
         currentView={currentView}
         onNavigateToDashboard={() => setCurrentView('dashboard')}
         onNavigateToAtti={() => setCurrentView('atti')}
+        onNavigateToDocumenti={() => setCurrentView('documenti')}
       />
       <div className="dashboard-main">
         <Header searchValue={searchValue} onSearchChange={handleSearchChange} />
@@ -209,7 +210,7 @@ function Dashboard({ onLogout }) {
                 <NotaryCards />
               </div>
             </>
-          ) : (
+          ) : currentView === 'atti' ? (
             /* Pagina I miei Atti */
             <div className="welcome-section">
               <div className="welcome-container">
@@ -227,7 +228,25 @@ function Dashboard({ onLogout }) {
                 <p>Sezione in costruzione - Qui verranno mostrati tutti i tuoi atti notarili</p>
               </div>
             </div>
-          )}
+          ) : currentView === 'documenti' ? (
+            /* Pagina I miei Documenti */
+            <div className="welcome-section">
+              <div className="welcome-container">
+                <div className="welcome-text-group">
+                  <h1 className="welcome-title">
+                    I Miei
+                  </h1>
+                  <div className="welcome-name-container">
+                    <span className="welcome-name">Documenti</span>
+                    <img src="/assets/element.png" alt="" className="welcome-underline" />
+                  </div>
+                </div>
+              </div>
+              <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+                <p>Sezione in costruzione - Qui verranno mostrati tutti i tuoi documenti</p>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
