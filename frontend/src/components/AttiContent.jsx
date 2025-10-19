@@ -84,14 +84,14 @@ function AttiContent() {
         <table className="atti-table">
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', width: '110px' }}>DATA ATTO</th>
-              <th style={{ textAlign: 'left', width: '180px' }}>TIPOLOGIA ATTO</th>
+              <th style={{ textAlign: 'left' }}>DATA ATTO</th>
+              <th style={{ textAlign: 'left' }}>TIPOLOGIA ATTO</th>
               <th style={{ textAlign: 'left' }}>DESCRIZIONE</th>
-              <th style={{ textAlign: 'left', width: '150px' }}>SOGGETTI COINVOLTI</th>
-              <th style={{ textAlign: 'left', width: '120px' }}>VALORE</th>
-              <th style={{ textAlign: 'center', width: '100px' }}>DOCUMENTI</th>
-              <th style={{ textAlign: 'center', width: '80px' }}>STATO</th>
-              <th style={{ textAlign: 'center', width: '100px' }}>AZIONI</th>
+              <th style={{ textAlign: 'left' }}>SOGGETTI COINVOLTI</th>
+              <th style={{ textAlign: 'left' }}>VALORE</th>
+              <th style={{ textAlign: 'center' }}>DOCUMENTI</th>
+              <th style={{ textAlign: 'center' }}>STATO</th>
+              <th style={{ textAlign: 'center' }}>AZIONI</th>
             </tr>
           </thead>
           <tbody>
@@ -122,13 +122,14 @@ function AttiContent() {
                   </button>
                 </td>
                 <td style={{ textAlign: 'center' }}>
-                  <div className="atti-stato-dot-container" title={atto.stato}>
+                  <div className="atti-stato-dot-container">
                     <span 
                       className="atti-stato-dot" 
                       style={{ 
                         backgroundColor: atto.statoColor
                       }}
                     ></span>
+                    <span className="atti-stato-tooltip">{atto.stato}</span>
                   </div>
                 </td>
                 <td>
