@@ -29,8 +29,8 @@ function DocumentiSidebar() {
         <ChevronDown size={16} strokeWidth={2} />
       </div>
 
-      {/* CONNECTED APPS */}
-      <div className="documenti-section-header">CONNECTED APPS</div>
+      {/* APP CONNESSE */}
+      <div className="documenti-section-header">APP CONNESSE</div>
       
       <div className="documenti-menu-item">
         <div className="documenti-menu-item-left">

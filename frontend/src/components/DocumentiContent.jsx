@@ -25,17 +25,17 @@ function DocumentiContent() {
   ]
 
   const files = [
-    { id: 1, name: 'Designerzafor.', type: 'Zip File', size: '512 MB', date: '24 Mag, 2020 alle 17:30', icon: FileArchive, linked: false },
-    { id: 2, name: '@designerzafor at twitter', type: 'Compressed', size: '128 MB', date: '8 Set, 2020 alle 17:30', icon: FileArchive, linked: false },
-    { id: 3, name: 'Dribbble, Behance & Portfolio Project List & Details', type: 'PDF file', size: '128 MB', date: '1 Feb, 2020 alle 12:43', icon: FileText, linked: false },
-    { id: 4, name: 'Templatecookie Logo v1.0', type: 'PDF file', size: '12 MB', date: '17 Ott, 2020 alle 12:43', icon: FileText, linked: true },
-    { id: 5, name: 'Templatecookie', type: 'Folder', size: '1.2 GB', date: '22 Ott, 2020 alle 12:43', icon: FolderOpen, linked: false },
-    { id: 6, name: 'Templatecookie - Themeforest Templates', type: 'Zip File', size: '128 MB', date: '1 Feb, 2020 alle 17:30', icon: FileArchive, linked: true },
-    { id: 7, name: 'Codeshikhi', type: 'PDF file', size: '256 MB', date: '17 Ott, 2020 alle 12:43', icon: FileText, linked: false },
-    { id: 8, name: 'Echotemplate Logo v1.0', type: 'Compressed', size: '1.2 GB', date: '24 Mag, 2020 alle 12:43', icon: FileArchive, linked: false },
-    { id: 9, name: 'Echotemplate', type: 'Zip File', size: '14.6 GB', date: '1 Feb, 2020 alle 17:30', icon: FileArchive, linked: false },
-    { id: 10, name: 'Zakirsoft Logo v1.0', type: 'Compressed', size: '16 MB', date: '22 Ott, 2020 alle 12:43', icon: FileArchive, linked: false },
-    { id: 11, name: 'Zakirsoft', type: 'PDF file', size: '128 MB', date: '21 Set, 2020 alle 17:30', icon: FileText, linked: false }
+    { id: 1, name: 'Designerzafor.', type: 'File Zip', size: '512 MB', date: '24 Mag, 2020 alle 17:30', icon: FileArchive, linked: false },
+    { id: 2, name: '@designerzafor at twitter', type: 'Compresso', size: '128 MB', date: '8 Set, 2020 alle 17:30', icon: FileArchive, linked: false },
+    { id: 3, name: 'Dribbble, Behance & Portfolio Project List & Details', type: 'File PDF', size: '128 MB', date: '1 Feb, 2020 alle 12:43', icon: FileText, linked: false },
+    { id: 4, name: 'Templatecookie Logo v1.0', type: 'File PDF', size: '12 MB', date: '17 Ott, 2020 alle 12:43', icon: FileText, linked: true },
+    { id: 5, name: 'Templatecookie', type: 'Cartella', size: '1.2 GB', date: '22 Ott, 2020 alle 12:43', icon: FolderOpen, linked: false },
+    { id: 6, name: 'Templatecookie - Themeforest Templates', type: 'File Zip', size: '128 MB', date: '1 Feb, 2020 alle 17:30', icon: FileArchive, linked: true },
+    { id: 7, name: 'Codeshikhi', type: 'File PDF', size: '256 MB', date: '17 Ott, 2020 alle 12:43', icon: FileText, linked: false },
+    { id: 8, name: 'Echotemplate Logo v1.0', type: 'Compresso', size: '1.2 GB', date: '24 Mag, 2020 alle 12:43', icon: FileArchive, linked: false },
+    { id: 9, name: 'Echotemplate', type: 'File Zip', size: '14.6 GB', date: '1 Feb, 2020 alle 17:30', icon: FileArchive, linked: false },
+    { id: 10, name: 'Zakirsoft Logo v1.0', type: 'Compresso', size: '16 MB', date: '22 Ott, 2020 alle 12:43', icon: FileArchive, linked: false },
+    { id: 11, name: 'Zakirsoft', type: 'File PDF', size: '128 MB', date: '21 Set, 2020 alle 17:30', icon: FileText, linked: false }
   ]
 
   const toggleFavorite = (id) => {
@@ -76,9 +76,9 @@ function DocumentiContent() {
             <tr>
               <th style={{ width: '40px' }}></th>
               <th style={{ textAlign: 'left' }}>NOME</th>
-              <th style={{ textAlign: 'center', width: '140px' }}>TIPO</th>
-              <th style={{ textAlign: 'center', width: '120px' }}>DIMENSIONI</th>
-              <th style={{ textAlign: 'center', width: '200px' }}>DATA DI CARICAMENTO</th>
+              <th style={{ textAlign: 'left', width: '140px' }}>TIPO</th>
+              <th style={{ textAlign: 'left', width: '120px' }}>DIMENSIONI</th>
+              <th style={{ textAlign: 'left', width: '220px' }}>DATA DI CARICAMENTO</th>
               <th style={{ width: '60px' }}></th>
             </tr>
           </thead>
@@ -108,16 +108,16 @@ function DocumentiContent() {
                       <span>{file.name}</span>
                     </div>
                   </td>
-                  <td style={{ textAlign: 'center' }}>
+                  <td style={{ textAlign: 'left' }}>
                     <div className="documenti-file-type">
                       <span>{file.type}</span>
                       {file.linked && <Link size={14} strokeWidth={2} color="#6B7280" />}
                     </div>
                   </td>
-                  <td style={{ textAlign: 'center' }}>
+                  <td style={{ textAlign: 'left' }}>
                     <span className="documenti-file-size">{file.size}</span>
                   </td>
-                  <td style={{ textAlign: 'center' }}>
+                  <td style={{ textAlign: 'left' }}>
                     <span className="documenti-file-date">{file.date}</span>
                   </td>
                   <td>
