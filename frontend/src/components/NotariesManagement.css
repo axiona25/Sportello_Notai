@@ -1,101 +1,165 @@
 /* ========================================
-   NOTARIES MANAGEMENT - Layout Dashboard Identico
+   NOTARIES MANAGEMENT - Layout IDENTICO a DashboardAdmin
    ======================================== */
 
-/* Layout principale identico a Dashboard */
+/* Layout principale IDENTICO a DashboardAdmin.css */
 .notaries-management-container {
   display: flex;
   height: 100vh;
-  background-color: var(--color-bg-main);
+  max-width: 100vw;
   overflow: hidden;
-  font-family: 'Poppins', sans-serif;
+  background-color: var(--color-bg-main);
+  position: fixed;
+  width: 100%;
+  overscroll-behavior: none;
 }
 
 .notaries-management-main {
   flex: 1;
   display: flex;
   flex-direction: column;
+  max-width: 100%;
   overflow: hidden;
+  height: 100vh;
 }
 
 .notaries-management-content {
-  flex: 1;
-  overflow-y: auto;
   padding: var(--spacing-xl);
-  max-width: 1600px;
-  margin: 0 auto;
-  width: 100%;
+  padding-right: var(--spacing-xl);
+  overflow-y: auto;
+  max-width: 100%;
+  height: calc(100vh - 80px);
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Header */
-.management-header {
+/* Welcome Section - IDENTICA a DashboardAdmin */
+.welcome-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.welcome-container {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-lg);
+  gap: 12px;
 }
 
-.header-left {
+.welcome-text-group {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
+  align-items: flex-start;
+  gap: 12px;
 }
 
-.btn-back {
-  padding: 8px 16px;
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-family: 'Poppins', sans-serif;
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
+.welcome-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 36px;
+  font-weight: 500;
+  color: #4FADFF;
+  line-height: 1.2;
 }
 
-.btn-back:hover {
-  background: var(--color-bg-main);
-  color: var(--color-primary);
+.welcome-name-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0px;
 }
 
-.management-header h1 {
-  font-family: 'Poppins', sans-serif;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0;
+.welcome-name {
+  color: #B0BAD3;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 1.2;
 }
 
-/* Filters */
-.management-filters {
+.welcome-underline {
+  display: block;
+  width: 100%;
+  height: 7px;
+  object-fit: fill;
+}
+
+/* Tab - IDENTICHE a Settings.css */
+.settings-tabs {
   display: flex;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
-  flex-wrap: wrap;
+  border-bottom: none;
+  margin-bottom: var(--spacing-xl);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background-color: transparent;
+  padding: 0;
+  min-height: 60px;
 }
 
-.filter-btn {
-  padding: 10px 20px;
-  background: var(--color-white);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-family: 'Poppins', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
+.settings-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-tabs {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.settings-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 14px 20px;
+  background: transparent;
+  border: none;
   color: var(--color-text-secondary);
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+  flex-shrink: 0;
 }
 
-.filter-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+.settings-tab-btn:hover {
+  color: #1668B0;
+  background-color: rgba(22, 104, 176, 0.05);
 }
 
-.filter-btn.active {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-white);
+.settings-tab-btn.active {
+  color: #1668B0;
+  font-weight: 600;
+}
+
+.settings-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: linear-gradient(to right, #83E0F7, #1668B0);
+  border-radius: 4px 4px 0 0;
+}
+
+.settings-tab-btn svg {
+  flex-shrink: 0;
+}
+
+/* Content - IDENTICO a Settings.css */
+.settings-content {
+  flex: 1;
+  max-width: 1400px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.settings-tab-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Table */
@@ -422,20 +486,10 @@
   margin: 0;
 }
 
-/* Responsive */
+/* Responsive - IDENTICO a DashboardAdmin.css */
 @media (max-width: 768px) {
-  .notaries-management-container {
-    flex-direction: column;
-  }
-
   .notaries-management-content {
     padding: var(--spacing-md);
-  }
-
-  .management-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-md);
   }
 
   .table-container {

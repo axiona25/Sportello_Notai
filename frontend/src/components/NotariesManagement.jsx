@@ -132,56 +132,69 @@ function NotariesManagement({ onLogout, onBack, onNavigateToDashboard, onNavigat
           onSearchChange={setSearchValue}
         />
         <div className="notaries-management-content">
-          {/* Header */}
-          <div className="management-header">
-            <div className="header-left">
-              <button className="btn-back" onClick={onBack}>← Dashboard</button>
-              <h1>Gestione Notai</h1>
+          {/* Welcome Section - IDENTICA a DashboardAdmin */}
+          <div className="welcome-section">
+            <div className="welcome-container">
+              <div className="welcome-text-group">
+                <h1 className="welcome-title">Gestione</h1>
+                <div className="welcome-name-container">
+                  <span className="welcome-name">Notai</span>
+                  <img src="/assets/element.png" alt="" className="welcome-underline" />
+                </div>
+              </div>
             </div>
           </div>
 
-      {/* Filtri */}
-      <div className="management-filters">
-        <button
-          className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-          onClick={() => setFilter('all')}
-        >
-          Tutti
-        </button>
-        <button
-          className={`filter-btn ${filter === 'active' ? 'active' : ''}`}
-          onClick={() => setFilter('active')}
-        >
-          Licenze Attive
-        </button>
-        <button
-          className={`filter-btn ${filter === 'expiring_soon' ? 'active' : ''}`}
-          onClick={() => setFilter('expiring_soon')}
-        >
-          In Scadenza
-        </button>
-        <button
-          className={`filter-btn ${filter === 'expired' ? 'active' : ''}`}
-          onClick={() => setFilter('expired')}
-        >
-          Scadute
-        </button>
-        <button
-          className={`filter-btn ${filter === 'disabled' ? 'active' : ''}`}
-          onClick={() => setFilter('disabled')}
-        >
-          Disattivate
-        </button>
-      </div>
+          {/* Tab - stile Settings */}
+          <div className="settings-tabs">
+            <button
+              className={`settings-tab-btn ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => setFilter('all')}
+            >
+              <Users size={18} strokeWidth={2} />
+              <span>Tutti</span>
+            </button>
+            <button
+              className={`settings-tab-btn ${filter === 'active' ? 'active' : ''}`}
+              onClick={() => setFilter('active')}
+            >
+              <CheckCircle size={18} strokeWidth={2} />
+              <span>Licenze Attive</span>
+            </button>
+            <button
+              className={`settings-tab-btn ${filter === 'expiring_soon' ? 'active' : ''}`}
+              onClick={() => setFilter('expiring_soon')}
+            >
+              <Clock size={18} strokeWidth={2} />
+              <span>In Scadenza</span>
+            </button>
+            <button
+              className={`settings-tab-btn ${filter === 'expired' ? 'active' : ''}`}
+              onClick={() => setFilter('expired')}
+            >
+              <AlertCircle size={18} strokeWidth={2} />
+              <span>Scadute</span>
+            </button>
+            <button
+              className={`settings-tab-btn ${filter === 'disabled' ? 'active' : ''}`}
+              onClick={() => setFilter('disabled')}
+            >
+              <XCircle size={18} strokeWidth={2} />
+              <span>Disattivate</span>
+            </button>
+          </div>
 
-      {/* Tabella */}
-      {loading ? (
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
-          <p>Caricamento notai...</p>
-        </div>
-      ) : (
-        <div className="table-container">
+          {/* Content wrapper - stile Settings */}
+          <div className="settings-content">
+            <div className="settings-tab-wrapper">
+              {/* Tabella */}
+              {loading ? (
+                <div className="loading-state">
+                  <div className="loading-spinner"></div>
+                  <p>Caricamento notai...</p>
+                </div>
+              ) : (
+                <div className="table-container">
           <table className="notaries-table">
             <thead>
               <tr>
@@ -238,11 +251,13 @@ function NotariesManagement({ onLogout, onBack, onNavigateToDashboard, onNavigat
                 ))
               )}
             </tbody>
-          </table>
-        </div>
-      )}
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
 
-      {/* Modal Licenza */}
+          {/* Modal Licenza */}
       {showLicenseModal && selectedNotary && (
         <>
           <div className="modal-overlay" onClick={() => setShowLicenseModal(false)}></div>

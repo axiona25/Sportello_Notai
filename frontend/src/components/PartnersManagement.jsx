@@ -57,22 +57,38 @@ function PartnersManagement({ onLogout, onBack, onNavigateToDashboard, onNavigat
           onSearchChange={setSearchValue}
         />
         <div className="notaries-management-content">
-          {/* Header */}
-          <div className="management-header">
-            <div className="header-left">
-              <button className="btn-back" onClick={onBack}>← Dashboard</button>
-              <h1>Gestione Partners</h1>
+          {/* Welcome Section - IDENTICA a DashboardAdmin */}
+          <div className="welcome-section">
+            <div className="welcome-container">
+              <div className="welcome-text-group">
+                <h1 className="welcome-title">Gestione</h1>
+                <div className="welcome-name-container">
+                  <span className="welcome-name">Partners</span>
+                  <img src="/assets/element.png" alt="" className="welcome-underline" />
+                </div>
+              </div>
             </div>
           </div>
 
-      {/* Tabella */}
-      {loading ? (
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
-          <p>Caricamento partners...</p>
-        </div>
-      ) : (
-        <div className="table-container">
+          {/* Tab - stile Settings */}
+          <div className="settings-tabs">
+            <button className="settings-tab-btn active">
+              <Building2 size={18} strokeWidth={2} />
+              <span>Tutti i Partners</span>
+            </button>
+          </div>
+
+          {/* Content wrapper - stile Settings */}
+          <div className="settings-content">
+            <div className="settings-tab-wrapper">
+              {/* Tabella */}
+              {loading ? (
+                <div className="loading-state">
+                  <div className="loading-spinner"></div>
+                  <p>Caricamento partners...</p>
+                </div>
+              ) : (
+                <div className="table-container">
           <table className="notaries-table">
             <thead>
               <tr>
@@ -126,9 +142,11 @@ function PartnersManagement({ onLogout, onBack, onNavigateToDashboard, onNavigat
                 ))
               )}
             </tbody>
-          </table>
-        </div>
-      )}
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
