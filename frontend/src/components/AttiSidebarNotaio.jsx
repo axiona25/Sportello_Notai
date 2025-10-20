@@ -45,6 +45,14 @@ function AttiSidebarNotaio({ selectedFilter, onFilterChange }) {
     onFilterChange(null)
   }
 
+  const handleRecentiClick = () => {
+    onFilterChange({ type: 'recenti' })
+  }
+
+  const handlePreferitiClick = () => {
+    onFilterChange({ type: 'preferiti' })
+  }
+
   const handleClienteClick = (clienteId) => {
     onFilterChange({ type: 'cliente', id: clienteId })
   }
@@ -65,7 +73,11 @@ function AttiSidebarNotaio({ selectedFilter, onFilterChange }) {
       </div>
 
       {/* Recenti */}
-      <div className="atti-menu-item" style={{ cursor: 'pointer' }}>
+      <div 
+        className={`atti-menu-item ${selectedFilter?.type === 'recenti' ? 'active' : ''}`}
+        onClick={handleRecentiClick}
+        style={{ cursor: 'pointer' }}
+      >
         <div className="atti-menu-item-left">
           <Clock size={20} strokeWidth={2} />
           <span>Recenti</span>
@@ -95,7 +107,11 @@ function AttiSidebarNotaio({ selectedFilter, onFilterChange }) {
       <div className="atti-separator"></div>
 
       {/* Preferiti */}
-      <div className="atti-menu-item">
+      <div 
+        className={`atti-menu-item ${selectedFilter?.type === 'preferiti' ? 'active' : ''}`}
+        onClick={handlePreferitiClick}
+        style={{ cursor: 'pointer' }}
+      >
         <div className="atti-menu-item-left">
           <Star size={20} strokeWidth={2} />
           <span>Preferiti</span>
