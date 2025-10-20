@@ -110,6 +110,7 @@ function Settings({ searchValue, onSearchChange, user }) {
       if (existingProfile) {
         console.log('✅ Profilo Vetrina caricato:', existingProfile)
         console.log('🔧 Servizi caricati dal profilo:', JSON.stringify(existingProfile.services, null, 2))
+        console.log('📸 Foto dal backend:', existingProfile.photo ? `${existingProfile.photo.substring(0, 50)}... (length: ${existingProfile.photo.length})` : 'NESSUNA FOTO')
         
         // Aggiorna vetrinaData con i dati dal backend
         setVetrinaData({
@@ -132,6 +133,7 @@ function Settings({ searchValue, onSearchChange, user }) {
           },
           availability: existingProfile.availability
         })
+        console.log('💾 Foto impostata in vetrinaData:', existingProfile.photo ? 'SI (foto caricata)' : 'NO (usando default)')
       } else {
         console.log('⚠️ Nessun profilo trovato, usando valori di default')
       }
@@ -548,14 +550,13 @@ function VetrinaTab({ isEditing, data, onPhotoUpload, onFieldChange, onServiceTo
   // Debug: verifica i dati ricevuti
   React.useEffect(() => {
     console.log('🎨 VetrinaTab render con isEditing:', isEditing)
-    console.log('📊 Dati completi VetrinaTab:', {
-      photo: data.photo ? `${data.photo.substring(0, 50)}... (length: ${data.photo.length})` : 'NO PHOTO',
-      photoIsDefault: data.photo === DEFAULT_PROFILE_PHOTO,
-      experience: data.experience,
-      languages: data.languages,
-      description: data.description,
-      services: data.services
-    })
+    console.log('📊 Dati completi VetrinaTab:')
+    console.log('  📸 Photo:', data.photo ? `${data.photo.substring(0, 50)}... (length: ${data.photo.length})` : 'NO PHOTO')
+    console.log('  🔍 Photo is Default?', data.photo === DEFAULT_PROFILE_PHOTO)
+    console.log('  📝 Experience:', data.experience)
+    console.log('  🗣️ Languages:', data.languages)
+    console.log('  📄 Description:', data.description)
+    console.log('  🛠️ Services:', data.services)
   }, [isEditing, data.photo, data.experience, data.languages, data.description, data.services])
 
   const handleUploadClick = () => {
