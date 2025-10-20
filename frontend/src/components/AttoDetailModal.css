@@ -5,21 +5,22 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 40px;
+  backdrop-filter: blur(4px);
 }
 
 .atto-modal-container {
-  background-color: white;
-  border-radius: 24px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  max-width: 1400px;
+  background-color: #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(22, 104, 176, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
+  max-width: 1100px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -30,9 +31,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px 32px;
-  border-bottom: 1px solid var(--color-border);
-  background-color: #F8F9FA;
+  padding: 28px 36px;
+  border-bottom: 2px solid #E5E7EB;
+  background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
 }
 
 .atto-modal-header-left {
@@ -43,48 +44,52 @@
 
 .atto-modal-header h2 {
   font-family: 'Poppins', sans-serif;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 600;
   color: #1668B0;
   margin: 0;
+  letter-spacing: -0.3px;
 }
 
 .atto-preferito-btn {
-  background: none;
-  border: none;
-  padding: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 10px;
   cursor: pointer;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
+  border-radius: 10px;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .atto-preferito-btn:hover {
-  background-color: #FEF3C7;
+  background-color: #FFFBEB;
+  border-color: #FCD34D;
 }
 
 .atto-preferito-btn.active {
   background-color: #FEF3C7;
+  border-color: #F59E0B;
 }
 
 .atto-modal-close {
-  background: none;
-  border: none;
-  padding: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 10px;
   cursor: pointer;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-  color: var(--color-text-secondary);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  color: #6B7280;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .atto-modal-close:hover {
-  background-color: #F0F2F5;
-  color: var(--color-text-primary);
+  background-color: #FEE2E2;
+  border-color: #FCA5A5;
+  color: #DC2626;
 }
 
 /* Content */
@@ -96,41 +101,52 @@
 
 .atto-modal-left {
   flex: 1;
-  padding: 32px;
+  padding: 36px;
   overflow-y: auto;
-  border-right: 1px solid var(--color-border);
+  border-right: 2px solid #E5E7EB;
+  background-color: #FFFFFF;
 }
 
 .atto-modal-right {
-  width: 400px;
-  padding: 32px;
+  width: 380px;
+  padding: 36px;
   overflow-y: auto;
-  background-color: #F8F9FA;
+  background: linear-gradient(180deg, #F9FAFB 0%, #F3F4F6 100%);
 }
 
 /* Detail Section */
 .atto-detail-section {
-  margin-bottom: 32px;
+  margin-bottom: 40px;
 }
 
 .atto-detail-section h3 {
   font-family: 'Poppins', sans-serif;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 0 0 20px 0;
+  color: #1F2937;
+  margin: 0 0 24px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 13px;
+  color: #6B7280;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #E5E7EB;
 }
 
 .atto-detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 24px;
 }
 
 .atto-detail-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  padding: 16px;
+  background-color: #F9FAFB;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
 }
 
 .atto-detail-item.full-width {
@@ -139,24 +155,25 @@
 
 .atto-detail-item label {
   font-family: 'Poppins', sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  color: var(--color-text-secondary);
-  letter-spacing: 0.5px;
+  color: #6B7280;
+  letter-spacing: 0.8px;
 }
 
 .atto-detail-item span {
   font-family: 'Poppins', sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--color-text-primary);
+  font-size: 15px;
+  font-weight: 500;
+  color: #1F2937;
+  line-height: 1.5;
 }
 
 .atto-detail-value {
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   color: #10B981 !important;
-  font-size: 16px !important;
+  font-size: 18px !important;
 }
 
 .atto-detail-stato {
@@ -176,27 +193,37 @@
 .atto-documenti-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  background-color: #F9FAFB;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #E5E7EB;
 }
 
 .atto-doc-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px;
-  border-radius: 8px;
+  padding: 14px 16px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
   font-family: 'Poppins', sans-serif;
   font-size: 14px;
+  background-color: #FFFFFF;
+  border: 1px solid transparent;
 }
 
 .atto-doc-item:hover {
-  background-color: #F8F9FA;
+  background-color: #F0F9FF;
+  border-color: #BAE6FD;
+  transform: translateX(4px);
 }
 
 .atto-doc-item.selected {
-  background-color: #E3F2FD;
+  background-color: #DBEAFE;
+  border-color: #1668B0;
+  box-shadow: 0 2px 8px rgba(22, 104, 176, 0.15);
 }
 
 .atto-doc-item.folder {
@@ -255,78 +282,101 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 28px;
+  padding: 20px;
+  background: linear-gradient(135deg, #FFFFFF 0%, #F0F9FF 100%);
+  border-radius: 12px;
+  border: 2px solid #BAE6FD;
 }
 
 .atto-doc-detail-header h3 {
   font-family: 'Poppins', sans-serif;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: #1668B0;
   margin: 0;
+  line-height: 1.4;
 }
 
 /* Verification Section */
 .atto-verification-section {
-  background-color: white;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 2px solid #E5E7EB;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .atto-verification-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #E5E7EB;
 }
 
 .atto-verification-header h4 {
   font-family: 'Poppins', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .atto-verification-info {
   font-family: 'Poppins', sans-serif;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.8;
 }
 
 .atto-verification-info p {
-  margin: 8px 0;
-  color: var(--color-text-primary);
+  margin: 10px 0;
+  color: #4B5563;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .atto-verification-info.success {
-  color: #10B981;
+  background-color: #F0FDF4;
+  padding: 16px;
+  border-radius: 10px;
+  border-left: 4px solid #10B981;
 }
 
 .atto-verification-info.success p {
-  color: var(--color-text-primary);
+  color: #065F46;
 }
 
 .atto-verification-info.success strong {
-  color: #10B981;
+  color: #047857;
+  font-weight: 600;
 }
 
 .atto-verification-info.error {
-  color: #EF4444;
+  background-color: #FEF2F2;
+  padding: 16px;
+  border-radius: 10px;
+  border-left: 4px solid #EF4444;
 }
 
 .atto-verification-info.error p {
-  color: #EF4444;
+  color: #991B1B;
   font-weight: 500;
 }
 
 /* Responsive */
 @media (max-width: 1200px) {
+  .atto-modal-container {
+    max-width: 95%;
+  }
+
   .atto-modal-right {
-    width: 350px;
+    width: 340px;
   }
 }
 
@@ -337,11 +387,17 @@
 
   .atto-modal-left {
     border-right: none;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 2px solid #E5E7EB;
+    padding: 24px;
   }
 
   .atto-modal-right {
     width: 100%;
+    padding: 24px;
+  }
+
+  .atto-detail-grid {
+    grid-template-columns: 1fr;
   }
 }
 
