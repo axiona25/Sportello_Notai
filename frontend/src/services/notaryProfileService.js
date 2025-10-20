@@ -53,6 +53,7 @@ class NotaryProfileService {
     try {
       console.log('💾 Salvando profilo vetrina sul backend...')
       console.log('📝 Servizi da salvare:', JSON.stringify(profileData.services, null, 2))
+      console.log('📸 Foto da inviare:', profileData.photo ? `${profileData.photo.substring(0, 50)}... (length: ${profileData.photo.length})` : 'NESSUNA FOTO')
       
       const payload = {
         photo: profileData.photo,
@@ -63,13 +64,14 @@ class NotaryProfileService {
         availability: profileData.availability
       }
       
-      console.log('📦 Payload completo:', JSON.stringify(payload, null, 2))
+      console.log('📦 Payload (senza foto per brevità):', JSON.stringify({...payload, photo: payload.photo ? `[BASE64 length: ${payload.photo.length}]` : null}, null, 2))
       
       // Invia solo i campi scrivibili (no name, title, address - sono read-only)
       const data = await apiClient.put('/notaries/showcase/me/', payload)
       
       console.log('✅ Profilo salvato con successo sul backend')
-      console.log('📊 Risposta dal backend:', JSON.stringify(data, null, 2))
+      console.log('📸 Foto nella risposta:', data?.photo ? `${data.photo.substring(0, 50)}... (length: ${data.photo.length})` : 'NESSUNA FOTO')
+      console.log('📊 Risposta dal backend (senza foto):', JSON.stringify({...data, photo: data?.photo ? `[BASE64 length: ${data.photo.length}]` : null}, null, 2))
       console.log('🗑️ Invalidando cache locale...')
       
       // Invalida cache per forzare refresh immediato

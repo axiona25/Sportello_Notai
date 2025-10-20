@@ -187,10 +187,13 @@ function Settings({ searchValue, onSearchChange, user }) {
           
         case 1: // Tab Vetrina
           console.log('💾 Salvando dati tab Vetrina...')
+          console.log('📸 Foto in vetrinaData da salvare:', vetrinaData.photo ? `${vetrinaData.photo.substring(0, 50)}... (length: ${vetrinaData.photo.length})` : 'NESSUNA FOTO')
+          console.log('🔍 Foto è default?', vetrinaData.photo === DEFAULT_PROFILE_PHOTO)
           result = await notaryProfileService.saveProfile(vetrinaData)
           
           if (result.success) {
             console.log('✅ Dati Vetrina salvati sul backend:', result.data)
+            console.log('📸 Foto restituita dal backend dopo salvataggio:', result.data?.photo ? `${result.data.photo.substring(0, 50)}... (length: ${result.data.photo.length})` : 'NESSUNA FOTO')
             
             // Aggiorna lo stato locale con i dati ricevuti dal backend
             if (result.data) {
