@@ -76,6 +76,18 @@
   white-space: nowrap;
 }
 
+.atti-tipologia.clickable {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+  transition: all 0.2s ease;
+}
+
+.atti-tipologia.clickable:hover {
+  color: #0d4a7a;
+  text-decoration-style: solid;
+}
+
 /* Descrizione */
 .atti-descrizione {
   font-family: 'Poppins', sans-serif;

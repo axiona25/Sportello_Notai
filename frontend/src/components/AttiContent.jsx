@@ -1,13 +1,16 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { 
   FolderOpen, 
   FileText,
   Share2,
   Printer
 } from 'lucide-react'
+import AttoDetailModal from './AttoDetailModal'
 import './AttiContent.css'
 
 function AttiContent({ selectedFilter = null }) {
+  const [selectedAtto, setSelectedAtto] = useState(null)
+  const [attiList, setAttiList] = useState(null) // Per gestire aggiornamenti preferiti
   // Database completo degli atti con notaioId, clienteId e preferito
   const allAtti = [
     {
@@ -132,8 +135,11 @@ function AttiContent({ selectedFilter = null }) {
     }
   ]
 
+  // Usa attiList se disponibile, altrimenti allAtti
+  const baseAtti = attiList || allAtti
+
   // Filtra e ordina gli atti in base al filtro selezionato
-  let atti = allAtti
+  let atti = baseAtti
 
   if (selectedFilter) {
     if (selectedFilter.type === 'notaio') {
@@ -145,6 +151,29 @@ function AttiContent({ selectedFilter = null }) {
     } else if (selectedFilter.type === 'recenti') {
       // Ordina per data decrescente (più recenti prima)
       atti = [...atti].sort((a, b) => b.dataAttoTimestamp - a.dataAttoTimestamp)
+    }
+  }
+
+  // Handler per aprire modale
+  const handleAttoClick = (atto) => {
+    setSelectedAtto(atto)
+  }
+
+  // Handler per chiudere modale
+  const handleCloseModal = () => {
+    setSelectedAtto(null)
+  }
+
+  // Handler per toggle preferito
+  const handleTogglePreferito = (attoId) => {
+    const updatedAtti = (attiList || allAtti).map(atto => 
+      atto.id === attoId ? { ...atto, preferito: !atto.preferito } : atto
+    )
+    setAttiList(updatedAtti)
+    
+    // Aggiorna anche l'atto selezionato se corrisponde
+    if (selectedAtto && selectedAtto.id === attoId) {
+      setSelectedAtto({ ...selectedAtto, preferito: !selectedAtto.preferito })
     }
   }
 
@@ -172,7 +201,13 @@ function AttiContent({ selectedFilter = null }) {
                   <span className="atti-data">{atto.dataAtto}</span>
                 </td>
                 <td>
-                  <span className="atti-tipologia">{atto.tipologia}</span>
+                  <span 
+                    className="atti-tipologia clickable"
+                    onClick={() => handleAttoClick(atto)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {atto.tipologia}
+                  </span>
                 </td>
                 <td>
                   <span className="atti-descrizione">{atto.descrizione}</span>
@@ -218,6 +253,15 @@ function AttiContent({ selectedFilter = null }) {
           </tbody>
         </table>
       </div>
+
+      {/* Modale Dettaglio Atto */}
+      {selectedAtto && (
+        <AttoDetailModal
+          atto={selectedAtto}
+          onClose={handleCloseModal}
+          onTogglePreferito={handleTogglePreferito}
+        />
+      )}
     </div>
   )
 }

@@ -1,0 +1,347 @@
+/* Atto Detail Modal */
+.atto-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 40px;
+}
+
+.atto-modal-container {
+  background-color: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 1400px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header */
+.atto-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--color-border);
+  background-color: #F8F9FA;
+}
+
+.atto-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.atto-modal-header h2 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1668B0;
+  margin: 0;
+}
+
+.atto-preferito-btn {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.atto-preferito-btn:hover {
+  background-color: #FEF3C7;
+}
+
+.atto-preferito-btn.active {
+  background-color: #FEF3C7;
+}
+
+.atto-modal-close {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.atto-modal-close:hover {
+  background-color: #F0F2F5;
+  color: var(--color-text-primary);
+}
+
+/* Content */
+.atto-modal-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.atto-modal-left {
+  flex: 1;
+  padding: 32px;
+  overflow-y: auto;
+  border-right: 1px solid var(--color-border);
+}
+
+.atto-modal-right {
+  width: 400px;
+  padding: 32px;
+  overflow-y: auto;
+  background-color: #F8F9FA;
+}
+
+/* Detail Section */
+.atto-detail-section {
+  margin-bottom: 32px;
+}
+
+.atto-detail-section h3 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 20px 0;
+}
+
+.atto-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.atto-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.atto-detail-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.atto-detail-item label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.5px;
+}
+
+.atto-detail-item span {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-primary);
+}
+
+.atto-detail-value {
+  font-weight: 600 !important;
+  color: #10B981 !important;
+  font-size: 16px !important;
+}
+
+.atto-detail-stato {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.atto-detail-stato .atto-stato-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Documenti List */
+.atto-documenti-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.atto-doc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+}
+
+.atto-doc-item:hover {
+  background-color: #F8F9FA;
+}
+
+.atto-doc-item.selected {
+  background-color: #E3F2FD;
+}
+
+.atto-doc-item.folder {
+  font-weight: 500;
+}
+
+.atto-doc-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.atto-doc-size {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-left: auto;
+}
+
+.atto-doc-children {
+  margin-top: 4px;
+}
+
+.atto-doc-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.atto-doc-item:hover .atto-doc-actions {
+  opacity: 1;
+}
+
+.atto-doc-action-btn {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.atto-doc-action-btn:hover {
+  background-color: white;
+  color: #1668B0;
+}
+
+/* Document Detail (Right Sidebar) */
+.atto-doc-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.atto-doc-detail-header h3 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* Verification Section */
+.atto-verification-section {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.atto-verification-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.atto-verification-header h4 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.atto-verification-info {
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.atto-verification-info p {
+  margin: 8px 0;
+  color: var(--color-text-primary);
+}
+
+.atto-verification-info.success {
+  color: #10B981;
+}
+
+.atto-verification-info.success p {
+  color: var(--color-text-primary);
+}
+
+.atto-verification-info.success strong {
+  color: #10B981;
+}
+
+.atto-verification-info.error {
+  color: #EF4444;
+}
+
+.atto-verification-info.error p {
+  color: #EF4444;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .atto-modal-right {
+    width: 350px;
+  }
+}
+
+@media (max-width: 900px) {
+  .atto-modal-content {
+    flex-direction: column;
+  }
+
+  .atto-modal-left {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .atto-modal-right {
+    width: 100%;
+  }
+}
+
