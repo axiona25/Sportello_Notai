@@ -168,6 +168,7 @@ function Dashboard({ onLogout, user }) {
           searchValue={searchValue} 
           onSearchChange={handleSearchChange}
           searchPlaceholder={getSearchPlaceholder()}
+          user={user}
         />
         <div className="dashboard-content">
           {currentView === 'dashboard' ? (

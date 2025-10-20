@@ -187,7 +187,7 @@ function DashboardAdmin({ onLogout }) {
       />
       
       <div className="dashboard-admin-main">
-        <Header searchValue={searchValue} onSearchChange={handleSearchChange} />
+        <Header searchValue={searchValue} onSearchChange={handleSearchChange} user={user} />
         
         <div className="dashboard-admin-content">
           {/* Welcome Section - IDENTICA */}

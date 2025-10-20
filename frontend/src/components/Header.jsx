@@ -1,8 +1,8 @@
 import React from 'react'
-import { Search, Bell, ChevronDown } from 'lucide-react'
+import { Search, Bell } from 'lucide-react'
 import './Header.css'
 
-function Header({ searchValue = '', onSearchChange, searchPlaceholder = 'Cerca appuntamenti...' }) {
+function Header({ searchValue = '', onSearchChange, searchPlaceholder = 'Cerca appuntamenti...', user = null }) {
   const currentDate = new Date()
   const options = { weekday: 'long', year: 'numeric', month: 'long', day: '2-digit' }
   const formattedDate = currentDate.toLocaleDateString('it-IT', options)
@@ -12,6 +12,30 @@ function Header({ searchValue = '', onSearchChange, searchPlaceholder = 'Cerca a
     if (onSearchChange) {
       onSearchChange(e.target.value)
     }
+  }
+
+  // Ottieni nome e cognome dell'utente
+  const getUserName = () => {
+    if (user?.cliente_profile) {
+      return `${user.cliente_profile.nome} ${user.cliente_profile.cognome}`
+    } else if (user?.notaio_profile) {
+      return `${user.notaio_profile.nome} ${user.notaio_profile.cognome}`
+    } else if (user?.admin_profile) {
+      return `${user.admin_profile.nome} ${user.admin_profile.cognome}`
+    }
+    return user?.email?.split('@')[0] || 'Utente'
+  }
+
+  // Ottieni avatar dell'utente
+  const getUserAvatar = () => {
+    if (user?.cliente_profile?.foto) {
+      return user.cliente_profile.foto
+    } else if (user?.notaio_profile?.foto) {
+      return user.notaio_profile.foto
+    } else if (user?.admin_profile?.foto) {
+      return user.admin_profile.foto
+    }
+    return "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
   }
 
   return (
@@ -44,12 +68,11 @@ function Header({ searchValue = '', onSearchChange, searchPlaceholder = 'Cerca a
         </button>
         <div className="user-profile">
           <img 
-            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" 
+            src={getUserAvatar()} 
             alt="User" 
             className="user-avatar"
           />
-          <span className="user-name">Robert Fox</span>
-          <ChevronDown size={16} />
+          <span className="user-name">{getUserName()}</span>
         </div>
       </div>
     </header>

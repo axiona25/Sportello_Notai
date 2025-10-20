@@ -224,6 +224,7 @@ function DashboardNotaio({ onLogout, user }) {
             searchValue={searchValue} 
             onSearchChange={handleSearchChange}
             searchPlaceholder={getSearchPlaceholder()}
+            user={user}
           />
           <div className="dashboard-notaio-content">
             {/* Titolo Pagina Documenti */}
@@ -275,6 +276,7 @@ function DashboardNotaio({ onLogout, user }) {
             searchValue={searchValue} 
             onSearchChange={handleSearchChange}
             searchPlaceholder={getSearchPlaceholder()}
+            user={user}
           />
           <div className="dashboard-notaio-content">
             {/* Titolo Pagina Atti */}
@@ -328,6 +330,7 @@ function DashboardNotaio({ onLogout, user }) {
           searchValue={searchValue} 
           onSearchChange={handleSearchChange}
           searchPlaceholder={getSearchPlaceholder()}
+          user={user}
         />
         <div className="dashboard-notaio-content">
           <div className="welcome-section">

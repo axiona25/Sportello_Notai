@@ -336,7 +336,7 @@ function Settings({ searchValue, onSearchChange, user }) {
 
   return (
     <div className="settings-page">
-      <Header searchValue={searchValue} onSearchChange={onSearchChange} />
+      <Header searchValue={searchValue} onSearchChange={onSearchChange} user={user} />
       
       <div className="settings-content-wrapper">
         <div className="settings-header">
