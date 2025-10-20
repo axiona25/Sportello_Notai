@@ -133,16 +133,26 @@ function Sidebar({ onLogout, userRole, onNavigateToSettings, onNavigateToDashboa
           </a>
         )}
 
-        {/* Notaio-specific settings */}
+        {/* Notaio-specific navigation */}
         {userRole === 'notaio' && (
-          <a 
-            href="#" 
-            className={`nav-item ${currentView === 'settings' ? 'active' : ''}`}
-            onClick={handleSettingsClick}
-          >
-            <Settings size={22} strokeWidth={2} />
-            <span>Impostazioni</span>
-          </a>
+          <>
+            <a 
+              href="#" 
+              className={`nav-item ${currentView === 'atti' ? 'active' : ''}`}
+              onClick={handleAttiClick}
+            >
+              <FileCheck size={22} strokeWidth={2} />
+              <span>I miei Atti</span>
+            </a>
+            <a 
+              href="#" 
+              className={`nav-item ${currentView === 'settings' ? 'active' : ''}`}
+              onClick={handleSettingsClick}
+            >
+              <Settings size={22} strokeWidth={2} />
+              <span>Impostazioni</span>
+            </a>
+          </>
         )}
       </nav>
 

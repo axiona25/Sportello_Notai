@@ -10,13 +10,15 @@ import Settings from './Settings'
 import ProtectedRoute from './ProtectedRoute'
 import DocumentiSidebar from './DocumentiSidebar'
 import DocumentiContent from './DocumentiContent'
+import AttiSidebarNotaio from './AttiSidebarNotaio'
+import AttiContent from './AttiContent'
 import './DashboardNotaio.css'
 
 function DashboardNotaio({ onLogout, user }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [searchValue, setSearchValue] = useState('')
-  const [currentView, setCurrentView] = useState('dashboard') // 'dashboard', 'settings', o 'documenti'
+  const [currentView, setCurrentView] = useState('dashboard') // 'dashboard', 'settings', 'documenti', o 'atti'
   
   // Ottieni nome del notaio
   const getNotaryName = () => {
@@ -159,6 +161,11 @@ function DashboardNotaio({ onLogout, user }) {
     setCurrentView('documenti')
   }
 
+  // Handler per navigazione ad Atti
+  const handleNavigateToAtti = () => {
+    setCurrentView('atti')
+  }
+
   // Se siamo nella vista Settings, mostra Settings (protetto solo per notai)
   if (currentView === 'settings') {
     return (
@@ -169,6 +176,7 @@ function DashboardNotaio({ onLogout, user }) {
           onNavigateToSettings={handleNavigateToSettings}
           onNavigateToDashboard={handleBackToDashboard}
           onNavigateToDocumenti={handleNavigateToDocumenti}
+          onNavigateToAtti={handleNavigateToAtti}
           currentView={currentView}
         />
         <ProtectedRoute allowedRoles={['notaio']}>
@@ -192,6 +200,7 @@ function DashboardNotaio({ onLogout, user }) {
           onNavigateToSettings={handleNavigateToSettings}
           onNavigateToDashboard={handleBackToDashboard}
           onNavigateToDocumenti={handleNavigateToDocumenti}
+          onNavigateToAtti={handleNavigateToAtti}
           currentView={currentView}
         />
         <div className="dashboard-notaio-main">
@@ -228,6 +237,53 @@ function DashboardNotaio({ onLogout, user }) {
     )
   }
 
+  // Se siamo nella vista Atti, mostra la pagina Atti
+  if (currentView === 'atti') {
+    return (
+      <div className="dashboard-notaio">
+        <Sidebar 
+          onLogout={onLogout} 
+          userRole="notaio" 
+          onNavigateToSettings={handleNavigateToSettings}
+          onNavigateToDashboard={handleBackToDashboard}
+          onNavigateToDocumenti={handleNavigateToDocumenti}
+          onNavigateToAtti={handleNavigateToAtti}
+          currentView={currentView}
+        />
+        <div className="dashboard-notaio-main">
+          <Header searchValue={searchValue} onSearchChange={handleSearchChange} />
+          <div className="dashboard-notaio-content">
+            {/* Titolo Pagina Atti */}
+            <div className="welcome-section">
+              <div className="welcome-container">
+                <div className="welcome-text-group">
+                  <h1 className="welcome-title">
+                    I Miei
+                  </h1>
+                  <div className="welcome-name-container">
+                    <span className="welcome-name">Atti</span>
+                    <img src="/assets/element.png" alt="" className="welcome-underline" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Container Card Atti */}
+            <div className="atti-container">
+              <div className="atti-card">
+                <AttiSidebarNotaio />
+                <div className="atti-separator-vertical"></div>
+                <div className="atti-content">
+                  <AttiContent />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // Altrimenti mostra la dashboard normale
   return (
     <div className="dashboard-notaio">
@@ -237,6 +293,7 @@ function DashboardNotaio({ onLogout, user }) {
         onNavigateToSettings={handleNavigateToSettings}
         onNavigateToDashboard={handleBackToDashboard}
         onNavigateToDocumenti={handleNavigateToDocumenti}
+        onNavigateToAtti={handleNavigateToAtti}
         currentView={currentView}
       />
       <div className="dashboard-notaio-main">
