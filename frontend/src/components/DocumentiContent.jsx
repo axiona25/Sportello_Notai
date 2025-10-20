@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import './DocumentiContent.css'
 
-function DocumentiContent() {
+function DocumentiContent({ searchValue = '' }) {
   const [favorites, setFavorites] = useState([2, 4, 8, 11])
 
   const categories = [
@@ -43,6 +43,18 @@ function DocumentiContent() {
       prev.includes(id) ? prev.filter(fav => fav !== id) : [...prev, id]
     )
   }
+
+  // Filtra i file in base alla ricerca
+  const filteredFiles = searchValue && searchValue.trim() !== ''
+    ? files.filter(file => {
+        const searchLower = searchValue.toLowerCase().trim()
+        return (
+          file.name.toLowerCase().includes(searchLower) ||
+          file.type.toLowerCase().includes(searchLower) ||
+          file.date.toLowerCase().includes(searchLower)
+        )
+      })
+    : files
 
   return (
     <div className="documenti-content-main">
@@ -78,7 +90,7 @@ function DocumentiContent() {
             </tr>
           </thead>
           <tbody>
-            {files.map((file) => {
+            {filteredFiles.map((file) => {
               const FileIcon = file.icon
               const isFavorite = favorites.includes(file.id)
               

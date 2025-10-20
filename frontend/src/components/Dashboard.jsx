@@ -143,6 +143,17 @@ function Dashboard({ onLogout, user }) {
     setSearchValue(value)
   }
 
+  // Determina il placeholder in base alla vista corrente
+  const getSearchPlaceholder = () => {
+    switch (currentView) {
+      case 'atti':
+        return 'Cerca i miei Atti...'
+      case 'dashboard':
+      default:
+        return 'Cerca appuntamenti...'
+    }
+  }
+
   return (
     <div className="dashboard">
       <Sidebar 
@@ -153,7 +164,11 @@ function Dashboard({ onLogout, user }) {
         onNavigateToAtti={() => setCurrentView('atti')}
       />
       <div className="dashboard-main">
-        <Header searchValue={searchValue} onSearchChange={handleSearchChange} />
+        <Header 
+          searchValue={searchValue} 
+          onSearchChange={handleSearchChange}
+          searchPlaceholder={getSearchPlaceholder()}
+        />
         <div className="dashboard-content">
           {currentView === 'dashboard' ? (
             <>
@@ -244,7 +259,7 @@ function Dashboard({ onLogout, user }) {
                   />
                   <div className="atti-separator-vertical"></div>
                   <div className="atti-content">
-                    <AttiContent selectedFilter={attiFilter} />
+                    <AttiContent selectedFilter={attiFilter} searchValue={searchValue} />
                   </div>
                 </div>
               </div>

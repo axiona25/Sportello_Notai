@@ -147,6 +147,21 @@ function DashboardNotaio({ onLogout, user }) {
     setSearchValue(value)
   }
 
+  // Determina il placeholder in base alla vista corrente
+  const getSearchPlaceholder = () => {
+    switch (currentView) {
+      case 'atti':
+        return 'Cerca i miei Atti...'
+      case 'documenti':
+        return 'Cerca documenti...'
+      case 'settings':
+        return 'Cerca nelle impostazioni...'
+      case 'dashboard':
+      default:
+        return 'Cerca appuntamenti...'
+    }
+  }
+
   // Handler per navigazione a Settings
   const handleNavigateToSettings = () => {
     setCurrentView('settings')
@@ -205,7 +220,11 @@ function DashboardNotaio({ onLogout, user }) {
           currentView={currentView}
         />
         <div className="dashboard-notaio-main">
-          <Header searchValue={searchValue} onSearchChange={handleSearchChange} />
+          <Header 
+            searchValue={searchValue} 
+            onSearchChange={handleSearchChange}
+            searchPlaceholder={getSearchPlaceholder()}
+          />
           <div className="dashboard-notaio-content">
             {/* Titolo Pagina Documenti */}
             <div className="welcome-section">
@@ -228,7 +247,7 @@ function DashboardNotaio({ onLogout, user }) {
                 <DocumentiSidebar />
                 <div className="documenti-separator-vertical"></div>
                 <div className="documenti-content">
-                  <DocumentiContent />
+                  <DocumentiContent searchValue={searchValue} />
                 </div>
               </div>
             </div>
@@ -252,7 +271,11 @@ function DashboardNotaio({ onLogout, user }) {
           currentView={currentView}
         />
         <div className="dashboard-notaio-main">
-          <Header searchValue={searchValue} onSearchChange={handleSearchChange} />
+          <Header 
+            searchValue={searchValue} 
+            onSearchChange={handleSearchChange}
+            searchPlaceholder={getSearchPlaceholder()}
+          />
           <div className="dashboard-notaio-content">
             {/* Titolo Pagina Atti */}
             <div className="welcome-section">
@@ -278,7 +301,7 @@ function DashboardNotaio({ onLogout, user }) {
                 />
                 <div className="atti-separator-vertical"></div>
                 <div className="atti-content">
-                  <AttiContent selectedFilter={attiFilter} />
+                  <AttiContent selectedFilter={attiFilter} searchValue={searchValue} />
                 </div>
               </div>
             </div>
@@ -301,7 +324,11 @@ function DashboardNotaio({ onLogout, user }) {
         currentView={currentView}
       />
       <div className="dashboard-notaio-main">
-        <Header searchValue={searchValue} onSearchChange={handleSearchChange} />
+        <Header 
+          searchValue={searchValue} 
+          onSearchChange={handleSearchChange}
+          searchPlaceholder={getSearchPlaceholder()}
+        />
         <div className="dashboard-notaio-content">
           <div className="welcome-section">
             <div className="welcome-container">

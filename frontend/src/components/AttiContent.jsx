@@ -8,7 +8,7 @@ import {
 import AttoDetailModal from './AttoDetailModal'
 import './AttiContent.css'
 
-function AttiContent({ selectedFilter = null }) {
+function AttiContent({ selectedFilter = null, searchValue = '' }) {
   const [selectedAtto, setSelectedAtto] = useState(null)
   const [attiList, setAttiList] = useState(null) // Per gestire aggiornamenti preferiti
   // Database completo degli atti con notaioId, clienteId e preferito
@@ -152,6 +152,18 @@ function AttiContent({ selectedFilter = null }) {
       // Ordina per data decrescente (più recenti prima)
       atti = [...atti].sort((a, b) => b.dataAttoTimestamp - a.dataAttoTimestamp)
     }
+  }
+
+  // Filtra in base alla ricerca
+  if (searchValue && searchValue.trim() !== '') {
+    const searchLower = searchValue.toLowerCase().trim()
+    atti = atti.filter(atto => 
+      atto.tipologia.toLowerCase().includes(searchLower) ||
+      atto.descrizione.toLowerCase().includes(searchLower) ||
+      atto.soggettiCoinvolti.toLowerCase().includes(searchLower) ||
+      atto.stato.toLowerCase().includes(searchLower) ||
+      atto.dataAtto.includes(searchLower)
+    )
   }
 
   // Handler per aprire modale

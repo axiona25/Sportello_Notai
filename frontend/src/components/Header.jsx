@@ -2,7 +2,7 @@ import React from 'react'
 import { Search, Bell, ChevronDown } from 'lucide-react'
 import './Header.css'
 
-function Header({ searchValue = '', onSearchChange }) {
+function Header({ searchValue = '', onSearchChange, searchPlaceholder = 'Cerca appuntamenti...' }) {
   const currentDate = new Date()
   const options = { weekday: 'long', year: 'numeric', month: 'long', day: '2-digit' }
   const formattedDate = currentDate.toLocaleDateString('it-IT', options)
@@ -31,7 +31,7 @@ function Header({ searchValue = '', onSearchChange }) {
           <Search size={18} />
           <input 
             type="text" 
-            placeholder="Cerca appuntamenti..." 
+            placeholder={searchPlaceholder}
             value={searchValue}
             onChange={handleSearchChange}
           />
