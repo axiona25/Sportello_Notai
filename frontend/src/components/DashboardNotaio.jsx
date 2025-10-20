@@ -19,6 +19,7 @@ function DashboardNotaio({ onLogout, user }) {
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [searchValue, setSearchValue] = useState('')
   const [currentView, setCurrentView] = useState('dashboard') // 'dashboard', 'settings', 'documenti', o 'atti'
+  const [attiFilter, setAttiFilter] = useState(null) // Filtro per gli atti (cliente)
   
   // Ottieni nome del notaio
   const getNotaryName = () => {
@@ -271,10 +272,13 @@ function DashboardNotaio({ onLogout, user }) {
             {/* Container Card Atti */}
             <div className="atti-container">
               <div className="atti-card">
-                <AttiSidebarNotaio />
+                <AttiSidebarNotaio 
+                  selectedFilter={attiFilter}
+                  onFilterChange={setAttiFilter}
+                />
                 <div className="atti-separator-vertical"></div>
                 <div className="atti-content">
-                  <AttiContent />
+                  <AttiContent selectedFilter={attiFilter} />
                 </div>
               </div>
             </div>

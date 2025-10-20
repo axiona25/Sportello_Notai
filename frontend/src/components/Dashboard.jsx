@@ -17,6 +17,7 @@ function Dashboard({ onLogout, user }) {
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [searchValue, setSearchValue] = useState('')
   const [currentView, setCurrentView] = useState('dashboard') // 'dashboard', 'atti', o 'documenti'
+  const [attiFilter, setAttiFilter] = useState(null) // Filtro per gli atti (notaio/cliente)
   
   // Ottieni nome e cognome dell'utente
   const getUserName = () => {
@@ -240,10 +241,13 @@ function Dashboard({ onLogout, user }) {
               </div>
               <div className="atti-container">
                 <div className="atti-card">
-                  <AttiSidebar />
+                  <AttiSidebar 
+                    selectedFilter={attiFilter}
+                    onFilterChange={setAttiFilter}
+                  />
                   <div className="atti-separator-vertical"></div>
                   <div className="atti-content">
-                    <AttiContent />
+                    <AttiContent selectedFilter={attiFilter} />
                   </div>
                 </div>
               </div>

@@ -29,6 +29,16 @@
   background-color: #F8F9FA;
 }
 
+.atti-menu-item.active {
+  background-color: #E3F2FD;
+  color: #1668B0;
+  font-weight: 500;
+}
+
+.atti-menu-item.active svg {
+  color: #1668B0;
+}
+
 .atti-menu-item-left {
   display: flex;
   align-items: center;

@@ -7,8 +7,9 @@ import {
 } from 'lucide-react'
 import './AttiContent.css'
 
-function AttiContent() {
-  const atti = [
+function AttiContent({ selectedFilter = null }) {
+  // Database completo degli atti con notaioId e clienteId
+  const allAtti = [
     {
       id: 1,
       dataAtto: '15/01/2025',
@@ -16,9 +17,11 @@ function AttiContent() {
       descrizione: 'Vendita appartamento via Garibaldi 42',
       soggettiCoinvolti: 'Misto',
       valore: '€ 250.000',
-      documenti: 'folder', // 'folder' o 'single'
+      documenti: 'folder',
       stato: 'Concluso',
-      statoColor: '#10B981'
+      statoColor: '#10B981',
+      notaioId: 1, // Francesco Spada
+      clienteId: 1 // Antonio Rossi
     },
     {
       id: 2,
@@ -29,7 +32,9 @@ function AttiContent() {
       valore: '€ 50.000',
       documenti: 'folder',
       stato: 'In lavorazione',
-      statoColor: '#F59E0B'
+      statoColor: '#F59E0B',
+      notaioId: 1, // Francesco Spada
+      clienteId: 2 // Maria Verdi
     },
     {
       id: 3,
@@ -40,7 +45,9 @@ function AttiContent() {
       valore: '€ 5.000',
       documenti: 'single',
       stato: 'Concluso',
-      statoColor: '#10B981'
+      statoColor: '#10B981',
+      notaioId: 2, // Maria Rossi
+      clienteId: 1 // Antonio Rossi
     },
     {
       id: 4,
@@ -51,7 +58,9 @@ function AttiContent() {
       valore: '€ 180.000',
       documenti: 'folder',
       stato: 'Concluso',
-      statoColor: '#10B981'
+      statoColor: '#10B981',
+      notaioId: 3, // Giorgio Bianchi
+      clienteId: 1 // Antonio Rossi
     },
     {
       id: 5,
@@ -62,7 +71,9 @@ function AttiContent() {
       valore: '€ 1.500',
       documenti: 'single',
       stato: 'In lavorazione',
-      statoColor: '#F59E0B'
+      statoColor: '#F59E0B',
+      notaioId: 1, // Francesco Spada
+      clienteId: 3 // Paolo Bianchi
     },
     {
       id: 6,
@@ -73,9 +84,49 @@ function AttiContent() {
       valore: '€ 150.000',
       documenti: 'folder',
       stato: 'Concluso',
-      statoColor: '#10B981'
+      statoColor: '#10B981',
+      notaioId: 2, // Maria Rossi
+      clienteId: 4 // Laura Neri
+    },
+    {
+      id: 7,
+      dataAtto: '10/12/2024',
+      tipologia: 'Contratto di Locazione',
+      descrizione: 'Locazione commerciale lungo termine',
+      soggettiCoinvolti: 'Misto',
+      valore: '€ 75.000',
+      documenti: 'folder',
+      stato: 'Concluso',
+      statoColor: '#10B981',
+      notaioId: 1, // Francesco Spada
+      clienteId: 4 // Laura Neri
+    },
+    {
+      id: 8,
+      dataAtto: '05/12/2024',
+      tipologia: 'Divisione Ereditaria',
+      descrizione: 'Divisione patrimonio ereditario',
+      soggettiCoinvolti: 'Persona Fisica',
+      valore: '€ 320.000',
+      documenti: 'folder',
+      stato: 'In lavorazione',
+      statoColor: '#F59E0B',
+      notaioId: 3, // Giorgio Bianchi
+      clienteId: 2 // Maria Verdi
     }
   ]
+
+  // Filtra gli atti in base al filtro selezionato
+  const atti = selectedFilter 
+    ? allAtti.filter(atto => {
+        if (selectedFilter.type === 'notaio') {
+          return atto.notaioId === selectedFilter.id
+        } else if (selectedFilter.type === 'cliente') {
+          return atto.clienteId === selectedFilter.id
+        }
+        return true
+      })
+    : allAtti
 
   return (
     <div className="atti-content-main">

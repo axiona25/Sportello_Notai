@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import './AttiSidebar.css'
 
-function AttiSidebarNotaio() {
+function AttiSidebarNotaio({ selectedFilter, onFilterChange }) {
   // Mock clienti con avatar placeholder colorati
   const clienti = [
     { 
@@ -41,10 +41,22 @@ function AttiSidebarNotaio() {
     }
   ]
 
+  const handleTuttiClick = () => {
+    onFilterChange(null)
+  }
+
+  const handleClienteClick = (clienteId) => {
+    onFilterChange({ type: 'cliente', id: clienteId })
+  }
+
   return (
     <div className="atti-sidebar">
       {/* Tutti gli atti */}
-      <div className="atti-menu-item">
+      <div 
+        className={`atti-menu-item ${selectedFilter === null ? 'active' : ''}`}
+        onClick={handleTuttiClick}
+        style={{ cursor: 'pointer' }}
+      >
         <div className="atti-menu-item-left">
           <FileText size={20} strokeWidth={2} />
           <span>Tutti gli Atti</span>
@@ -53,7 +65,7 @@ function AttiSidebarNotaio() {
       </div>
 
       {/* Recenti */}
-      <div className="atti-menu-item">
+      <div className="atti-menu-item" style={{ cursor: 'pointer' }}>
         <div className="atti-menu-item-left">
           <Clock size={20} strokeWidth={2} />
           <span>Recenti</span>
@@ -64,7 +76,12 @@ function AttiSidebarNotaio() {
       <div className="atti-section-header">CLIENTI</div>
       
       {clienti.map((cliente) => (
-        <div key={cliente.id} className="atti-menu-item">
+        <div 
+          key={cliente.id} 
+          className={`atti-menu-item ${selectedFilter?.type === 'cliente' && selectedFilter?.id === cliente.id ? 'active' : ''}`}
+          onClick={() => handleClienteClick(cliente.id)}
+          style={{ cursor: 'pointer' }}
+        >
           <div className="atti-menu-item-left">
             <div className="atti-notaio-avatar" style={{ background: cliente.color }}>
               <span>{cliente.avatar}</span>
