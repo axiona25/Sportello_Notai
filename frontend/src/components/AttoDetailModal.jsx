@@ -185,6 +185,18 @@ function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
     }))
   }
 
+  const handleOpenDocument = (documento) => {
+    // TODO: Implementare l'apertura del documento reale quando disponibile
+    // Per ora usa URL mock
+    if (documento.url) {
+      window.open(documento.url, '_blank')
+    } else {
+      // Mock URL per testing - da sostituire con URL reale del backend
+      console.log(`Apertura documento: ${documento.nome}`)
+      // window.open(`/api/documents/${documento.id}/download`, '_blank')
+    }
+  }
+
   const renderDocumenti = (items, level = 0) => {
     return items.map((item) => (
       <div key={item.id} style={{ marginLeft: `${level * 20}px` }}>
@@ -310,7 +322,13 @@ function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
             <div className="atto-modal-right">
               <div className="atto-doc-detail-header">
                 <FileText size={20} strokeWidth={2} color="#1668B0" />
-                <h3>{selectedDocument.nome}</h3>
+                <h3 
+                  className="atto-doc-name-clickable"
+                  onClick={() => handleOpenDocument(selectedDocument)}
+                  title="Clicca per aprire il documento"
+                >
+                  {selectedDocument.nome}
+                </h3>
               </div>
 
               {/* Firma Digitale */}

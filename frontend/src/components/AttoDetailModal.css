@@ -298,6 +298,20 @@
   line-height: 1.4;
 }
 
+.atto-doc-name-clickable {
+  cursor: pointer;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: #1668B0;
+  text-underline-offset: 3px;
+}
+
+.atto-doc-name-clickable:hover {
+  color: #0d4a7a;
+  text-decoration-style: solid;
+}
+
 /* Verification Section */
 .atto-verification-section {
   background-color: #FFFFFF;
