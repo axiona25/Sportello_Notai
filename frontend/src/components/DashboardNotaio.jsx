@@ -8,13 +8,15 @@ import NotaryMetrics from './NotaryMetrics'
 import StudioActivity from './StudioActivity'
 import Settings from './Settings'
 import ProtectedRoute from './ProtectedRoute'
+import DocumentiSidebar from './DocumentiSidebar'
+import DocumentiContent from './DocumentiContent'
 import './DashboardNotaio.css'
 
 function DashboardNotaio({ onLogout, user }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [searchValue, setSearchValue] = useState('')
-  const [currentView, setCurrentView] = useState('dashboard') // 'dashboard' o 'settings'
+  const [currentView, setCurrentView] = useState('dashboard') // 'dashboard', 'settings', o 'documenti'
   
   // Ottieni nome del notaio
   const getNotaryName = () => {
@@ -152,6 +154,11 @@ function DashboardNotaio({ onLogout, user }) {
     setCurrentView('dashboard')
   }
 
+  // Handler per navigazione a Documenti
+  const handleNavigateToDocumenti = () => {
+    setCurrentView('documenti')
+  }
+
   // Se siamo nella vista Settings, mostra Settings (protetto solo per notai)
   if (currentView === 'settings') {
     return (
@@ -161,6 +168,7 @@ function DashboardNotaio({ onLogout, user }) {
           userRole="notaio" 
           onNavigateToSettings={handleNavigateToSettings}
           onNavigateToDashboard={handleBackToDashboard}
+          onNavigateToDocumenti={handleNavigateToDocumenti}
           currentView={currentView}
         />
         <ProtectedRoute allowedRoles={['notaio']}>
@@ -174,6 +182,52 @@ function DashboardNotaio({ onLogout, user }) {
     )
   }
 
+  // Se siamo nella vista Documenti, mostra la pagina Documenti
+  if (currentView === 'documenti') {
+    return (
+      <div className="dashboard-notaio">
+        <Sidebar 
+          onLogout={onLogout} 
+          userRole="notaio" 
+          onNavigateToSettings={handleNavigateToSettings}
+          onNavigateToDashboard={handleBackToDashboard}
+          onNavigateToDocumenti={handleNavigateToDocumenti}
+          currentView={currentView}
+        />
+        <div className="dashboard-notaio-main">
+          <Header searchValue={searchValue} onSearchChange={handleSearchChange} />
+          <div className="dashboard-notaio-content">
+            {/* Titolo Pagina Documenti */}
+            <div className="welcome-section">
+              <div className="welcome-container">
+                <div className="welcome-text-group">
+                  <h1 className="welcome-title">
+                    I Miei
+                  </h1>
+                  <div className="welcome-name-container">
+                    <span className="welcome-name">Documenti</span>
+                    <img src="/assets/element.png" alt="" className="welcome-underline" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Container Card Documenti */}
+            <div className="documenti-container">
+              <div className="documenti-card">
+                <DocumentiSidebar />
+                <div className="documenti-separator-vertical"></div>
+                <div className="documenti-content">
+                  <DocumentiContent />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // Altrimenti mostra la dashboard normale
   return (
     <div className="dashboard-notaio">
@@ -182,6 +236,7 @@ function DashboardNotaio({ onLogout, user }) {
         userRole="notaio" 
         onNavigateToSettings={handleNavigateToSettings}
         onNavigateToDashboard={handleBackToDashboard}
+        onNavigateToDocumenti={handleNavigateToDocumenti}
         currentView={currentView}
       />
       <div className="dashboard-notaio-main">
