@@ -200,7 +200,7 @@ function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
                 ) : (
                   <ChevronRight size={16} strokeWidth={2} />
                 )}
-                <Folder size={18} strokeWidth={2} color="#F59E0B" />
+                <Folder size={18} strokeWidth={2} color="#1668B0" />
                 <span>{item.nome}</span>
               </div>
             </div>
