@@ -63,6 +63,15 @@
   font-size: 12px;
   font-weight: 600;
   color: white;
+  overflow: hidden;
+  position: relative;
+}
+
+.atti-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 /* Section Header */

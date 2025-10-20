@@ -9,30 +9,35 @@ import {
 import './AttiSidebar.css'
 
 function AttiSidebar({ selectedFilter, onFilterChange }) {
-  // Mock notai con avatar placeholder colorati
+  // Mock notai - TODO: Recuperare da backend con foto reale
   const notai = [
     { 
       id: 1, 
       nome: 'Francesco', 
       cognome: 'Spada',
-      avatar: 'FS',
+      foto: null, // Verrà caricata da Impostazioni Vetrina
       color: '#1668B0'
     },
     { 
       id: 2, 
       nome: 'Maria', 
       cognome: 'Rossi',
-      avatar: 'MR',
+      foto: null,
       color: '#E91E63'
     },
     { 
       id: 3, 
       nome: 'Giorgio', 
       cognome: 'Bianchi',
-      avatar: 'GB',
+      foto: null,
       color: '#2196F3'
     }
   ]
+
+  // Genera iniziali dal nome e cognome
+  const getInitials = (nome, cognome) => {
+    return `${nome.charAt(0)}${cognome.charAt(0)}`.toUpperCase()
+  }
 
   const handleTuttiClick = () => {
     onFilterChange(null)
@@ -103,8 +108,12 @@ function AttiSidebar({ selectedFilter, onFilterChange }) {
           style={{ cursor: 'pointer' }}
         >
           <div className="atti-menu-item-left">
-            <div className="atti-notaio-avatar" style={{ background: notaio.color }}>
-              <span>{notaio.avatar}</span>
+            <div className="atti-notaio-avatar" style={{ background: notaio.foto ? 'transparent' : notaio.color }}>
+              {notaio.foto ? (
+                <img src={notaio.foto} alt={`${notaio.nome} ${notaio.cognome}`} className="atti-avatar-image" />
+              ) : (
+                <span>{getInitials(notaio.nome, notaio.cognome)}</span>
+              )}
             </div>
             <span>{notaio.nome} {notaio.cognome}</span>
           </div>
