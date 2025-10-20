@@ -257,7 +257,12 @@ function Settings({ searchValue, onSearchChange, user }) {
 
       const reader = new FileReader()
       reader.onloadend = () => {
-        setVetrinaData(prev => ({ ...prev, photo: reader.result }))
+        console.log('📸 Foto caricata, lunghezza base64:', reader.result.length)
+        setVetrinaData(prev => {
+          const newData = { ...prev, photo: reader.result }
+          console.log('✅ Vetrina data aggiornato con nuova foto')
+          return newData
+        })
       }
       reader.readAsDataURL(file)
     }
@@ -544,12 +549,14 @@ function VetrinaTab({ isEditing, data, onPhotoUpload, onFieldChange, onServiceTo
   React.useEffect(() => {
     console.log('🎨 VetrinaTab render con isEditing:', isEditing)
     console.log('📊 Dati completi VetrinaTab:', {
+      photo: data.photo ? `${data.photo.substring(0, 50)}... (length: ${data.photo.length})` : 'NO PHOTO',
+      photoIsDefault: data.photo === DEFAULT_PROFILE_PHOTO,
       experience: data.experience,
       languages: data.languages,
       description: data.description,
       services: data.services
     })
-  }, [isEditing, data.experience, data.languages, data.description, data.services])
+  }, [isEditing, data.photo, data.experience, data.languages, data.description, data.services])
 
   const handleUploadClick = () => {
     fileInputRef.current?.click()
