@@ -77,6 +77,21 @@ function AttiSidebar({ selectedFilter, onFilterChange }) {
         </div>
       </div>
 
+      {/* Preferiti */}
+      <div 
+        className={`atti-menu-item ${selectedFilter?.type === 'preferiti' ? 'active' : ''}`}
+        onClick={handlePreferitiClick}
+        style={{ cursor: 'pointer' }}
+      >
+        <div className="atti-menu-item-left">
+          <Star size={20} strokeWidth={2} />
+          <span>Preferiti</span>
+        </div>
+      </div>
+
+      {/* Separatore */}
+      <div className="atti-separator"></div>
+
       {/* NOTAI */}
       <div className="atti-section-header">NOTAI</div>
       
@@ -95,21 +110,6 @@ function AttiSidebar({ selectedFilter, onFilterChange }) {
           </div>
         </div>
       ))}
-
-      {/* Separatore */}
-      <div className="atti-separator"></div>
-
-      {/* Preferiti */}
-      <div 
-        className={`atti-menu-item ${selectedFilter?.type === 'preferiti' ? 'active' : ''}`}
-        onClick={handlePreferitiClick}
-        style={{ cursor: 'pointer' }}
-      >
-        <div className="atti-menu-item-left">
-          <Star size={20} strokeWidth={2} />
-          <span>Preferiti</span>
-        </div>
-      </div>
 
       {/* Separatore */}
       <div className="atti-separator"></div>
