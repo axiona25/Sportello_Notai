@@ -104,7 +104,13 @@ function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
   const handleDocumentClick = (doc, e) => {
     e.stopPropagation() // Previene la chiusura quando si clicca su un documento
     if (doc.tipo === 'file') {
-      setSelectedDocument(doc)
+      // Se il documento è già selezionato, chiudi la sidebar
+      if (selectedDocument?.id === doc.id) {
+        setSelectedDocument(null)
+      } else {
+        // Altrimenti, apri la sidebar con il nuovo documento
+        setSelectedDocument(doc)
+      }
     }
   }
 
