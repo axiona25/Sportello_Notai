@@ -93,17 +93,23 @@ function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
     }
   ]
 
-  const toggleFolder = (folderId) => {
+  const toggleFolder = (folderId, e) => {
+    e.stopPropagation() // Previene la chiusura quando si clicca su una cartella
     setExpandedFolders(prev => ({
       ...prev,
       [folderId]: !prev[folderId]
     }))
   }
 
-  const handleDocumentClick = (doc) => {
+  const handleDocumentClick = (doc, e) => {
+    e.stopPropagation() // Previene la chiusura quando si clicca su un documento
     if (doc.tipo === 'file') {
       setSelectedDocument(doc)
     }
+  }
+
+  const handleLeftSectionClick = () => {
+    setSelectedDocument(null) // Chiude la sidebar quando si clicca fuori
   }
 
   const renderDocumenti = (items, level = 0) => {
@@ -113,7 +119,7 @@ function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
           <>
             <div 
               className="atto-doc-item folder"
-              onClick={() => toggleFolder(item.id)}
+              onClick={(e) => toggleFolder(item.id, e)}
             >
               <div className="atto-doc-item-left">
                 {expandedFolders[item.id] ? (
@@ -134,7 +140,7 @@ function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
         ) : (
           <div 
             className={`atto-doc-item file ${selectedDocument?.id === item.id ? 'selected' : ''}`}
-            onClick={() => handleDocumentClick(item)}
+            onClick={(e) => handleDocumentClick(item, e)}
           >
             <div className="atto-doc-item-left">
               <FileText size={18} strokeWidth={2} color="#1668B0" />
@@ -183,7 +189,7 @@ function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
         {/* Content */}
         <div className="atto-modal-content">
           {/* Left: Dettagli Atto */}
-          <div className="atto-modal-left">
+          <div className="atto-modal-left" onClick={handleLeftSectionClick}>
             {/* Dettagli */}
             <div className="atto-detail-section">
               <h3>Dettagli Atto</h3>
