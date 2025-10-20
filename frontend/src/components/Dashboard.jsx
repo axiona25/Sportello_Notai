@@ -6,8 +6,6 @@ import AppointmentCard from './AppointmentCard'
 import DeedDetailCard from './DeedDetailCard'
 import NotarySelection from './NotarySelection'
 import NotaryCards from './NotaryCards'
-import DocumentiSidebar from './DocumentiSidebar'
-import DocumentiContent from './DocumentiContent'
 import AttiSidebar from './AttiSidebar'
 import AttiContent from './AttiContent'
 import './Dashboard.css'
@@ -16,7 +14,7 @@ function Dashboard({ onLogout, user }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [searchValue, setSearchValue] = useState('')
-  const [currentView, setCurrentView] = useState('dashboard') // 'dashboard', 'atti', o 'documenti'
+  const [currentView, setCurrentView] = useState('dashboard') // 'dashboard' o 'atti'
   const [attiFilter, setAttiFilter] = useState(null) // Filtro per gli atti (notaio/cliente)
   
   // Ottieni nome e cognome dell'utente
@@ -153,7 +151,6 @@ function Dashboard({ onLogout, user }) {
         currentView={currentView}
         onNavigateToDashboard={() => setCurrentView('dashboard')}
         onNavigateToAtti={() => setCurrentView('atti')}
-        onNavigateToDocumenti={() => setCurrentView('documenti')}
       />
       <div className="dashboard-main">
         <Header searchValue={searchValue} onSearchChange={handleSearchChange} />
@@ -248,32 +245,6 @@ function Dashboard({ onLogout, user }) {
                   <div className="atti-separator-vertical"></div>
                   <div className="atti-content">
                     <AttiContent selectedFilter={attiFilter} />
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : currentView === 'documenti' ? (
-            /* Pagina I miei Documenti */
-            <>
-              <div className="welcome-section">
-                <div className="welcome-container">
-                  <div className="welcome-text-group">
-                    <h1 className="welcome-title">
-                      I Miei
-                    </h1>
-                    <div className="welcome-name-container">
-                      <span className="welcome-name">Documenti</span>
-                      <img src="/assets/element.png" alt="" className="welcome-underline" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="documenti-container">
-                <div className="documenti-card">
-                  <DocumentiSidebar />
-                  <div className="documenti-separator-vertical"></div>
-                  <div className="documenti-content">
-                    <DocumentiContent />
                   </div>
                 </div>
               </div>

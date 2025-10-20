@@ -121,40 +121,34 @@ function Sidebar({ onLogout, userRole, onNavigateToSettings, onNavigateToDashboa
           </a>
         )}
 
-        {/* Notaio-specific navigation - I miei Atti */}
+        {/* Notaio-specific navigation */}
         {userRole === 'notaio' && (
-          <a 
-            href="#" 
-            className={`nav-item ${currentView === 'atti' ? 'active' : ''}`}
-            onClick={handleAttiClick}
-          >
-            <FileCheck size={22} strokeWidth={2} />
-            <span>I miei Atti</span>
-          </a>
-        )}
-
-        {/* Cliente/Notaio navigation - Documenti */}
-        {userRole !== 'admin' && (
-          <a 
-            href="#" 
-            className={`nav-item ${currentView === 'documenti' ? 'active' : ''}`}
-            onClick={handleDocumentiClick}
-          >
-            <FileText size={22} strokeWidth={2} />
-            <span>Documenti</span>
-          </a>
-        )}
-
-        {/* Notaio-specific navigation - Impostazioni */}
-        {userRole === 'notaio' && (
-          <a 
-            href="#" 
-            className={`nav-item ${currentView === 'settings' ? 'active' : ''}`}
-            onClick={handleSettingsClick}
-          >
-            <Settings size={22} strokeWidth={2} />
-            <span>Impostazioni</span>
-          </a>
+          <>
+            <a 
+              href="#" 
+              className={`nav-item ${currentView === 'atti' ? 'active' : ''}`}
+              onClick={handleAttiClick}
+            >
+              <FileCheck size={22} strokeWidth={2} />
+              <span>I miei Atti</span>
+            </a>
+            <a 
+              href="#" 
+              className={`nav-item ${currentView === 'documenti' ? 'active' : ''}`}
+              onClick={handleDocumentiClick}
+            >
+              <FileText size={22} strokeWidth={2} />
+              <span>Documenti</span>
+            </a>
+            <a 
+              href="#" 
+              className={`nav-item ${currentView === 'settings' ? 'active' : ''}`}
+              onClick={handleSettingsClick}
+            >
+              <Settings size={22} strokeWidth={2} />
+              <span>Impostazioni</span>
+            </a>
+          </>
         )}
       </nav>
 
