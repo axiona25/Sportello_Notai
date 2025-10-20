@@ -369,6 +369,114 @@
   font-weight: 500;
 }
 
+/* Signatures Container */
+.atto-signatures-container {
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.atto-signatures-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.atto-signatures-container::-webkit-scrollbar-track {
+  background: #F3F4F6;
+  border-radius: 3px;
+}
+
+.atto-signatures-container::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 3px;
+}
+
+.atto-signatures-container::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* Signature Accordion */
+.atto-signature-accordion {
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.atto-signature-accordion:hover {
+  border-color: #BAE6FD;
+  box-shadow: 0 2px 8px rgba(22, 104, 176, 0.1);
+}
+
+.atto-signature-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.atto-signature-header:hover {
+  background-color: #F0F9FF;
+}
+
+.atto-signature-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.atto-signature-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.atto-signature-role {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: #6B7280;
+  font-style: italic;
+}
+
+.atto-signature-details {
+  padding: 16px;
+  border-top: 1px solid #E5E7EB;
+  background-color: #FFFFFF;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 200px;
+  }
+}
+
+.atto-signature-details p {
+  margin: 10px 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #4B5563;
+}
+
+.atto-signature-details strong {
+  color: #047857;
+  font-weight: 600;
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .atto-modal-container {

@@ -17,6 +17,7 @@ import './AttoDetailModal.css'
 function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
   const [selectedDocument, setSelectedDocument] = useState(null)
   const [expandedFolders, setExpandedFolders] = useState({})
+  const [expandedSignatures, setExpandedSignatures] = useState({})
 
   if (!atto) return null
 
@@ -34,18 +35,27 @@ function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
           dimensione: '2.3 MB',
           firmaDigitale: true,
           conservazione: true,
-          dataFirma: '10/01/2025',
-          firmatario: 'Francesco Spada'
+          firme: [
+            {
+              id: 1,
+              firmatario: 'Francesco Spada',
+              ruolo: 'Notaio',
+              dataFirma: '10/01/2025',
+              oraFirma: '10:30',
+              algoritmo: 'SHA-256 con RSA',
+              certificato: 'CN=Francesco Spada',
+              valida: true
+            }
+          ]
         },
         {
           id: 12,
           nome: 'Planimetria.pdf',
           tipo: 'file',
           dimensione: '4.1 MB',
-          firmaDigitale: true,
+          firmaDigitale: false,
           conservazione: false,
-          dataFirma: '10/01/2025',
-          firmatario: 'Francesco Spada'
+          firme: []
         }
       ]
     },
@@ -61,8 +71,38 @@ function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
           dimensione: '1.8 MB',
           firmaDigitale: true,
           conservazione: true,
-          dataFirma: '12/01/2025',
-          firmatario: 'Antonio Rossi'
+          firme: [
+            {
+              id: 1,
+              firmatario: 'Francesco Spada',
+              ruolo: 'Notaio',
+              dataFirma: '12/01/2025',
+              oraFirma: '14:20',
+              algoritmo: 'SHA-256 con RSA',
+              certificato: 'CN=Francesco Spada',
+              valida: true
+            },
+            {
+              id: 2,
+              firmatario: 'Antonio Rossi',
+              ruolo: 'Acquirente',
+              dataFirma: '12/01/2025',
+              oraFirma: '14:22',
+              algoritmo: 'SHA-256 con RSA',
+              certificato: 'CN=Antonio Rossi',
+              valida: true
+            },
+            {
+              id: 3,
+              firmatario: 'Maria Verdi',
+              ruolo: 'Venditore',
+              dataFirma: '12/01/2025',
+              oraFirma: '14:25',
+              algoritmo: 'SHA-256 con RSA',
+              certificato: 'CN=Maria Verdi',
+              valida: true
+            }
+          ]
         },
         {
           id: 22,
@@ -88,8 +128,28 @@ function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
       dimensione: '3.5 MB',
       firmaDigitale: true,
       conservazione: true,
-      dataFirma: '15/01/2025',
-      firmatario: 'Francesco Spada'
+      firme: [
+        {
+          id: 1,
+          firmatario: 'Francesco Spada',
+          ruolo: 'Notaio',
+          dataFirma: '15/01/2025',
+          oraFirma: '11:00',
+          algoritmo: 'SHA-256 con RSA',
+          certificato: 'CN=Francesco Spada',
+          valida: true
+        },
+        {
+          id: 2,
+          firmatario: 'Antonio Rossi',
+          ruolo: 'Acquirente',
+          dataFirma: '15/01/2025',
+          oraFirma: '11:02',
+          algoritmo: 'SHA-256 con RSA',
+          certificato: 'CN=Antonio Rossi',
+          valida: true
+        }
+      ]
     }
   ]
 
@@ -116,6 +176,13 @@ function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
 
   const handleLeftSectionClick = () => {
     setSelectedDocument(null) // Chiude la sidebar quando si clicca fuori
+  }
+
+  const toggleSignature = (signatureId) => {
+    setExpandedSignatures(prev => ({
+      ...prev,
+      [signatureId]: !prev[signatureId]
+    }))
   }
 
   const renderDocumenti = (items, level = 0) => {
@@ -249,19 +316,47 @@ function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
               {/* Firma Digitale */}
               <div className="atto-verification-section">
                 <div className="atto-verification-header">
-                  <h4>Firma Digitale</h4>
-                  {selectedDocument.firmaDigitale ? (
+                  <h4>Firme Digitali</h4>
+                  {selectedDocument.firme && selectedDocument.firme.length > 0 ? (
                     <CheckCircle size={20} strokeWidth={2} color="#10B981" />
                   ) : (
                     <AlertCircle size={20} strokeWidth={2} color="#EF4444" />
                   )}
                 </div>
-                {selectedDocument.firmaDigitale ? (
-                  <div className="atto-verification-info success">
-                    <p><strong>Stato:</strong> Firma valida e verificata</p>
-                    <p><strong>Firmatario:</strong> {selectedDocument.firmatario}</p>
-                    <p><strong>Data Firma:</strong> {selectedDocument.dataFirma}</p>
-                    <p><strong>Algoritmo:</strong> SHA-256 con RSA</p>
+                
+                {selectedDocument.firme && selectedDocument.firme.length > 0 ? (
+                  <div className="atto-signatures-container">
+                    {selectedDocument.firme.map((firma) => (
+                      <div key={firma.id} className="atto-signature-accordion">
+                        <div 
+                          className="atto-signature-header"
+                          onClick={() => toggleSignature(firma.id)}
+                        >
+                          <div className="atto-signature-header-left">
+                            <CheckCircle size={16} strokeWidth={2} color={firma.valida ? "#10B981" : "#EF4444"} />
+                            <span className="atto-signature-name">{firma.firmatario}</span>
+                            <span className="atto-signature-role">({firma.ruolo})</span>
+                          </div>
+                          <ChevronDown 
+                            size={16} 
+                            strokeWidth={2} 
+                            style={{
+                              transform: expandedSignatures[firma.id] ? 'rotate(180deg)' : 'rotate(0deg)',
+                              transition: 'transform 0.2s ease'
+                            }}
+                          />
+                        </div>
+                        
+                        {expandedSignatures[firma.id] && (
+                          <div className="atto-signature-details">
+                            <p><strong>Stato:</strong> {firma.valida ? 'Firma valida e verificata' : 'Firma non valida'}</p>
+                            <p><strong>Data:</strong> {firma.dataFirma} ore {firma.oraFirma}</p>
+                            <p><strong>Algoritmo:</strong> {firma.algoritmo}</p>
+                            <p><strong>Certificato:</strong> {firma.certificato}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="atto-verification-info error">
