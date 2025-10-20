@@ -121,7 +121,19 @@ function Sidebar({ onLogout, userRole, onNavigateToSettings, onNavigateToDashboa
           </a>
         )}
 
-        {/* Cliente/Notaio navigation */}
+        {/* Notaio-specific navigation - I miei Atti */}
+        {userRole === 'notaio' && (
+          <a 
+            href="#" 
+            className={`nav-item ${currentView === 'atti' ? 'active' : ''}`}
+            onClick={handleAttiClick}
+          >
+            <FileCheck size={22} strokeWidth={2} />
+            <span>I miei Atti</span>
+          </a>
+        )}
+
+        {/* Cliente/Notaio navigation - Documenti */}
         {userRole !== 'admin' && (
           <a 
             href="#" 
@@ -133,26 +145,16 @@ function Sidebar({ onLogout, userRole, onNavigateToSettings, onNavigateToDashboa
           </a>
         )}
 
-        {/* Notaio-specific navigation */}
+        {/* Notaio-specific navigation - Impostazioni */}
         {userRole === 'notaio' && (
-          <>
-            <a 
-              href="#" 
-              className={`nav-item ${currentView === 'atti' ? 'active' : ''}`}
-              onClick={handleAttiClick}
-            >
-              <FileCheck size={22} strokeWidth={2} />
-              <span>I miei Atti</span>
-            </a>
-            <a 
-              href="#" 
-              className={`nav-item ${currentView === 'settings' ? 'active' : ''}`}
-              onClick={handleSettingsClick}
-            >
-              <Settings size={22} strokeWidth={2} />
-              <span>Impostazioni</span>
-            </a>
-          </>
+          <a 
+            href="#" 
+            className={`nav-item ${currentView === 'settings' ? 'active' : ''}`}
+            onClick={handleSettingsClick}
+          >
+            <Settings size={22} strokeWidth={2} />
+            <span>Impostazioni</span>
+          </a>
         )}
       </nav>
 
