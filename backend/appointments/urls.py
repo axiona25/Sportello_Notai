@@ -9,6 +9,12 @@ from .views import (
     AppuntamentoViewSet,
     PartecipanteAppuntamentoViewSet
 )
+from .views_extended import (
+    AppuntamentoGestioneViewSet,
+    DocumentoAppuntamentoViewSet,
+    DocumentiRichiestiView,
+    NotificaViewSet
+)
 
 # Router per i ViewSets
 router = DefaultRouter()
@@ -16,6 +22,18 @@ router.register(r'disponibilita', DisponibilitaNotaioViewSet, basename='disponib
 router.register(r'eccezioni', EccezioneDisponibilitaViewSet, basename='eccezioni')
 router.register(r'appuntamenti', AppuntamentoViewSet, basename='appuntamento')
 router.register(r'partecipanti', PartecipanteAppuntamentoViewSet, basename='partecipante')
+
+# Extended API - Gestione appuntamenti (conferma/rifiuto)
+router.register(r'gestione-appuntamenti', AppuntamentoGestioneViewSet, basename='gestione-appuntamento')
+
+# Extended API - Documenti appuntamento
+router.register(r'documenti-appuntamento', DocumentoAppuntamentoViewSet, basename='documento-appuntamento')
+
+# Extended API - Documenti richiesti per tipologia atto
+router.register(r'documenti-richiesti', DocumentiRichiestiView, basename='documenti-richiesti')
+
+# Extended API - Notifiche
+router.register(r'notifiche', NotificaViewSet, basename='notifica')
 
 urlpatterns = [
     path('', include(router.urls)),

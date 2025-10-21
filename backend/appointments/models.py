@@ -18,13 +18,31 @@ except ImportError:
 
 
 class AppointmentStatus(models.TextChoices):
-    """Appointment status choices."""
-    RICHIESTO = 'richiesto', 'Richiesto'
-    APPROVATO = 'approvato', 'Approvato'
-    CONFERMATO = 'confermato', 'Confermato'
-    RIFIUTATO = 'rifiutato', 'Rifiutato'
+    """Appointment status choices - Flusso completo."""
+    # Stati iniziali
+    PROVVISORIO = 'provvisorio', 'Provvisorio'  # Cliente ha prenotato, attende conferma notaio
+    RICHIESTO = 'richiesto', 'Richiesto'  # Alias per PROVVISORIO (backward compatibility)
+    
+    # Conferma notaio
+    CONFERMATO = 'confermato', 'Confermato'  # Notaio ha confermato
+    RIFIUTATO = 'rifiutato', 'Rifiutato'  # Notaio ha rifiutato
+    
+    # Gestione documenti
+    DOCUMENTI_IN_CARICAMENTO = 'documenti_in_caricamento', 'Documenti in Caricamento'  # Cliente sta caricando
+    DOCUMENTI_IN_VERIFICA = 'documenti_in_verifica', 'Documenti in Verifica'  # Notaio/Staff verificano
+    DOCUMENTI_PARZIALI = 'documenti_parziali', 'Documenti Parzialmente Accettati'  # Alcuni rifiutati
+    DOCUMENTI_VERIFICATI = 'documenti_verificati', 'Documenti Verificati'  # Tutti i documenti OK
+    
+    # Atto virtuale
+    PRONTO_ATTO_VIRTUALE = 'pronto_atto_virtuale', 'Pronto per Atto Virtuale'  # Abilitato per atto virtuale
+    IN_CORSO = 'in_corso', 'In Corso'  # Appuntamento in svolgimento
+    
+    # Stati finali
     COMPLETATO = 'completato', 'Completato'
     ANNULLATO = 'annullato', 'Annullato'
+    
+    # Backward compatibility
+    APPROVATO = 'approvato', 'Approvato'  # Alias per CONFERMATO
 
 
 class AppointmentType(models.TextChoices):
@@ -220,11 +238,21 @@ class Appuntamento(models.Model):
         related_name='appuntamenti'
     )
     
+    # Tipologia atto richiesta (collega alla categoria atto)
+    tipologia_atto = models.ForeignKey(
+        'acts.NotarialActCategory',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='appuntamenti_richiesti',
+        help_text='Tipologia di atto per cui è richiesto l\'appuntamento'
+    )
+    
     # Stato e tipo
     status = models.CharField(
-        max_length=20,
+        max_length=50,  # Aumentato per i nuovi stati più lunghi
         choices=AppointmentStatus.choices,
-        default=AppointmentStatus.RICHIESTO
+        default=AppointmentStatus.PROVVISORIO
     )
     tipo = models.CharField(
         max_length=30,
@@ -270,6 +298,14 @@ class Appuntamento(models.Model):
     )
     confermato_at = models.DateTimeField(blank=True, null=True)
     confermato_da = models.CharField(max_length=255, blank=True)
+    
+    # Gestione rifiuto
+    rifiutato_at = models.DateTimeField(blank=True, null=True)
+    rifiutato_da = models.CharField(max_length=255, blank=True)
+    motivo_rifiuto = models.TextField(
+        blank=True,
+        help_text="Motivazione del rifiuto dell'appuntamento"
+    )
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
@@ -344,19 +380,62 @@ class Appuntamento(models.Model):
         return True
     
     def approva(self, confermato_da=None):
-        """Approva l'appuntamento."""
-        self.status = AppointmentStatus.APPROVATO
+        """Approva/Conferma l'appuntamento."""
+        self.status = AppointmentStatus.CONFERMATO
         self.confermato_at = timezone.now()
         if confermato_da:
             self.confermato_da = confermato_da
         self.save()
     
-    def rifiuta(self, motivo=None):
+    def rifiuta(self, motivo=None, rifiutato_da=None):
         """Rifiuta l'appuntamento."""
         self.status = AppointmentStatus.RIFIUTATO
+        self.rifiutato_at = timezone.now()
         if motivo:
-            self.note_notaio = f"Rifiutato: {motivo}"
+            self.motivo_rifiuto = motivo
+        if rifiutato_da:
+            self.rifiutato_da = rifiutato_da
         self.save()
+    
+    def inizia_caricamento_documenti(self):
+        """Passa allo stato di caricamento documenti (dopo conferma)."""
+        if self.status == AppointmentStatus.CONFERMATO:
+            self.status = AppointmentStatus.DOCUMENTI_IN_CARICAMENTO
+            self.save()
+            return True
+        return False
+    
+    def verifica_completamento_documenti(self):
+        """Verifica se tutti i documenti richiesti sono stati verificati."""
+        documenti = self.documenti_appuntamento.all()
+        if not documenti.exists():
+            return False
+        
+        # Tutti i documenti devono essere accettati
+        tutti_accettati = all(
+            doc.stato == 'accettato' for doc in documenti
+        )
+        
+        if tutti_accettati:
+            self.status = AppointmentStatus.DOCUMENTI_VERIFICATI
+            self.save()
+            return True
+        
+        # Verifica se ci sono documenti rifiutati
+        documenti_rifiutati = documenti.filter(stato='rifiutato').exists()
+        if documenti_rifiutati:
+            self.status = AppointmentStatus.DOCUMENTI_PARZIALI
+            self.save()
+        
+        return False
+    
+    def abilita_atto_virtuale(self):
+        """Abilita l'accesso all'atto virtuale."""
+        if self.status == AppointmentStatus.DOCUMENTI_VERIFICATI:
+            self.status = AppointmentStatus.PRONTO_ATTO_VIRTUALE
+            self.save()
+            return True
+        return False
     
     def send_reminder(self):
         """Send appointment reminder."""
@@ -507,4 +586,297 @@ class PartecipanteAppuntamento(models.Model):
         if note:
             self.note_partecipante = note
         self.save()
+
+
+# ============================================
+# DOCUMENTI APPUNTAMENTO
+# ============================================
+
+class DocumentoStato(models.TextChoices):
+    """Stati del documento dell'appuntamento."""
+    DA_CARICARE = 'da_caricare', 'Da Caricare'
+    CARICATO = 'caricato', 'Caricato'
+    IN_VERIFICA = 'in_verifica', 'In Verifica'
+    ACCETTATO = 'accettato', 'Accettato'
+    RIFIUTATO = 'rifiutato', 'Rifiutato'
+
+
+class DocumentoAppuntamento(models.Model):
+    """
+    Gestisce i documenti richiesti per un appuntamento.
+    Ogni documento è collegato a un DocumentType della tipologia atto.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    appuntamento = models.ForeignKey(
+        Appuntamento,
+        on_delete=models.CASCADE,
+        related_name='documenti_appuntamento'
+    )
+    
+    document_type = models.ForeignKey(
+        'acts.DocumentType',
+        on_delete=models.CASCADE,
+        related_name='documenti_appuntamenti',
+        help_text='Tipo di documento richiesto'
+    )
+    
+    # File caricato
+    file = models.FileField(
+        upload_to='appuntamenti/documenti/%Y/%m/%d/',
+        blank=True,
+        null=True,
+        help_text='File del documento caricato dal cliente'
+    )
+    
+    # Stato del documento
+    stato = models.CharField(
+        max_length=20,
+        choices=DocumentoStato.choices,
+        default=DocumentoStato.DA_CARICARE
+    )
+    
+    # Obbligatorietà (dal DocumentType o personalizzato)
+    is_obbligatorio = models.BooleanField(
+        default=True,
+        help_text='Se il documento è obbligatorio per questo appuntamento'
+    )
+    
+    # Caricamento
+    caricato_da = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='documenti_caricati'
+    )
+    caricato_at = models.DateTimeField(blank=True, null=True)
+    
+    # Verifica
+    verificato_da = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='documenti_verificati'
+    )
+    verificato_at = models.DateTimeField(blank=True, null=True)
+    
+    # Note
+    note_rifiuto = models.TextField(
+        blank=True,
+        help_text='Motivazione del rifiuto del documento'
+    )
+    note_interne = models.TextField(
+        blank=True,
+        help_text='Note visibili solo al notaio/staff'
+    )
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'documenti_appuntamento'
+        verbose_name = 'Documento Appuntamento'
+        verbose_name_plural = 'Documenti Appuntamento'
+        ordering = ['document_type__category', 'document_type__name']
+        unique_together = [['appuntamento', 'document_type']]
+    
+    def __str__(self):
+        return f"{self.document_type.name} - {self.appuntamento.titolo}"
+    
+    def carica(self, file, caricato_da):
+        """Carica il documento."""
+        self.file = file
+        self.stato = DocumentoStato.CARICATO
+        self.caricato_da = caricato_da
+        self.caricato_at = timezone.now()
+        self.save()
+        
+        # Aggiorna stato appuntamento se necessario
+        if self.appuntamento.status == AppointmentStatus.CONFERMATO:
+            self.appuntamento.inizia_caricamento_documenti()
+    
+    def metti_in_verifica(self):
+        """Mette il documento in verifica."""
+        if self.stato == DocumentoStato.CARICATO:
+            self.stato = DocumentoStato.IN_VERIFICA
+            self.save()
+            
+            # Aggiorna stato appuntamento
+            if self.appuntamento.status == AppointmentStatus.DOCUMENTI_IN_CARICAMENTO:
+                self.appuntamento.status = AppointmentStatus.DOCUMENTI_IN_VERIFICA
+                self.appuntamento.save()
+    
+    def accetta(self, verificato_da, note_interne=None):
+        """Accetta il documento."""
+        self.stato = DocumentoStato.ACCETTATO
+        self.verificato_da = verificato_da
+        self.verificato_at = timezone.now()
+        if note_interne:
+            self.note_interne = note_interne
+        self.save()
+        
+        # Verifica se tutti i documenti sono stati verificati
+        self.appuntamento.verifica_completamento_documenti()
+    
+    def rifiuta(self, verificato_da, motivo):
+        """Rifiuta il documento."""
+        self.stato = DocumentoStato.RIFIUTATO
+        self.verificato_da = verificato_da
+        self.verificato_at = timezone.now()
+        self.note_rifiuto = motivo
+        self.save()
+        
+        # Aggiorna stato appuntamento
+        self.appuntamento.verifica_completamento_documenti()
+
+
+# ============================================
+# NOTIFICHE
+# ============================================
+
+class NotificaTipo(models.TextChoices):
+    """Tipi di notifica."""
+    # Appuntamenti
+    APPUNTAMENTO_RICHIESTO = 'appuntamento_richiesto', 'Nuova Richiesta Appuntamento'
+    APPUNTAMENTO_CONFERMATO = 'appuntamento_confermato', 'Appuntamento Confermato'
+    APPUNTAMENTO_RIFIUTATO = 'appuntamento_rifiutato', 'Appuntamento Rifiutato'
+    APPUNTAMENTO_MODIFICATO = 'appuntamento_modificato', 'Appuntamento Modificato'
+    APPUNTAMENTO_ANNULLATO = 'appuntamento_annullato', 'Appuntamento Annullato'
+    APPUNTAMENTO_REMINDER = 'appuntamento_reminder', 'Reminder Appuntamento'
+    
+    # Documenti
+    DOCUMENTI_DA_CARICARE = 'documenti_da_caricare', 'Documenti da Caricare'
+    DOCUMENTO_CARICATO = 'documento_caricato', 'Nuovo Documento Caricato'
+    DOCUMENTO_ACCETTATO = 'documento_accettato', 'Documento Accettato'
+    DOCUMENTO_RIFIUTATO = 'documento_rifiutato', 'Documento Rifiutato'
+    DOCUMENTI_VERIFICATI = 'documenti_verificati', 'Tutti i Documenti Verificati'
+    
+    # Atto virtuale
+    ATTO_VIRTUALE_DISPONIBILE = 'atto_virtuale_disponibile', 'Atto Virtuale Disponibile'
+    
+    # Atti
+    ATTO_CREATO = 'atto_creato', 'Nuovo Atto Creato'
+    ATTO_FIRMATO = 'atto_firmato', 'Atto Firmato'
+    ATTO_COMPLETATO = 'atto_completato', 'Atto Completato'
+    
+    # Sistema
+    MESSAGGIO_SISTEMA = 'messaggio_sistema', 'Messaggio di Sistema'
+    ALTRO = 'altro', 'Altro'
+
+
+class Notifica(models.Model):
+    """
+    Sistema di notifiche per gli utenti.
+    Gestisce notifiche in-app per tutti gli eventi del sistema.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    # Destinatario
+    user = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.CASCADE,
+        related_name='notifiche'
+    )
+    
+    # Tipo e contenuto
+    tipo = models.CharField(
+        max_length=50,
+        choices=NotificaTipo.choices,
+        default=NotificaTipo.ALTRO
+    )
+    titolo = models.CharField(max_length=255)
+    messaggio = models.TextField()
+    
+    # Link/Riferimenti
+    link_url = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text='URL a cui reindirizzare quando si clicca la notifica'
+    )
+    
+    # Riferimenti opzionali
+    appuntamento = models.ForeignKey(
+        Appuntamento,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name='notifiche'
+    )
+    atto = models.ForeignKey(
+        Act,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name='notifiche'
+    )
+    
+    # Stato
+    letta = models.BooleanField(default=False)
+    letta_at = models.DateTimeField(blank=True, null=True)
+    
+    # Invio email
+    invia_email = models.BooleanField(
+        default=False,
+        help_text='Se True, invia anche una email'
+    )
+    email_inviata = models.BooleanField(default=False)
+    email_inviata_at = models.DateTimeField(blank=True, null=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'notifiche'
+        verbose_name = 'Notifica'
+        verbose_name_plural = 'Notifiche'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['user', 'letta', '-created_at']),
+            models.Index(fields=['tipo', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.titolo} - {self.user.email}"
+    
+    def segna_come_letta(self):
+        """Segna la notifica come letta."""
+        if not self.letta:
+            self.letta = True
+            self.letta_at = timezone.now()
+            self.save()
+    
+    def segna_email_inviata(self):
+        """Segna l'email come inviata."""
+        if not self.email_inviata:
+            self.email_inviata = True
+            self.email_inviata_at = timezone.now()
+            self.save()
+    
+    @classmethod
+    def crea_notifica(cls, user, tipo, titolo, messaggio, **kwargs):
+        """
+        Helper method per creare una notifica.
+        
+        Args:
+            user: Utente destinatario
+            tipo: Tipo di notifica (NotificaTipo)
+            titolo: Titolo della notifica
+            messaggio: Messaggio della notifica
+            **kwargs: Altri campi opzionali (link_url, appuntamento, atto, invia_email)
+        """
+        notifica = cls.objects.create(
+            user=user,
+            tipo=tipo,
+            titolo=titolo,
+            messaggio=messaggio,
+            link_url=kwargs.get('link_url', ''),
+            appuntamento=kwargs.get('appuntamento'),
+            atto=kwargs.get('atto'),
+            invia_email=kwargs.get('invia_email', False)
+        )
+        return notifica
 

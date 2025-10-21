@@ -62,6 +62,14 @@ class AppointmentTypeTemplate(models.Model):
         help_text='Se disattivato non sarà visibile ai notai'
     )
     
+    # Collegamento alle tipologie di atto
+    tipologie_atto = models.ManyToManyField(
+        'acts.NotarialActCategory',
+        blank=True,
+        related_name='appointment_types',
+        help_text='Tipologie di atto associate a questo tipo di appuntamento'
+    )
+    
     # Timestamp
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -7,10 +7,12 @@ from datetime import datetime, date, timedelta
 
 from .models import (
     Appuntamento, DisponibilitaNotaio, EccezioneDisponibilita,
-    PartecipanteAppuntamento, AppointmentStatus, ParticipantStatus
+    PartecipanteAppuntamento, AppointmentStatus, ParticipantStatus,
+    DocumentoAppuntamento, DocumentoStato, Notifica, NotificaTipo
 )
-from accounts.models import Notaio, Cliente, Partner
+from accounts.models import Notaio, Cliente, Partner, User
 from accounts.serializers import ClienteSerializer, NotaioSerializer, PartnerSerializer
+from acts.models import DocumentType, NotarialActCategory
 from .services import DisponibilitaService, AppuntamentoService
 
 
@@ -339,4 +341,149 @@ class AgendaSerializer(serializers.Serializer):
             raise serializers.ValidationError("Il periodo massimo è di 90 giorni")
         
         return data
+
+
+# ============================================
+# DOCUMENTI APPUNTAMENTO
+# ============================================
+
+class DocumentTypeSimpleSerializer(serializers.ModelSerializer):
+    """Serializer semplice per DocumentType."""
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    required_from_display = serializers.CharField(source='get_required_from_display', read_only=True)
+    
+    class Meta:
+        model = DocumentType
+        fields = [
+            'id', 'name', 'code', 'description',
+            'category', 'category_display',
+            'required_from', 'required_from_display',
+            'is_mandatory', 'is_active'
+        ]
+        read_only_fields = ['id']
+
+
+class DocumentoAppuntamentoSerializer(serializers.ModelSerializer):
+    """Serializer per i documenti dell'appuntamento."""
+    document_type = DocumentTypeSimpleSerializer(read_only=True)
+    document_type_id = serializers.PrimaryKeyRelatedField(
+        queryset=DocumentType.objects.all(),
+        source='document_type',
+        write_only=True
+    )
+    caricato_da_email = serializers.EmailField(source='caricato_da.email', read_only=True)
+    verificato_da_email = serializers.EmailField(source='verificato_da.email', read_only=True)
+    stato_display = serializers.CharField(source='get_stato_display', read_only=True)
+    
+    class Meta:
+        model = DocumentoAppuntamento
+        fields = [
+            'id', 'appuntamento',
+            'document_type', 'document_type_id',
+            'file', 'stato', 'stato_display',
+            'is_obbligatorio',
+            'caricato_da', 'caricato_da_email', 'caricato_at',
+            'verificato_da', 'verificato_da_email', 'verificato_at',
+            'note_rifiuto', 'note_interne',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'stato', 'caricato_da', 'caricato_at',
+            'verificato_da', 'verificato_at',
+            'created_at', 'updated_at'
+        ]
+
+
+class DocumentoAppuntamentoUploadSerializer(serializers.ModelSerializer):
+    """Serializer per l'upload di un documento."""
+    
+    class Meta:
+        model = DocumentoAppuntamento
+        fields = ['id', 'file']
+    
+    def update(self, instance, validated_data):
+        """Carica il documento."""
+        file = validated_data.get('file')
+        request = self.context.get('request')
+        
+        if file and request:
+            instance.carica(file, request.user)
+        
+        return instance
+
+
+class DocumentoAppuntamentoVerificaSerializer(serializers.Serializer):
+    """Serializer per la verifica (accettazione/rifiuto) di un documento."""
+    azione = serializers.ChoiceField(choices=['accetta', 'rifiuta'], required=True)
+    note_rifiuto = serializers.CharField(required=False, allow_blank=True)
+    note_interne = serializers.CharField(required=False, allow_blank=True)
+    
+    def validate(self, data):
+        if data['azione'] == 'rifiuta' and not data.get('note_rifiuto'):
+            raise serializers.ValidationError({
+                'note_rifiuto': 'Il motivo del rifiuto è obbligatorio'
+            })
+        return data
+
+
+# ============================================
+# NOTIFICHE
+# ============================================
+
+class NotificaSerializer(serializers.ModelSerializer):
+    """Serializer per le notifiche."""
+    tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+    appuntamento_titolo = serializers.CharField(source='appuntamento.titolo', read_only=True)
+    atto_titolo = serializers.CharField(source='atto.title', read_only=True)
+    
+    class Meta:
+        model = Notifica
+        fields = [
+            'id', 'user',
+            'tipo', 'tipo_display',
+            'titolo', 'messaggio',
+            'link_url',
+            'appuntamento', 'appuntamento_titolo',
+            'atto', 'atto_titolo',
+            'letta', 'letta_at',
+            'invia_email', 'email_inviata', 'email_inviata_at',
+            'created_at'
+        ]
+        read_only_fields = [
+            'id', 'letta_at', 'email_inviata', 'email_inviata_at', 'created_at'
+        ]
+
+
+class NotificaListSerializer(serializers.ModelSerializer):
+    """Serializer semplificato per lista notifiche."""
+    tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+    
+    class Meta:
+        model = Notifica
+        fields = [
+            'id', 'tipo', 'tipo_display',
+            'titolo', 'messaggio', 'link_url',
+            'letta', 'created_at'
+        ]
+
+
+# ============================================
+# APPUNTAMENTO (ESTESO)
+# ============================================
+
+class AppuntamentoConfermaSerializer(serializers.Serializer):
+    """Serializer per confermare un appuntamento."""
+    note = serializers.CharField(required=False, allow_blank=True)
+
+
+class AppuntamentoRifiutaSerializer(serializers.Serializer):
+    """Serializer per rifiutare un appuntamento."""
+    motivo = serializers.CharField(required=True, help_text='Motivazione del rifiuto')
+    
+    def validate_motivo(self, value):
+        if not value or len(value.strip()) < 10:
+            raise serializers.ValidationError(
+                'La motivazione deve contenere almeno 10 caratteri'
+            )
+        return value
 

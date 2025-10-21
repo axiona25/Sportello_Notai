@@ -4,7 +4,8 @@ Configurazione pannello admin per gli appuntamenti.
 from django.contrib import admin
 from .models import (
     DisponibilitaNotaio, EccezioneDisponibilita,
-    Appuntamento, PartecipanteAppuntamento
+    Appuntamento, PartecipanteAppuntamento,
+    DocumentoAppuntamento, Notifica
 )
 
 
@@ -90,10 +91,10 @@ class AppuntamentoAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Organizzatore', {
-            'fields': ('notaio',)
+            'fields': ('notaio', 'notary')
         }),
         ('Stato e Tipo', {
-            'fields': ('status', 'tipo', 'act')
+            'fields': ('status', 'tipo', 'act', 'tipologia_atto')
         }),
         ('Orari', {
             'fields': ('start_time', 'end_time')
@@ -115,6 +116,10 @@ class AppuntamentoAdmin(admin.ModelAdmin):
             'fields': ('richiede_conferma', 'confermato_at', 'confermato_da'),
             'classes': ('collapse',)
         }),
+        ('Rifiuto', {
+            'fields': ('rifiutato_at', 'rifiutato_da', 'motivo_rifiuto'),
+            'classes': ('collapse',)
+        }),
         ('Metadata', {
             'fields': ('created_at', 'updated_at', 'created_by_email'),
             'classes': ('collapse',)
@@ -123,6 +128,7 @@ class AppuntamentoAdmin(admin.ModelAdmin):
     
     readonly_fields = [
         'confermato_at', 'confermato_da',
+        'rifiutato_at', 'rifiutato_da',
         'reminder_sent', 'reminder_sent_at',
         'created_at', 'updated_at'
     ]
@@ -169,4 +175,93 @@ class PartecipanteAppuntamentoAdmin(admin.ModelAdmin):
     )
     
     readonly_fields = ['notificato_at', 'risposta_at', 'created_at', 'updated_at']
+
+
+@admin.register(DocumentoAppuntamento)
+class DocumentoAppuntamentoAdmin(admin.ModelAdmin):
+    list_display = [
+        'appuntamento', 'document_type', 'stato',
+        'is_obbligatorio', 'caricato_da', 'caricato_at', 'verificato_da'
+    ]
+    list_filter = ['stato', 'is_obbligatorio', 'document_type__category']
+    search_fields = [
+        'appuntamento__titolo',
+        'document_type__name',
+        'caricato_da__email',
+        'verificato_da__email'
+    ]
+    ordering = ['-created_at']
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Appuntamento', {
+            'fields': ('appuntamento', 'document_type')
+        }),
+        ('File', {
+            'fields': ('file', 'stato', 'is_obbligatorio')
+        }),
+        ('Caricamento', {
+            'fields': ('caricato_da', 'caricato_at')
+        }),
+        ('Verifica', {
+            'fields': ('verificato_da', 'verificato_at', 'note_rifiuto', 'note_interne')
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    readonly_fields = ['caricato_at', 'verificato_at', 'created_at', 'updated_at']
+
+
+@admin.register(Notifica)
+class NotificaAdmin(admin.ModelAdmin):
+    list_display = [
+        'user', 'tipo', 'titolo', 'letta',
+        'invia_email', 'email_inviata', 'created_at'
+    ]
+    list_filter = ['tipo', 'letta', 'invia_email', 'email_inviata']
+    search_fields = ['user__email', 'titolo', 'messaggio']
+    ordering = ['-created_at']
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Destinatario', {
+            'fields': ('user',)
+        }),
+        ('Contenuto', {
+            'fields': ('tipo', 'titolo', 'messaggio', 'link_url')
+        }),
+        ('Riferimenti', {
+            'fields': ('appuntamento', 'atto'),
+            'classes': ('collapse',)
+        }),
+        ('Stato', {
+            'fields': ('letta', 'letta_at')
+        }),
+        ('Email', {
+            'fields': ('invia_email', 'email_inviata', 'email_inviata_at'),
+            'classes': ('collapse',)
+        }),
+        ('Metadata', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    readonly_fields = ['letta_at', 'email_inviata_at', 'created_at']
+    
+    actions = ['segna_come_letta', 'segna_come_non_letta']
+    
+    def segna_come_letta(self, request, queryset):
+        for notifica in queryset:
+            notifica.segna_come_letta()
+        self.message_user(request, f"{queryset.count()} notifiche segnate come lette.")
+    segna_come_letta.short_description = "Segna come letta"
+    
+    def segna_come_non_letta(self, request, queryset):
+        queryset.update(letta=False, letta_at=None)
+        self.message_user(request, f"{queryset.count()} notifiche segnate come non lette.")
+    segna_come_non_letta.short_description = "Segna come non letta"
 
