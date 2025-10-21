@@ -11,7 +11,7 @@ import './AttiContent.css'
 function AttiContent({ selectedFilter = null, searchValue = '' }) {
   const [selectedAtto, setSelectedAtto] = useState(null)
   const [attiList, setAttiList] = useState(null) // Per gestire aggiornamenti preferiti
-  // Database completo degli atti con notaioId, clienteId e preferito
+  // Database completo degli atti con notaioId, notaioNome, clienteId e preferito
   const allAtti = [
     {
       id: 1,
@@ -24,8 +24,9 @@ function AttiContent({ selectedFilter = null, searchValue = '' }) {
       documenti: 'folder',
       stato: 'Concluso',
       statoColor: '#10B981',
-      notaioId: 1, // Francesco Spada
-      clienteId: 1, // Antonio Rossi
+      notaioId: 1,
+      notaioNome: 'Francesco Spada',
+      clienteId: 1,
       preferito: true
     },
     {
@@ -39,8 +40,9 @@ function AttiContent({ selectedFilter = null, searchValue = '' }) {
       documenti: 'folder',
       stato: 'In lavorazione',
       statoColor: '#F59E0B',
-      notaioId: 1, // Francesco Spada
-      clienteId: 2, // Maria Verdi
+      notaioId: 1,
+      notaioNome: 'Francesco Spada',
+      clienteId: 2,
       preferito: false
     },
     {
@@ -54,8 +56,9 @@ function AttiContent({ selectedFilter = null, searchValue = '' }) {
       documenti: 'single',
       stato: 'Concluso',
       statoColor: '#10B981',
-      notaioId: 2, // Maria Rossi
-      clienteId: 1, // Antonio Rossi
+      notaioId: 2,
+      notaioNome: 'Studio Notarile Maria Rossi',
+      clienteId: 1,
       preferito: true
     },
     {
@@ -69,8 +72,9 @@ function AttiContent({ selectedFilter = null, searchValue = '' }) {
       documenti: 'folder',
       stato: 'Concluso',
       statoColor: '#10B981',
-      notaioId: 3, // Giorgio Bianchi
-      clienteId: 1, // Antonio Rossi
+      notaioId: 3,
+      notaioNome: 'Studio Notarile Laura Verdi',
+      clienteId: 1,
       preferito: false
     },
     {
@@ -84,8 +88,9 @@ function AttiContent({ selectedFilter = null, searchValue = '' }) {
       documenti: 'single',
       stato: 'In lavorazione',
       statoColor: '#F59E0B',
-      notaioId: 1, // Francesco Spada
-      clienteId: 3, // Paolo Bianchi
+      notaioId: 1,
+      notaioNome: 'Francesco Spada',
+      clienteId: 3,
       preferito: true
     },
     {
@@ -99,8 +104,9 @@ function AttiContent({ selectedFilter = null, searchValue = '' }) {
       documenti: 'folder',
       stato: 'Concluso',
       statoColor: '#10B981',
-      notaioId: 2, // Maria Rossi
-      clienteId: 4, // Laura Neri
+      notaioId: 2,
+      notaioNome: 'Studio Notarile Maria Rossi',
+      clienteId: 4,
       preferito: false
     },
     {
@@ -114,8 +120,9 @@ function AttiContent({ selectedFilter = null, searchValue = '' }) {
       documenti: 'folder',
       stato: 'Concluso',
       statoColor: '#10B981',
-      notaioId: 1, // Francesco Spada
-      clienteId: 4, // Laura Neri
+      notaioId: 1,
+      notaioNome: 'Francesco Spada',
+      clienteId: 4,
       preferito: false
     },
     {
@@ -129,8 +136,9 @@ function AttiContent({ selectedFilter = null, searchValue = '' }) {
       documenti: 'folder',
       stato: 'In lavorazione',
       statoColor: '#F59E0B',
-      notaioId: 3, // Giorgio Bianchi
-      clienteId: 2, // Maria Verdi
+      notaioId: 3,
+      notaioNome: 'Studio Notarile Laura Verdi',
+      clienteId: 2,
       preferito: true
     }
   ]
@@ -160,6 +168,7 @@ function AttiContent({ selectedFilter = null, searchValue = '' }) {
     atti = atti.filter(atto => 
       atto.tipologia.toLowerCase().includes(searchLower) ||
       atto.descrizione.toLowerCase().includes(searchLower) ||
+      atto.notaioNome.toLowerCase().includes(searchLower) ||
       atto.soggettiCoinvolti.toLowerCase().includes(searchLower) ||
       atto.stato.toLowerCase().includes(searchLower) ||
       atto.dataAtto.includes(searchLower)
@@ -196,14 +205,14 @@ function AttiContent({ selectedFilter = null, searchValue = '' }) {
         <table className="atti-table">
           <thead>
             <tr>
-              <th style={{ textAlign: 'left' }}>DATA ATTO</th>
-              <th style={{ textAlign: 'left' }}>TIPOLOGIA ATTO</th>
-              <th style={{ textAlign: 'left' }}>DESCRIZIONE</th>
-              <th style={{ textAlign: 'left' }}>SOGGETTI COINVOLTI</th>
-              <th style={{ textAlign: 'left' }}>VALORE</th>
-              <th style={{ textAlign: 'center' }}>DOCUMENTI</th>
-              <th style={{ textAlign: 'center' }}>STATO</th>
-              <th style={{ textAlign: 'center' }}>AZIONI</th>
+              <th>DATA ATTO</th>
+              <th>TIPOLOGIA ATTO</th>
+              <th>DESCRIZIONE</th>
+              <th>SOGGETTI COINVOLTI</th>
+              <th>VALORE</th>
+              <th>DOCUMENTI</th>
+              <th>STATO</th>
+              <th>AZIONI</th>
             </tr>
           </thead>
           <tbody>
@@ -230,7 +239,7 @@ function AttiContent({ selectedFilter = null, searchValue = '' }) {
                 <td>
                   <span className="atti-valore">{atto.valore}</span>
                 </td>
-                <td style={{ textAlign: 'center' }}>
+                <td>
                   <button className="atti-doc-btn">
                     {atto.documenti === 'folder' ? (
                       <FolderOpen size={20} strokeWidth={2} color="#1668B0" />
@@ -239,7 +248,7 @@ function AttiContent({ selectedFilter = null, searchValue = '' }) {
                     )}
                   </button>
                 </td>
-                <td style={{ textAlign: 'center' }}>
+                <td>
                   <div className="atti-stato-dot-container">
                     <span 
                       className="atti-stato-dot" 

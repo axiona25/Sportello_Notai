@@ -51,7 +51,7 @@ function Settings({ searchValue, onSearchChange, user }) {
 
   // State per i dati generali
   const [generaliData, setGeneraliData] = useState({
-    studioName: 'Studio Notarile Francesco Spada',
+    nomeCognome: 'Francesco Spada',
     partitaIva: 'SM23456789',
     address: 'Piazza Cavour n.19 - Dogana (SM)',
     telefono: '+378 0549 987654',
@@ -62,7 +62,7 @@ function Settings({ searchValue, onSearchChange, user }) {
 
   // State per i dati della vetrina
   const [vetrinaData, setVetrinaData] = useState({
-    photo: DEFAULT_PROFILE_PHOTO,
+    photo: '', // Inizialmente vuoto, verrà caricato dal backend
     name: 'Francesco Spada',
     title: 'Notaio - Diritto Immobiliare',
     address: 'Piazza Cavour n.19 - Dogana (SM)',
@@ -88,14 +88,13 @@ function Settings({ searchValue, onSearchChange, user }) {
   // Carica i dati esistenti al mount
   useEffect(() => {
     const loadProfile = async () => {
-      console.log('📥 Caricamento dati dal backend...')
       
       // Carica dati Generali
       const generalData = await notaryProfileService.getGeneralData()
       if (generalData) {
-        console.log('✅ Dati Generali caricati:', generalData)
+        
         setGeneraliData({
-          studioName: generalData.studio_name || '',
+          nomeCognome: generalData.studio_name || '',
           partitaIva: generalData.fiscal_code || '',
           address: generalData.address_street || '',
           telefono: generalData.phone || '',
@@ -108,13 +107,10 @@ function Settings({ searchValue, onSearchChange, user }) {
       // Carica dati Vetrina
       const existingProfile = await notaryProfileService.getMyProfile()
       if (existingProfile) {
-        console.log('✅ Profilo Vetrina caricato:', existingProfile)
-        console.log('🔧 Servizi caricati dal profilo:', JSON.stringify(existingProfile.services, null, 2))
-        console.log('📸 Foto dal backend:', existingProfile.photo ? `${existingProfile.photo.substring(0, 50)}... (length: ${existingProfile.photo.length})` : 'NESSUNA FOTO')
         
         // Aggiorna vetrinaData con i dati dal backend
         setVetrinaData({
-          photo: existingProfile.photo || DEFAULT_PROFILE_PHOTO,
+          photo: existingProfile.photo || '', // Non usare DEFAULT_PROFILE_PHOTO se vuoto
           name: existingProfile.name,
           title: existingProfile.title,
           address: existingProfile.address,
@@ -133,9 +129,7 @@ function Settings({ searchValue, onSearchChange, user }) {
           },
           availability: existingProfile.availability
         })
-        console.log('💾 Foto impostata in vetrinaData:', existingProfile.photo ? 'SI (foto caricata)' : 'NO (usando default)')
       } else {
-        console.log('⚠️ Nessun profilo trovato, usando valori di default')
       }
     }
     
@@ -161,11 +155,9 @@ function Settings({ searchValue, onSearchChange, user }) {
       
       switch (activeTab) {
         case 0: // Tab Generali
-          console.log('💾 Salvando dati tab Generali...')
           result = await notaryProfileService.saveGeneralData(generaliData)
           
           if (result.success) {
-            console.log('✅ Dati Generali salvati sul backend:', result.data)
             
             // Aggiorna vetrinaData con i campi read-only sincronizzati
             if (result.data) {
@@ -174,30 +166,41 @@ function Settings({ searchValue, onSearchChange, user }) {
                 name: result.data.studio_name,
                 address: result.data.address_street
               }))
+              
+              // Aggiorna anche l'oggetto user nel localStorage
+              const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+              if (storedUser && storedUser.notary_profile) {
+                storedUser.notary_profile.studio_name = result.data.studio_name
+                localStorage.setItem('user', JSON.stringify(storedUser))
+                
+                // Emetti eventi per forzare re-render di tutti i componenti
+                window.dispatchEvent(new CustomEvent('userUpdated', { 
+                  detail: { user: storedUser } 
+                }))
+                window.dispatchEvent(new CustomEvent('notaryProfileUpdated', { 
+                  detail: { notaryId: storedUser.notary_profile.id } 
+                }))
+                
+                // Usa localStorage per notificare anche altre tab/browser
+                localStorage.setItem('notaryProfileUpdatedTrigger', Date.now().toString())
+              }
             }
             
             // Forza invalidazione cache
             notaryProfileService.clearCache()
           } else {
-            console.error('❌ Errore nel salvare i dati Generali:', result.error)
             alert('Errore nel salvare le impostazioni. Riprova.')
             return
           }
           break
           
         case 1: // Tab Vetrina
-          console.log('💾 Salvando dati tab Vetrina...')
-          console.log('📸 Foto in vetrinaData da salvare:', vetrinaData.photo ? `${vetrinaData.photo.substring(0, 50)}... (length: ${vetrinaData.photo.length})` : 'NESSUNA FOTO')
-          console.log('🔍 Foto è default?', vetrinaData.photo === DEFAULT_PROFILE_PHOTO)
           result = await notaryProfileService.saveProfile(vetrinaData)
           
           if (result.success) {
-            console.log('✅ Dati Vetrina salvati sul backend:', result.data)
-            console.log('📸 Foto restituita dal backend dopo salvataggio:', result.data?.photo ? `${result.data.photo.substring(0, 50)}... (length: ${result.data.photo.length})` : 'NESSUNA FOTO')
             
             // Aggiorna lo stato locale con i dati ricevuti dal backend
             if (result.data) {
-              console.log('🔄 Aggiornando stato locale con dati dal backend...')
               setVetrinaData({
                 photo: result.data.photo || DEFAULT_PROFILE_PHOTO,
                 name: result.data.name,
@@ -210,23 +213,32 @@ function Settings({ searchValue, onSearchChange, user }) {
                 services: result.data.services || vetrinaData.services,
                 availability: result.data.availability || vetrinaData.availability
               })
+              
+              // Aggiorna anche l'oggetto user nel localStorage con la foto
+              const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+              if (storedUser && storedUser.notary_profile) {
+                storedUser.notary_profile.showcase_photo = result.data.photo || ''
+                storedUser.notary_profile.foto = result.data.photo || ''
+                localStorage.setItem('user', JSON.stringify(storedUser))
+              }
             }
-            
-            console.log('📡 Forzo invalidazione cache globale...')
             
             // Forza invalidazione cache e aggiornamento immediato
             notaryProfileService.clearCache()
             
-            console.log('📢 Emettendo evento notaryProfileUpdated con forceRefresh...')
-            
-            // Notifica l'aggiornamento del profilo per aggiornare la dashboard clienti in tempo reale
+            // Notifica l'aggiornamento del profilo per aggiornare tutti i componenti
             window.dispatchEvent(new CustomEvent('notaryProfileUpdated', { 
               detail: { forceRefresh: true }
             }))
             
-            console.log('✅ Evento emesso correttamente')
+            const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+            window.dispatchEvent(new CustomEvent('userUpdated', { 
+              detail: { user: storedUser } 
+            }))
+            
+            // Usa localStorage per notificare anche altre tab/browser
+            localStorage.setItem('notaryProfileUpdatedTrigger', Date.now().toString())
           } else {
-            console.error('❌ Errore nel salvare i dati Vetrina:', result.error)
             alert('Errore nel salvare le impostazioni. Riprova.')
             return
           }
@@ -239,7 +251,6 @@ function Settings({ searchValue, onSearchChange, user }) {
         case 5: // PEC
         case 6: // Conservazione
         case 7: // Modelli
-          console.log(`ℹ️ Tab ${activeTab}: salvataggio locale (backend TODO)`)
           // TODO: implementare salvataggio backend per queste tab
           break
       }
@@ -262,10 +273,8 @@ function Settings({ searchValue, onSearchChange, user }) {
 
       const reader = new FileReader()
       reader.onloadend = () => {
-        console.log('📸 Foto caricata, lunghezza base64:', reader.result.length)
         setVetrinaData(prev => {
           const newData = { ...prev, photo: reader.result }
-          console.log('✅ Vetrina data aggiornato con nuova foto')
           return newData
         })
       }
@@ -277,7 +286,7 @@ function Settings({ searchValue, onSearchChange, user }) {
     setGeneraliData(prev => ({ ...prev, [field]: value }))
     
     // Sincronizza i campi read-only con la vetrina in tempo reale
-    if (field === 'studioName') {
+    if (field === 'nomeCognome') {
       setVetrinaData(prev => ({ ...prev, name: value }))
     }
     if (field === 'address') {
@@ -286,10 +295,8 @@ function Settings({ searchValue, onSearchChange, user }) {
   }
 
   const handleVetrinaFieldChange = (field, value) => {
-    console.log(`✏️ Modifica campo "${field}":`, value)
     setVetrinaData(prev => {
       const updated = { ...prev, [field]: value }
-      console.log('📝 Nuovo stato vetrinaData:', updated)
       return updated
     })
   }
@@ -297,7 +304,6 @@ function Settings({ searchValue, onSearchChange, user }) {
   const handleServiceToggle = (serviceKey) => {
     setVetrinaData(prev => {
       const newValue = !prev.services[serviceKey]
-      console.log(`🔄 Toggle servizio ${serviceKey}: ${prev.services[serviceKey]} -> ${newValue}`)
       return {
         ...prev,
         services: {
@@ -360,39 +366,41 @@ function Settings({ searchValue, onSearchChange, user }) {
           <p className="settings-subtitle">Configura le preferenze del tuo studio notarile</p>
         </div>
 
-        <div className="settings-tabs">
-          {tabs.map((tab) => {
-            const Icon = tab.icon
-            return (
-              <button
-                key={tab.id}
-                className={`settings-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                <Icon size={18} strokeWidth={2} />
-                <span>{tab.label}</span>
+        <div className="settings-tabs-container">
+          <div className="settings-tabs">
+            {tabs.map((tab) => {
+              const Icon = tab.icon
+              return (
+                <button
+                  key={tab.id}
+                  className={`settings-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  <Icon size={18} strokeWidth={2} />
+                  <span>{tab.label}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="settings-actions">
+            {isEditing && (
+              <button className="btn-secondary" onClick={handleCancel}>
+                Annulla
               </button>
-            )
-          })}
+            )}
+            <button className="btn-primary" onClick={handleSaveOrEdit}>
+              <Save size={18} />
+              {isEditing ? 'Salva Modifiche' : 'Modifica'}
+            </button>
+          </div>
         </div>
 
-                <div className="settings-content">
-                  <div className="settings-tab-wrapper">
-                    {renderTabContent()}
-                  </div>
-
-                  <div className="settings-actions">
-                    {isEditing && (
-                      <button className="btn-secondary" onClick={handleCancel}>
-                        Annulla
-                      </button>
-                    )}
-                    <button className="btn-primary" onClick={handleSaveOrEdit}>
-                      <Save size={18} />
-                      {isEditing ? 'Salva Modifiche' : 'Modifica'}
-                    </button>
-                  </div>
-                </div>
+        <div className="settings-container">
+          <div className="settings-content">
+            {renderTabContent()}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -406,13 +414,13 @@ function GeneraliTab({ isEditing, data, onFieldChange }) {
         <h3 className="section-title">Informazioni Studio</h3>
         <div className="form-grid-spaced">
           <div className="form-group">
-            <label className="form-label">Nome Studio</label>
+            <label className="form-label">Nome e Cognome</label>
             <input 
               type="text" 
               className="form-input" 
-              placeholder="Studio Notarile Francesco Spada"
-              value={data.studioName} 
-              onChange={(e) => onFieldChange('studioName', e.target.value)}
+              placeholder="Francesco Spada"
+              value={data.nomeCognome} 
+              onChange={(e) => onFieldChange('nomeCognome', e.target.value)}
               disabled={!isEditing}
             />
           </div>
@@ -552,18 +560,20 @@ function VetrinaTab({ isEditing, data, onPhotoUpload, onFieldChange, onServiceTo
 
   // Debug: verifica i dati ricevuti
   React.useEffect(() => {
-    console.log('🎨 VetrinaTab render con isEditing:', isEditing)
-    console.log('📊 Dati completi VetrinaTab:')
-    console.log('  📸 Photo:', data.photo ? `${data.photo.substring(0, 50)}... (length: ${data.photo.length})` : 'NO PHOTO')
-    console.log('  🔍 Photo is Default?', data.photo === DEFAULT_PROFILE_PHOTO)
-    console.log('  📝 Experience:', data.experience)
-    console.log('  🗣️ Languages:', data.languages)
-    console.log('  📄 Description:', data.description)
-    console.log('  🛠️ Services:', data.services)
   }, [isEditing, data.photo, data.experience, data.languages, data.description, data.services])
 
   const handleUploadClick = () => {
     fileInputRef.current?.click()
+  }
+
+  // Estrai iniziali dal nome pubblico
+  const getInitials = () => {
+    if (!data.name) return 'NN'
+    const parts = data.name.trim().split(' ')
+    if (parts.length === 1) {
+      return parts[0].substring(0, 2).toUpperCase()
+    }
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
   }
 
   return (
@@ -571,16 +581,11 @@ function VetrinaTab({ isEditing, data, onPhotoUpload, onFieldChange, onServiceTo
       <div className="settings-section">
         <h3 className="section-title">Profilo Pubblico</h3>
         <div className="photo-upload-compact">
-          <div className={`photo-preview-compact ${(!data.photo || data.photo === DEFAULT_PROFILE_PHOTO) ? 'placeholder' : ''}`}>
-            {data.photo && data.photo !== DEFAULT_PROFILE_PHOTO ? (
+          <div className={`photo-preview-compact ${(!data.photo || data.photo === '' || data.photo === DEFAULT_PROFILE_PHOTO) ? 'placeholder' : ''}`}>
+            {data.photo && data.photo !== '' && data.photo !== DEFAULT_PROFILE_PHOTO && data.photo.startsWith('data:image') ? (
               <img src={data.photo} alt="Foto profilo" className="photo-preview-img" />
             ) : (
-              <User 
-                size={40} 
-                color="white" 
-                strokeWidth={1.5}
-                style={{ opacity: 0.9 }}
-              />
+              <span className="initials-placeholder">{getInitials()}</span>
             )}
           </div>
           <div className="photo-upload-info">
@@ -895,38 +900,6 @@ function AgendaTab({ isEditing }) {
               <span className="closure-reason">Ferie estive</span>
             </div>
             {isEditing && <button className="btn-text-danger">Rimuovi</button>}
-          </div>
-        </div>
-
-        <div className="section-header-with-action" style={{marginTop: '24px'}}>
-          <h3 className="section-title">Tipologie Appuntamento</h3>
-          {isEditing && (
-            <button className="btn-add-inline">
-              + Aggiungi Tipologia
-            </button>
-          )}
-        </div>
-        <div className="appointment-types-compact">
-          <div className="appointment-type-compact">
-            <div className="type-info-compact">
-              <span className="type-name-compact">Rogito Notarile</span>
-              <span className="type-duration-compact">90 min</span>
-            </div>
-            {isEditing && <button className="btn-text-sm">Modifica</button>}
-          </div>
-          <div className="appointment-type-compact">
-            <div className="type-info-compact">
-              <span className="type-name-compact">Consulenza</span>
-              <span className="type-duration-compact">45 min</span>
-            </div>
-            {isEditing && <button className="btn-text-sm">Modifica</button>}
-          </div>
-          <div className="appointment-type-compact">
-            <div className="type-info-compact">
-              <span className="type-name-compact">Revisione Documenti</span>
-              <span className="type-duration-compact">30 min</span>
-            </div>
-            {isEditing && <button className="btn-text-sm">Modifica</button>}
           </div>
         </div>
       </div>

@@ -139,3 +139,19 @@
   color: var(--color-text-secondary);
 }
 
+/* Count Badge */
+.atti-count {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background-color: #E5E7EB;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.atti-menu-item.active .atti-count {
+  background-color: #1668B0;
+  color: white;
+}
+

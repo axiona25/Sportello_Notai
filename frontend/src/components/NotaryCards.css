@@ -6,11 +6,335 @@
   overflow: hidden;
 }
 
+/* Header con titolo e filtri */
+.notary-cards-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  gap: 20px;
+}
+
 .notary-cards-title {
+  font-family: 'Poppins', sans-serif;
   font-size: 20px;
   font-weight: 600;
   color: #1668B0;
-  margin: 0 0 var(--spacing-md) 0;
+  margin: 0;
+}
+
+/* Pulsante Filtri */
+.filter-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1E293B;
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.filter-button:hover {
+  border-color: #4FACFE;
+  background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%);
+  box-shadow: 0 2px 6px rgba(79, 172, 254, 0.15);
+}
+
+.filter-button svg {
+  color: #1668B0;
+  transition: transform 0.2s ease;
+}
+
+.filter-button:hover svg {
+  transform: rotate(90deg);
+}
+
+.filter-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
+/* Modale Filtri */
+.filter-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.filter-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 420px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.filter-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.filter-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1E293B;
+  margin: 0;
+}
+
+.filter-modal-title svg {
+  color: #1668B0;
+}
+
+.filter-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #64748B;
+  transition: all 0.2s ease;
+}
+
+.filter-modal-close:hover {
+  background: #F1F5F9;
+  color: #1E293B;
+}
+
+.filter-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filter-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Campo di ricerca */
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  transition: all 0.2s ease;
+}
+
+.search-input-wrapper:focus-within {
+  background: white;
+  border-color: #4FACFE;
+  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+}
+
+.search-input-wrapper svg:first-child {
+  color: #94A3B8;
+  flex-shrink: 0;
+}
+
+.search-input-wrapper:focus-within svg:first-child {
+  color: #4FACFE;
+}
+
+.search-input {
+  flex: 1;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #1E293B;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+}
+
+.search-input::placeholder {
+  color: #94A3B8;
+}
+
+.search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #E2E8F0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #64748B;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.search-clear:hover {
+  background: #CBD5E1;
+  color: #1E293B;
+}
+
+.filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: #475569;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.filter-option:hover {
+  background: #EFF6FF;
+  border-color: #BFDBFE;
+  color: #1E40AF;
+}
+
+.filter-option.active {
+  background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%);
+  border-color: #4FACFE;
+  color: white;
+  font-weight: 500;
+}
+
+.filter-option.active svg {
+  fill: white;
+  stroke: white;
+}
+
+/* Footer Modale */
+.filter-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #F1F5F9;
+  background: #F8FAFC;
+  border-radius: 0 0 16px 16px;
+}
+
+.filter-reset-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748B;
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-reset-btn:hover {
+  color: #EF4444;
+  border-color: #FCA5A5;
+  background: #FEF2F2;
+}
+
+.filter-apply-btn {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(79, 172, 254, 0.25);
+}
+
+.filter-apply-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.35);
 }
 
 .notary-cards-grid {
@@ -23,6 +347,17 @@
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* Disabilita lo scroll quando ci sono meno di 6 notai */
+.notary-cards-grid.no-scroll {
+  overflow-x: hidden;
+}
+
+/* Scroll hint - mostra parzialmente la sesta card per suggerire lo scrolling */
+.notary-card.scroll-hint {
+  clip-path: inset(0 0 0 0);
+  margin-right: -230px; /* Mostra solo 50px della card (280px - 230px = 50px visibili) */
 }
 
 /* Nascondi scrollbar per Chrome, Safari e Opera */
@@ -91,6 +426,26 @@
   font-family: 'Poppins', sans-serif;
   font-size: 36px;
   font-weight: 600;
+  position: relative;
+}
+
+.notary-initials {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Poppins', sans-serif;
+  font-size: 56px;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  user-select: none;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 /* Header: Nome + Rating */
@@ -199,12 +554,58 @@
   justify-content: flex-start;
   color: var(--color-text-secondary);
   flex-shrink: 0;
+  cursor: pointer;
+  position: relative;
 }
 
 .notary-service-item svg {
   width: 14px;
   height: 14px;
   stroke-width: 2;
+  pointer-events: none;
+}
+
+/* Tooltip personalizzato */
+.notary-service-item::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.notary-service-item::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.9);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.notary-service-item:hover::after,
+.notary-service-item:hover::before {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* Separatore tra icone */
@@ -234,6 +635,107 @@
   font-size: 14px;
 }
 
+/* Placeholder Card - Per notai bloccati - Stile identico alle card normali */
+.notary-card-placeholder {
+  background-color: var(--color-white);
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.08) !important;
+  border: none !important;
+  min-width: 280px;
+  max-width: 280px;
+  width: 280px;
+  height: 310px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+  flex-shrink: 0;
+  position: relative;
+  opacity: 0.7;
+}
+
+.notary-card-placeholder:hover {
+  transform: none;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Foto placeholder - stile identico alla foto normale */
+.notary-card-placeholder .notary-photo {
+  width: 100%;
+  height: 140px;
+  border-radius: 16px;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #F1F3F5 0%, #E9ECEF 100%);
+}
+
+.placeholder-icon {
+  width: 48px;
+  height: 48px;
+  color: #ADB5BD;
+  opacity: 0.7;
+}
+
+/* Header placeholder */
+.notary-card-placeholder .notary-card-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.notary-card-placeholder .placeholder-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #868E96;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* Indirizzo placeholder */
+.notary-card-placeholder .placeholder-address {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: #ADB5BD;
+  margin: 0;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Servizi placeholder */
+.notary-card-placeholder .notary-services {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.notary-card-placeholder .notary-services-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: #ADB5BD;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.notary-card-placeholder .placeholder-services-empty {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  color: #CED4DA;
+  text-align: center;
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .notary-cards-grid {
@@ -247,6 +749,19 @@
 }
 
 @media (max-width: 768px) {
+  .notary-cards-header {
+    gap: 12px;
+  }
+  
+  .filter-button {
+    font-size: 13px;
+    padding: 8px 14px;
+  }
+  
+  .filter-modal {
+    max-width: 380px;
+  }
+  
   .notary-cards-grid {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   }
@@ -262,5 +777,47 @@
   
   .notary-name {
     font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .notary-cards-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .filter-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .filter-modal {
+    width: 95%;
+    max-width: none;
+    max-height: 90vh;
+  }
+  
+  .filter-modal-header {
+    padding: 16px 20px;
+  }
+  
+  .filter-modal-title {
+    font-size: 16px;
+  }
+  
+  .filter-modal-body {
+    padding: 20px;
+    gap: 20px;
+  }
+  
+  .filter-modal-footer {
+    padding: 14px 20px;
+    flex-direction: column-reverse;
+  }
+  
+  .filter-reset-btn,
+  .filter-apply-btn {
+    width: 100%;
+    justify-content: center;
   }
 }

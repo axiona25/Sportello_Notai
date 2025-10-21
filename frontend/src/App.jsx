@@ -1,11 +1,13 @@
 import React, { useState } from 'react'
 import { AuthProvider, useAuth } from './hooks/useAuth.jsx'
+import { ToastProvider } from './contexts/ToastContext'
 import Login from './components/Login'
 import ForgotPassword from './components/ForgotPassword'
 import Dashboard from './components/Dashboard'
 import DashboardNotaio from './components/DashboardNotaio'
 import DashboardAdmin from './components/DashboardAdmin'
 import ProtectedRoute from './components/ProtectedRoute'
+import ToastContainer from './components/ToastContainer'
 import './App.css'
 
 function AppContent() {
@@ -13,14 +15,12 @@ function AppContent() {
   const { isAuthenticated, user, login, logout, loading } = useAuth()
 
   const handleLogin = async (credentials) => {
-    console.log('Login attempt:', credentials)
     
     try {
       const data = await login(credentials.email, credentials.password)
       
       // Se MFA richiesto, gestisci separatamente
       if (data.mfa_required) {
-        console.log('MFA required')
         return { 
           success: false, 
           mfa_required: true,
@@ -30,7 +30,6 @@ function AppContent() {
       }
 
       // Login successful - non serve più setCurrentView, isAuthenticated gestisce tutto
-      console.log('Login successful! Role:', data.user.role)
       return { success: true }
     } catch (error) {
       console.error('Login failed:', error)
@@ -50,12 +49,10 @@ function AppContent() {
   }
 
   const handlePasswordResetSubmit = (data) => {
-    console.log('Password reset request:', data)
     // Qui andrà la logica per inviare email di reset
   }
 
   const handleLogout = async () => {
-    console.log('Logout...')
     await logout()
     // Torna alla pagina di login dopo il logout
     setCurrentView('login')
@@ -119,11 +116,14 @@ function AppContent() {
   )
 }
 
-// App principale con AuthProvider
+// App principale con AuthProvider e ToastProvider
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+        <ToastContainer />
+      </ToastProvider>
     </AuthProvider>
   )
 }

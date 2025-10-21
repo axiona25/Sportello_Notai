@@ -40,7 +40,6 @@ class AdminService {
       const data = await apiClient.get(`/notaries/admin/notaries/?${params.toString()}`)
       return { success: true, data }
     } catch (error) {
-      console.error('❌ Errore nel recuperare i notai:', error)
       return { success: false, error: error.message }
     }
   }
@@ -55,7 +54,6 @@ class AdminService {
       const data = await apiClient.get(`/notaries/admin/notaries/${notaryId}/`)
       return { success: true, data }
     } catch (error) {
-      console.error('❌ Errore nel recuperare il dettaglio del notaio:', error)
       return { success: false, error: error.message }
     }
   }
@@ -70,7 +68,6 @@ class AdminService {
       const data = await apiClient.post('/notaries/admin/notaries/', notaryData)
       return { success: true, data }
     } catch (error) {
-      console.error('❌ Errore nella creazione del notaio:', error)
       return { success: false, error: error.message }
     }
   }
@@ -86,7 +83,6 @@ class AdminService {
       const data = await apiClient.patch(`/notaries/admin/notaries/${notaryId}/`, notaryData)
       return { success: true, data }
     } catch (error) {
-      console.error('❌ Errore nell\'aggiornamento del notaio:', error)
       return { success: false, error: error.message }
     }
   }
@@ -101,7 +97,6 @@ class AdminService {
       const data = await apiClient.delete(`/notaries/admin/notaries/${notaryId}/`)
       return { success: true, data }
     } catch (error) {
-      console.error('❌ Errore nell\'eliminazione del notaio:', error)
       return { success: false, error: error.message }
     }
   }
@@ -109,6 +104,21 @@ class AdminService {
   // ========================================
   // LICENZE NOTAI
   // ========================================
+
+  /**
+   * Aggiorna i dati completi di un notaio (generali + licenza)
+   * @param {string} notaryId - ID del notaio
+   * @param {Object} notaryData - Dati notaio completi
+   * @returns {Promise<Object>} Dati notaio aggiornati
+   */
+  async updateNotary(notaryId, notaryData) {
+    try {
+      const data = await apiClient.patch(`/notaries/admin/notaries/${notaryId}/`, notaryData)
+      return { success: true, data }
+    } catch (error) {
+      return { success: false, error: error.message }
+    }
+  }
 
   /**
    * Aggiorna SOLO i dati di licenza di un notaio
@@ -124,12 +134,9 @@ class AdminService {
    */
   async updateNotaryLicense(notaryId, licenseData) {
     try {
-      console.log('📝 Aggiornamento licenza notaio:', notaryId, licenseData)
       const data = await apiClient.patch(`/notaries/admin/notaries/${notaryId}/license/`, licenseData)
-      console.log('✅ Licenza aggiornata:', data)
       return { success: true, data }
     } catch (error) {
-      console.error('❌ Errore nell\'aggiornamento della licenza:', error)
       return { success: false, error: error.message }
     }
   }
@@ -158,10 +165,9 @@ class AdminService {
       if (filters.is_active !== undefined) params.append('is_active', filters.is_active)
       if (filters.is_verified !== undefined) params.append('is_verified', filters.is_verified)
       
-      const data = await apiClient.get(`/accounts/partners/?${params.toString()}`)
+      const data = await apiClient.get(`/auth/partners/?${params.toString()}`)
       return { success: true, data }
     } catch (error) {
-      console.error('❌ Errore nel recuperare i partners:', error)
       return { success: false, error: error.message }
     }
   }
@@ -173,10 +179,9 @@ class AdminService {
    */
   async getPartnerDetail(partnerId) {
     try {
-      const data = await apiClient.get(`/accounts/partners/${partnerId}/`)
+      const data = await apiClient.get(`/auth/partners/${partnerId}/`)
       return { success: true, data }
     } catch (error) {
-      console.error('❌ Errore nel recuperare il dettaglio del partner:', error)
       return { success: false, error: error.message }
     }
   }
@@ -188,10 +193,9 @@ class AdminService {
    */
   async createPartner(partnerData) {
     try {
-      const data = await apiClient.post('/accounts/partners/', partnerData)
+      const data = await apiClient.post('/auth/partners/', partnerData)
       return { success: true, data }
     } catch (error) {
-      console.error('❌ Errore nella creazione del partner:', error)
       return { success: false, error: error.message }
     }
   }
@@ -204,10 +208,9 @@ class AdminService {
    */
   async updatePartner(partnerId, partnerData) {
     try {
-      const data = await apiClient.patch(`/accounts/partners/${partnerId}/`, partnerData)
+      const data = await apiClient.patch(`/auth/partners/${partnerId}/`, partnerData)
       return { success: true, data }
     } catch (error) {
-      console.error('❌ Errore nell\'aggiornamento del partner:', error)
       return { success: false, error: error.message }
     }
   }
@@ -219,10 +222,9 @@ class AdminService {
    */
   async deletePartner(partnerId) {
     try {
-      const data = await apiClient.delete(`/accounts/partners/${partnerId}/`)
+      const data = await apiClient.delete(`/auth/partners/${partnerId}/`)
       return { success: true, data }
     } catch (error) {
-      console.error('❌ Errore nell\'eliminazione del partner:', error)
       return { success: false, error: error.message }
     }
   }
@@ -240,7 +242,6 @@ class AdminService {
       const data = await apiClient.get('/notaries/admin/stats/')
       return { success: true, data }
     } catch (error) {
-      console.error('❌ Errore nel recuperare le statistiche:', error)
       return { success: false, error: error.message }
     }
   }

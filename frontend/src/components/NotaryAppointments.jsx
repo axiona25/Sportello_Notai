@@ -24,7 +24,6 @@ function NotaryAppointments() {
     if (result.success) {
       setAppointments(result.data)
     } else {
-      console.error('Error loading appointments:', result.error)
     }
     
     setLoading(false)

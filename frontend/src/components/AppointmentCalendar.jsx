@@ -32,7 +32,6 @@ function AppointmentCalendar({ notaryId, onSlotSelect }) {
     if (result.success) {
       setAvailableSlots(result.data)
     } else {
-      console.error('Error loading slots:', result.error)
     }
     
     setLoading(false)

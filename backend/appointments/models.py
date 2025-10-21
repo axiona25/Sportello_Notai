@@ -9,6 +9,13 @@ from django.core.exceptions import ValidationError
 from accounts.models import Cliente, Notaio, Partner
 from acts.models import Act
 
+# Import Notary per unificazione
+# NOTA: stiamo migrando da Notaio (accounts) a Notary (notaries)
+try:
+    from notaries.models import Notary
+except ImportError:
+    Notary = None  # Compatibilità durante le migrations
+
 
 class AppointmentStatus(models.TextChoices):
     """Appointment status choices."""
@@ -66,10 +73,23 @@ class DisponibilitaNotaio(models.Model):
     Es: Lunedì 9:00-13:00, Martedì 14:00-18:00
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    # NUOVO: Campo unificato che punta a Notary
+    notary = models.ForeignKey(
+        'notaries.Notary',
+        on_delete=models.CASCADE,
+        related_name='disponibilita',
+        null=True,  # Temporaneo per la migrazione
+        blank=True
+    )
+    
+    # DEPRECATO: Mantenuto temporaneamente per compatibilità
     notaio = models.ForeignKey(
         Notaio,
         on_delete=models.CASCADE,
-        related_name='disponibilita'
+        related_name='disponibilita_old',
+        null=True,  # Ora opzionale
+        blank=True
     )
     
     # Giorni e orari
@@ -173,11 +193,22 @@ class Appuntamento(models.Model):
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
-    # Organizzatore (solitamente il Notaio)
+    # NUOVO: Campo unificato che punta a Notary
+    notary = models.ForeignKey(
+        'notaries.Notary',
+        on_delete=models.CASCADE,
+        related_name='appuntamenti_organizzati',
+        null=True,  # Temporaneo per la migrazione
+        blank=True
+    )
+    
+    # DEPRECATO: Organizzatore (solitamente il Notaio)
     notaio = models.ForeignKey(
         Notaio,
         on_delete=models.CASCADE,
-        related_name='appuntamenti_organizzati'
+        related_name='appuntamenti_organizzati_old',
+        null=True,  # Ora opzionale
+        blank=True
     )
     
     # Atto collegato (opzionale)

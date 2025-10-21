@@ -13,15 +13,44 @@ class Notary(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='notary_profile')
     
+    # Dati anagrafici (unified from Notaio)
+    nome = models.CharField(max_length=100, blank=True)
+    cognome = models.CharField(max_length=100, blank=True)
+    sesso = models.CharField(max_length=1, blank=True, choices=[('M', 'Maschio'), ('F', 'Femmina')])
+    data_nascita = models.DateField(blank=True, null=True)
+    luogo_nascita = models.CharField(max_length=200, blank=True)
+    codice_fiscale = models.CharField(max_length=16, blank=True, unique=True, null=True)
+    
+    # Dati professionali (unified from Notaio)
+    numero_iscrizione_albo = models.CharField(max_length=50, blank=True, unique=True, null=True)
+    distretto_notarile = models.CharField(max_length=100, blank=True)
+    data_iscrizione_albo = models.DateField(blank=True, null=True)
+    sede_notarile = models.CharField(max_length=100, blank=True)
+    tipologia = models.CharField(
+        max_length=30,
+        blank=True,
+        choices=[
+            ('notaio_singolo', 'Notaio Singolo'),
+            ('studio_associato', 'Studio Associato'),
+            ('societa_tra_professionisti', 'Società tra Professionisti')
+        ],
+        default='notaio_singolo'
+    )
+    
     # Studio
-    studio_name = models.CharField(max_length=255)
+    studio_name = models.CharField(max_length=255)  # = denominazione_studio
     bio = models.TextField(blank=True)
     specializations = models.JSONField(default=list, blank=True)  # ["Compravendite", "Successioni", ...]
     
+    # Dati fiscali
+    partita_iva = models.CharField(max_length=11, blank=True, null=True, unique=True, help_text='Partita IVA del notaio/studio')
+    
     # Contatti
-    phone = models.CharField(max_length=50, blank=True)
-    pec_address = models.EmailField(blank=True)
-    website = models.URLField(blank=True)
+    phone = models.CharField(max_length=50, blank=True)  # = telefono_studio
+    cellulare = models.CharField(max_length=20, blank=True)
+    pec_address = models.EmailField(blank=True)  # = pec
+    email_studio = models.EmailField(blank=True)
+    website = models.URLField(blank=True)  # = sito_web
     
     # Indirizzo
     address_street = models.CharField(max_length=255, blank=True)
@@ -69,6 +98,31 @@ class Notary(models.Model):
         blank=True,
         help_text='{"monday": {"start": "09:00", "end": "18:00"}, ...}'
     )
+    orari_ricevimento = models.JSONField(
+        blank=True,
+        null=True,
+        help_text="Orari di ricevimento in formato JSON (unified from Notaio)"
+    )
+    
+    # Documenti (unified from Notaio)
+    documento_identita = models.FileField(
+        upload_to='notai/documenti/identita/',
+        blank=True,
+        null=True
+    )
+    certificato_iscrizione_albo = models.FileField(
+        upload_to='notai/documenti/albo/',
+        blank=True,
+        null=True
+    )
+    visura_camerale = models.FileField(
+        upload_to='notai/documenti/visura/',
+        blank=True,
+        null=True
+    )
+    
+    # Status (unified from Notaio)
+    is_verified = models.BooleanField(default=False, help_text='Se il notaio è stato verificato dall\'admin')
     
     # Gestione Licenza (Admin)
     license_active = models.BooleanField(
@@ -116,6 +170,30 @@ class Notary(models.Model):
     
     def __str__(self):
         return f"{self.studio_name}"
+    
+    @property
+    def nome_completo(self):
+        """Compatibility method for Notaio model."""
+        if self.nome and self.cognome:
+            return f"{self.nome} {self.cognome}"
+        return self.studio_name
+    
+    @property
+    def indirizzo_completo_studio(self):
+        """Compatibility method for Notaio model."""
+        parts = []
+        if self.address_street:
+            parts.append(self.address_street)
+        if self.address_city:
+            parts.append(self.address_city)
+        if self.address_province:
+            parts.append(f"({self.address_province})")
+        return ', '.join(parts) if parts else ''
+    
+    @property
+    def is_active(self):
+        """Compatibility property - active if license is active."""
+        return self.license_active
     
     def is_license_valid(self):
         """

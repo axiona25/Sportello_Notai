@@ -11,13 +11,47 @@ from notaries.models import Notary, Client, Collaborator
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Basic user serializer."""
+    """Basic user serializer with profile data."""
+    
+    notary_profile = serializers.SerializerMethodField()
+    cliente_profile = serializers.SerializerMethodField()
+    admin_profile = serializers.SerializerMethodField()
+    partner_profile = serializers.SerializerMethodField()
     
     class Meta:
         model = User
         fields = ['id', 'email', 'role', 'status', 'mfa_enabled', 'email_verified', 
-                  'created_at', 'last_login']
+                  'created_at', 'last_login', 'notary_profile', 'cliente_profile', 
+                  'admin_profile', 'partner_profile']
         read_only_fields = ['id', 'created_at', 'last_login']
+    
+    def get_notary_profile(self, obj):
+        """Get notary profile data if user is a notary."""
+        if obj.role == UserRole.NOTAIO and hasattr(obj, 'notary_profile'):
+            from notaries.serializers import NotarySerializer
+            return NotarySerializer(obj.notary_profile).data
+        return None
+    
+    def get_cliente_profile(self, obj):
+        """Get client profile data if user is a client."""
+        if obj.role == UserRole.CLIENTE and hasattr(obj, 'client_profile'):
+            from notaries.serializers import ClientSerializer
+            return ClientSerializer(obj.client_profile).data
+        return None
+    
+    def get_admin_profile(self, obj):
+        """Get admin profile data if user is admin."""
+        if obj.role == UserRole.ADMIN:
+            # Admin doesn't have a separate profile model yet
+            return None
+        return None
+    
+    def get_partner_profile(self, obj):
+        """Get partner profile data if user is a partner."""
+        if obj.role == UserRole.PARTNER:
+            # Partner profile TODO
+            return None
+        return None
 
 
 class RegisterSerializer(serializers.Serializer):

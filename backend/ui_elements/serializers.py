@@ -1,19 +1,26 @@
+"""
+Serializers for UI elements.
+"""
 from rest_framework import serializers
-from .models import Element
+from .models import AppointmentTypeTemplate
 
 
-class ElementSerializer(serializers.ModelSerializer):
-    """Serializer for UI Elements."""
+class AppointmentTypeTemplateSerializer(serializers.ModelSerializer):
+    """Serializer for appointment type templates."""
     
     class Meta:
-        model = Element
+        model = AppointmentTypeTemplate
         fields = [
-            'id', 'name', 'type', 'description',
-            'svg_content', 'image_url',
-            'width', 'height',
-            'primary_color', 'secondary_color',
-            'location', 'is_active',
-            'created_at', 'updated_at'
+            'id',
+            'code',
+            'name',
+            'description',
+            'default_duration_minutes',
+            'icon',
+            'color',
+            'order',
+            'is_active',
+            'created_at',
+            'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
-

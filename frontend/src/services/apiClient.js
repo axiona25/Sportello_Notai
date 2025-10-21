@@ -5,7 +5,7 @@
 
 import authService from './authService'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
 
 /**
  * Wrapper per fetch con gestione automatica JWT
@@ -69,7 +69,52 @@ class ApiClient {
       // Se errore, lancia eccezione
       if (!response.ok) {
         const error = await response.json().catch(() => ({}))
-        throw new Error(error.detail || error.error || `HTTP ${response.status}`)
+        
+        // Estrai il messaggio di errore in modo intelligente
+        let errorMessage = ''
+        
+        // Se c'è un campo 'message' che contiene gli errori di validazione
+        if (error.message && typeof error.message === 'object') {
+          const validationErrors = Object.entries(error.message)
+            .map(([field, messages]) => {
+              if (Array.isArray(messages)) {
+                // Estrai il messaggio da ErrorDetail objects o stringhe
+                const msgTexts = messages.map(msg => {
+                  if (typeof msg === 'object' && msg.string) return msg.string
+                  if (typeof msg === 'string') return msg
+                  return JSON.stringify(msg)
+                })
+                return `${field}: ${msgTexts.join(', ')}`
+              }
+              return `${field}: ${messages}`
+            })
+            .join('; ')
+          errorMessage = validationErrors
+        }
+        // Se è un oggetto con errori diretti (senza 'message')
+        else if (typeof error === 'object' && !error.detail && !error.error) {
+          const validationErrors = Object.entries(error)
+            .filter(([key]) => key !== 'error' && key !== 'status_code')
+            .map(([field, messages]) => {
+              if (Array.isArray(messages)) {
+                const msgTexts = messages.map(msg => {
+                  if (typeof msg === 'object' && msg.string) return msg.string
+                  if (typeof msg === 'string') return msg
+                  return JSON.stringify(msg)
+                })
+                return `${field}: ${msgTexts.join(', ')}`
+              }
+              return `${field}: ${messages}`
+            })
+            .join('; ')
+          errorMessage = validationErrors || error.detail || error.error
+        }
+        // Altrimenti usa detail o error standard
+        else {
+          errorMessage = error.detail || error.error
+        }
+        
+        throw new Error(errorMessage || `HTTP ${response.status}`)
       }
 
       // Ritorna risposta JSON

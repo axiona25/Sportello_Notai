@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import Calendar from './Calendar'
@@ -10,12 +10,36 @@ import AttiSidebar from './AttiSidebar'
 import AttiContent from './AttiContent'
 import './Dashboard.css'
 
-function Dashboard({ onLogout, user }) {
+function Dashboard({ onLogout, user: initialUser }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [searchValue, setSearchValue] = useState('')
   const [currentView, setCurrentView] = useState('dashboard') // 'dashboard' o 'atti'
   const [attiFilter, setAttiFilter] = useState(null) // Filtro per gli atti (notaio/cliente)
+  const [user, setUser] = useState(initialUser)
+
+  // Ascolta gli aggiornamenti dell'utente dal localStorage
+  useEffect(() => {
+    const handleUserUpdate = (event) => {
+      setUser(event.detail.user)
+    }
+
+    // Listener per aggiornamenti da altre tab/browser tramite localStorage
+    const handleStorageChange = (event) => {
+      if (event.key === 'user') {
+        const updatedUser = JSON.parse(event.newValue || '{}')
+        setUser(updatedUser)
+      }
+    }
+
+    window.addEventListener('userUpdated', handleUserUpdate)
+    window.addEventListener('storage', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('userUpdated', handleUserUpdate)
+      window.removeEventListener('storage', handleStorageChange)
+    }
+  }, [])
   
   // Ottieni nome e cognome dell'utente
   const getUserName = () => {
@@ -184,7 +208,6 @@ function Dashboard({ onLogout, user }) {
                       <img src="/assets/element.png" alt="" className="welcome-underline" />
                     </div>
                   </div>
-                  <button className="btn-primary">Nuovo</button>
                 </div>
               </div>
 

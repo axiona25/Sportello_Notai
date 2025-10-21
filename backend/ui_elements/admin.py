@@ -1,28 +1,23 @@
 from django.contrib import admin
-from .models import Element
+from .models import AppointmentTypeTemplate
 
 
-@admin.register(Element)
-class ElementAdmin(admin.ModelAdmin):
-    list_display = ('name', 'type', 'width', 'height', 'location', 'is_active', 'created_at')
-    list_filter = ('type', 'is_active', 'created_at')
-    search_fields = ('name', 'description', 'location')
+@admin.register(AppointmentTypeTemplate)
+class AppointmentTypeTemplateAdmin(admin.ModelAdmin):
+    list_display = ('name', 'code', 'default_duration_minutes', 'icon', 'order', 'is_active', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('name', 'code', 'description')
     readonly_fields = ('id', 'created_at', 'updated_at')
+    ordering = ('order', 'name')
     
     fieldsets = (
-        ('Basic Info', {
-            'fields': ('name', 'type', 'description', 'location')
+        ('Informazioni Base', {
+            'fields': ('code', 'name', 'description')
         }),
-        ('Content', {
-            'fields': ('svg_content', 'image_url')
+        ('Configurazione', {
+            'fields': ('default_duration_minutes', 'icon', 'color', 'order')
         }),
-        ('Dimensions', {
-            'fields': ('width', 'height')
-        }),
-        ('Colors', {
-            'fields': ('primary_color', 'secondary_color')
-        }),
-        ('Status', {
+        ('Stato', {
             'fields': ('is_active',)
         }),
         ('Metadata', {

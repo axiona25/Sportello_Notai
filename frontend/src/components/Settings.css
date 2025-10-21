@@ -12,9 +12,13 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
   padding: var(--spacing-xl);
-  max-height: calc(100vh - 80px);
+  padding-right: var(--spacing-xl);
+  overflow-y: auto;
+  max-width: 100%;
+  height: calc(100vh - 80px);
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Settings Header */
@@ -69,12 +73,21 @@
   margin: 0;
 }
 
+/* Tabs Container - contiene tabs e actions sulla stessa riga */
+.settings-tabs-container {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: flex-start;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  width: 100%;
+}
+
 /* Horizontal Tabs */
 .settings-tabs {
   display: flex;
   gap: var(--spacing-sm);
   border-bottom: none;
-  margin-bottom: var(--spacing-xl);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   background-color: transparent;
@@ -134,30 +147,36 @@
   flex-shrink: 0;
 }
 
-/* Settings Content */
-.settings-content {
-  flex: 1;
-  max-width: 1400px;
+/* Settings Container (come documenti-container) */
+.settings-container {
   width: 100%;
+  height: calc(100vh - 80px - 120px - var(--spacing-xl) * 2);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
 }
 
-/* Settings Tab */
+/* Settings Content */
+.settings-content {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Settings Tab (come documenti-card) */
 .settings-tab {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
   gap: 0;
   align-items: start;
   background-color: var(--color-white);
-  border-radius: var(--radius-lg);
+  border-radius: 24px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
   padding: var(--spacing-xl);
-  box-shadow: var(--shadow-sm);
-  min-height: 400px;
-  height: calc(100vh - 480px);
-  max-width: 1400px;
   width: 100%;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .settings-tab.single-column {
@@ -179,6 +198,12 @@
   padding: 0 var(--spacing-lg);
   box-shadow: none;
   position: relative;
+}
+
+/* Admin Settings - Section Full Width per Placeholder */
+.settings-tab.two-columns .settings-section:only-child {
+  grid-column: 1 / -1;
+  padding: 0;
 }
 
 .settings-section:not(:last-child)::after {
@@ -1033,6 +1058,18 @@ input.form-input[type="number"] {
   border-color: transparent;
 }
 
+.initials-placeholder {
+  font-family: 'Poppins', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
 .photo-preview-img {
   width: 100%;
   height: 100%;
@@ -1410,37 +1447,42 @@ input.form-input[type="number"] {
 
 /* Buttons */
 .btn-primary {
-  display: flex;
+  display: flex !important;
   align-items: center;
   gap: var(--spacing-sm);
-  padding: 10px 20px;
-  background-color: #1668B0;
-  color: var(--color-white);
-  border: none;
-  border-radius: var(--radius-md);
+  padding: 10px 20px !important;
+  background: linear-gradient(to right, #4FADFF, #1668B0) !important;
+  color: var(--color-white) !important;
+  border: none !important;
+  border-radius: var(--radius-md) !important;
   font-family: 'Poppins', sans-serif;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .btn-primary:hover {
-  background-color: #0F4C81;
+  background: linear-gradient(to right, #3D9EEE, #1357A0) !important;
   box-shadow: var(--shadow-md);
 }
 
 .btn-secondary {
-  padding: 10px 20px;
-  background-color: transparent;
-  color: var(--color-text-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  display: flex !important;
+  padding: 10px 20px !important;
+  background-color: transparent !important;
+  color: var(--color-text-secondary) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
   font-family: 'Poppins', sans-serif;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .btn-secondary:hover {
@@ -1489,18 +1531,36 @@ input.form-input[type="number"] {
 
 /* Settings Actions */
 .settings-actions {
-  display: flex;
+  display: flex !important;
   justify-content: flex-end;
   align-items: center;
   gap: var(--spacing-md);
-  padding-top: var(--spacing-lg);
-  margin-top: var(--spacing-lg);
-  border-top: 2px solid var(--color-border);
-  max-width: 1400px;
-  width: 100%;
+  white-space: nowrap;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 10 !important;
+  position: relative !important;
+  align-self: flex-start;
+  padding-top: 14px;
 }
 
 /* Responsive Design */
+@media (max-width: 1200px) {
+  .settings-tabs-container {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .settings-tabs {
+    width: 100%;
+  }
+
+  .settings-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
 @media (max-width: 1024px) {
   .settings-content-wrapper {
     padding: var(--spacing-lg);
@@ -1544,5 +1604,319 @@ input.form-input[type="number"] {
 
   .conservation-stats {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   ADMIN SETTINGS - TIPOLOGIE APPUNTAMENTI
+   ============================================ */
+
+/* Sezione Header */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.section-header h2 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.btn-new {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #4FADFF 0%, #1668B0 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-new:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 173, 255, 0.4);
+}
+
+/* Form di creazione/modifica */
+.appointment-type-form {
+  background: white;
+  border-radius: 12px;
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.appointment-type-form h3 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-lg) 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-lg);
+}
+
+.form-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 10px 12px;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #4FADFF;
+  box-shadow: 0 0 0 3px rgba(79, 173, 255, 0.1);
+}
+
+.form-group input:disabled {
+  background-color: #F9FAFB;
+  cursor: not-allowed;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.color-picker-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.color-picker-wrapper input[type="color"] {
+  width: 50px;
+  height: 40px;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.color-value {
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* Lista tipologie */
+.appointment-types-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: var(--spacing-lg);
+  min-height: 400px;
+  width: 100%;
+}
+
+.appointment-types-list .loading-state {
+  grid-column: 1 / -1;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  min-height: 400px !important;
+  padding: var(--spacing-xxl) !important;
+  margin: 0 !important;
+}
+
+.appointment-type-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: white;
+  border-radius: 12px;
+  border: 1.5px solid #E5E7EB;
+  transition: all 0.3s ease;
+}
+
+.appointment-type-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #4FADFF;
+}
+
+.appointment-type-card.inactive {
+  opacity: 0.6;
+}
+
+.type-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.type-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.type-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.type-header h4 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.badge-inactive {
+  padding: 2px 8px;
+  background-color: #FEF2F2;
+  color: #EF4444;
+  border-radius: 4px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.type-description {
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0 0 10px 0;
+  line-height: 1.5;
+}
+
+.type-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.type-duration,
+.type-code {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+}
+
+.type-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1.5px solid #E5E7EB;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--color-text-secondary);
+}
+
+.btn-icon:hover {
+  background: #F3F4F6;
+  border-color: #4FADFF;
+  color: #4FADFF;
+}
+
+.btn-icon.btn-danger:hover {
+  background: #FEF2F2;
+  border-color: #EF4444;
+  color: #EF4444;
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--spacing-xxl);
+  min-height: 200px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .appointment-types-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-md);
   }
 }

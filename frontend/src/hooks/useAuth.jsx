@@ -29,7 +29,6 @@ export function AuthProvider({ children }) {
           setIsAuthenticated(true)
         }
       } catch (error) {
-        console.error('Error loading user:', error)
         authService.clearAuth()
       } finally {
         setLoading(false)
@@ -57,7 +56,6 @@ export function AuthProvider({ children }) {
       
       return data
     } catch (error) {
-      console.error('Login failed:', error)
       throw error
     }
   }
@@ -69,7 +67,6 @@ export function AuthProvider({ children }) {
     try {
       await authService.logout()
     } catch (error) {
-      console.error('Logout error:', error)
     } finally {
       setUser(null)
       setIsAuthenticated(false)

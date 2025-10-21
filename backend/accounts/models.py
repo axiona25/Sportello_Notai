@@ -335,7 +335,7 @@ class Notaio(models.Model):
     
     # Studio notarile
     denominazione_studio = models.CharField(max_length=255, blank=True)
-    partita_iva = models.CharField(max_length=11, unique=True)
+    partita_iva = models.CharField(max_length=11, blank=True, null=True, unique=True)
     
     # Indirizzo studio
     indirizzo_studio = models.CharField(max_length=255)
@@ -445,7 +445,7 @@ class Partner(models.Model):
     
     # Dati aziendali
     ragione_sociale = models.CharField(max_length=255)
-    partita_iva = models.CharField(max_length=11, unique=True)
+    partita_iva = models.CharField(max_length=11, blank=True, null=True, unique=True)
     codice_fiscale = models.CharField(max_length=16)
     
     # Indirizzo completo

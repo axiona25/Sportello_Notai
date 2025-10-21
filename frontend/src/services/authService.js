@@ -3,7 +3,7 @@
  * Gestisce login, logout e token JWT
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
 
 class AuthService {
   /**
@@ -42,7 +42,6 @@ class AuthService {
 
       return data
     } catch (error) {
-      console.error('Login error:', error)
       throw error
     }
   }
@@ -68,7 +67,6 @@ class AuthService {
         })
       }
     } catch (error) {
-      console.error('Logout error:', error)
     } finally {
       // Rimuovi sempre dati locali anche se chiamata backend fallisce
       this.clearAuth()
@@ -168,7 +166,6 @@ class AuthService {
 
       return data.access
     } catch (error) {
-      console.error('Token refresh error:', error)
       this.clearAuth()
       throw error
     }

@@ -20,7 +20,6 @@ class AppointmentService {
       )
       return { success: true, data: response }
     } catch (error) {
-      console.error('Error fetching available slots:', error)
       return { success: false, error: error.message }
     }
   }
@@ -38,7 +37,6 @@ class AppointmentService {
       })
       return { success: true, data: response }
     } catch (error) {
-      console.error('Error creating appointment:', error)
       return { success: false, error: error.message }
     }
   }
@@ -56,7 +54,6 @@ class AppointmentService {
       const response = await apiClient.request(url, { method: 'GET' })
       return { success: true, data: response }
     } catch (error) {
-      console.error('Error fetching appointments:', error)
       return { success: false, error: error.message }
     }
   }
@@ -73,7 +70,6 @@ class AppointmentService {
       })
       return { success: true, data: response }
     } catch (error) {
-      console.error('Error fetching appointment:', error)
       return { success: false, error: error.message }
     }
   }
@@ -92,7 +88,6 @@ class AppointmentService {
       })
       return { success: true, data: response }
     } catch (error) {
-      console.error('Error updating appointment:', error)
       return { success: false, error: error.message }
     }
   }
@@ -110,7 +105,6 @@ class AppointmentService {
       })
       return { success: true, data: response }
     } catch (error) {
-      console.error('Error accepting appointment:', error)
       return { success: false, error: error.message }
     }
   }
@@ -132,7 +126,6 @@ class AppointmentService {
       })
       return { success: true, data: response }
     } catch (error) {
-      console.error('Error rejecting appointment:', error)
       return { success: false, error: error.message }
     }
   }

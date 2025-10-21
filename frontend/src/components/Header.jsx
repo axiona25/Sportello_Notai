@@ -17,26 +17,50 @@ function Header({ searchValue = '', onSearchChange, searchPlaceholder = 'Cerca a
   // Ottieni nome e cognome dell'utente
   const getUserName = () => {
     if (user?.cliente_profile) {
-      return `${user.cliente_profile.nome} ${user.cliente_profile.cognome}`
-    } else if (user?.notaio_profile) {
-      return `${user.notaio_profile.nome} ${user.notaio_profile.cognome}`
+      return `${user.cliente_profile.nome || ''} ${user.cliente_profile.cognome || ''}`.trim()
+    } else if (user?.notary_profile) {
+      // Il notaio ha studio_name, non nome/cognome
+      return user.notary_profile.studio_name || user.email?.split('@')[0] || 'Notaio'
     } else if (user?.admin_profile) {
-      return `${user.admin_profile.nome} ${user.admin_profile.cognome}`
+      return `${user.admin_profile.nome || ''} ${user.admin_profile.cognome || ''}`.trim()
     }
     return user?.email?.split('@')[0] || 'Utente'
   }
 
   // Ottieni avatar dell'utente
   const getUserAvatar = () => {
+    let foto = null
+    
     if (user?.cliente_profile?.foto) {
-      return user.cliente_profile.foto
-    } else if (user?.notaio_profile?.foto) {
-      return user.notaio_profile.foto
+      foto = user.cliente_profile.foto
+    } else if (user?.notary_profile?.foto || user?.notary_profile?.showcase_photo) {
+      // Il notaio ha showcase_photo come foto profilo
+      foto = user.notary_profile.foto || user.notary_profile.showcase_photo
     } else if (user?.admin_profile?.foto) {
-      return user.admin_profile.foto
+      foto = user.admin_profile.foto
     }
-    return "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
+    
+    // Verifica che la foto sia valida (base64)
+    if (foto && foto !== '' && foto.startsWith('data:image')) {
+      return foto
+    }
+    
+    return null
   }
+
+  // Ottieni iniziali utente
+  const getUserInitials = () => {
+    const name = getUserName()
+    if (!name) return 'U'
+    
+    const parts = name.split(' ').filter(p => p.length > 0)
+    if (parts.length === 1) {
+      return parts[0].substring(0, 2).toUpperCase()
+    }
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  }
+
+  const userAvatar = getUserAvatar()
 
   return (
     <header className="header">
@@ -67,11 +91,17 @@ function Header({ searchValue = '', onSearchChange, searchPlaceholder = 'Cerca a
           <Bell size={20} />
         </button>
         <div className="user-profile">
-          <img 
-            src={getUserAvatar()} 
-            alt="User" 
-            className="user-avatar"
-          />
+          {userAvatar ? (
+            <img 
+              src={userAvatar} 
+              alt="User" 
+              className="user-avatar"
+            />
+          ) : (
+            <div className="user-avatar-placeholder">
+              <span>{getUserInitials()}</span>
+            </div>
+          )}
           <span className="user-name">{getUserName()}</span>
         </div>
       </div>

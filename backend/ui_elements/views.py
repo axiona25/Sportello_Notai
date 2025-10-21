@@ -1,34 +1,44 @@
-from rest_framework import viewsets, permissions
-from .models import Element
-from .serializers import ElementSerializer
+"""
+Views for UI elements management.
+"""
+from rest_framework import viewsets, permissions, status
+from rest_framework.response import Response
+from .models import AppointmentTypeTemplate
+from .serializers import AppointmentTypeTemplateSerializer
 
 
-class ElementViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for UI Elements.
+class IsAdminUser(permissions.BasePermission):
+    """Custom permission to only allow admins."""
     
-    list: Get all UI elements
-    retrieve: Get a specific element by ID
-    create: Create a new element (admin only)
-    update: Update an element (admin only)
-    delete: Delete an element (admin only)
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and request.user.role == 'admin'
+
+
+class AppointmentTypeTemplateViewSet(viewsets.ModelViewSet):
     """
-    queryset = Element.objects.filter(is_active=True)
-    serializer_class = ElementSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    ViewSet for managing appointment type templates.
+    Only admins can create/update/delete.
+    All authenticated users can read (for booking).
+    """
+    queryset = AppointmentTypeTemplate.objects.all()
+    serializer_class = AppointmentTypeTemplateSerializer
+    
+    def get_permissions(self):
+        """
+        Read-only per tutti gli autenticati.
+        Write solo per admin.
+        """
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [permissions.IsAuthenticated]
+        else:
+            permission_classes = [IsAdminUser]
+        return [permission() for permission in permission_classes]
     
     def get_queryset(self):
-        queryset = super().get_queryset()
-        
-        # Filter by type
-        element_type = self.request.query_params.get('type', None)
-        if element_type:
-            queryset = queryset.filter(type=element_type)
-        
-        # Filter by location
-        location = self.request.query_params.get('location', None)
-        if location:
-            queryset = queryset.filter(location__icontains=location)
-        
-        return queryset
-
+        """
+        Admins vedono tutte le tipologie.
+        Altri utenti vedono solo quelle attive.
+        """
+        if self.request.user.role == 'admin':
+            return AppointmentTypeTemplate.objects.all()
+        return AppointmentTypeTemplate.objects.filter(is_active=True)

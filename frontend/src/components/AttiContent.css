@@ -15,6 +15,61 @@
   border-radius: 12px;
 }
 
+.atti-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  background-color: white;
+  border-radius: 12px;
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  gap: 16px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #E5E7EB;
+  border-top-color: #1668B0;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+}
+
+.empty-state p {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.atti-no-results {
+  text-align: center;
+}
+
 .atti-table {
   width: 100%;
   border-collapse: collapse;
@@ -40,6 +95,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
+  text-align: left;
 }
 
 .atti-table-row {
@@ -56,6 +112,7 @@
   font-size: 14px;
   color: var(--color-text-primary);
   vertical-align: middle;
+  text-align: left;
 }
 
 /* Data Atto */
@@ -94,6 +151,15 @@
   font-size: 14px;
   font-weight: 400;
   color: var(--color-text-primary);
+}
+
+/* Notaio */
+.atti-notaio {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1668B0;
+  white-space: nowrap;
 }
 
 /* Soggetti */
@@ -149,6 +215,19 @@
   transition: transform 0.2s ease;
 }
 
+/* Stati specifici */
+.atti-stato-dot.concluso {
+  background-color: #10B981;
+}
+
+.atti-stato-dot.lavorazione {
+  background-color: #F59E0B;
+}
+
+.atti-stato-dot.sospeso {
+  background-color: #EF4444;
+}
+
 .atti-stato-dot-container:hover .atti-stato-dot {
   transform: scale(1.2);
 }
@@ -189,7 +268,52 @@
   visibility: visible;
 }
 
+/* Page Actions - sopra la card */
+.page-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 0 var(--spacing-sm);
+}
+
 /* Actions */
+.atti-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.btn-nuovo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-white);
+  background: linear-gradient(to right, #4FADFF, #1668B0);
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(22, 104, 176, 0.2);
+  align-self: center;
+  white-space: nowrap;
+}
+
+.btn-nuovo:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(22, 104, 176, 0.3);
+}
+
+.btn-nuovo:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(22, 104, 176, 0.2);
+}
+
 .atti-actions {
   display: flex;
   align-items: center;
@@ -206,11 +330,18 @@
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  transition: background-color 0.2s ease;
+  color: #6B7280;
+  transition: all 0.2s ease;
 }
 
 .atti-action-btn:hover {
   background-color: #F0F2F5;
+  color: #1668B0;
+}
+
+.atti-action-btn.atti-action-delete:hover {
+  background-color: #FEE2E2;
+  color: #DC2626;
 }
 
 .atti-action-btn:active {
@@ -232,6 +363,7 @@
   .atti-tipologia,
   .atti-data,
   .atti-descrizione,
+  .atti-notaio,
   .atti-soggetti,
   .atti-valore {
     font-size: 13px;

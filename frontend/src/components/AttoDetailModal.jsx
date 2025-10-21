@@ -192,7 +192,6 @@ function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
       window.open(documento.url, '_blank')
     } else {
       // Mock URL per testing - da sostituire con URL reale del backend
-      console.log(`Apertura documento: ${documento.nome}`)
       // window.open(`/api/documents/${documento.id}/download`, '_blank')
     }
   }
@@ -284,12 +283,16 @@ function AttoDetailModal({ atto, onClose, onTogglePreferito }) {
                   <span>{atto.dataAtto}</span>
                 </div>
                 <div className="atto-detail-item">
-                  <label>Valore</label>
-                  <span className="atto-detail-value">{atto.valore}</span>
+                  <label>Notaio</label>
+                  <span className="atto-detail-notaio">{atto.notaioNome}</span>
                 </div>
-                <div className="atto-detail-item full-width">
+                <div className="atto-detail-item">
                   <label>Descrizione</label>
                   <span>{atto.descrizione}</span>
+                </div>
+                <div className="atto-detail-item">
+                  <label>Valore</label>
+                  <span className="atto-detail-value">{atto.valore}</span>
                 </div>
                 <div className="atto-detail-item">
                   <label>Soggetti Coinvolti</label>

@@ -106,6 +106,14 @@ function Sidebar({ onLogout, userRole, onNavigateToSettings, onNavigateToDashboa
               <Building2 size={22} strokeWidth={2} />
               <span>Partners</span>
             </a>
+            <a 
+              href="#" 
+              className={`nav-item ${currentView === 'settings' ? 'active' : ''}`}
+              onClick={handleSettingsClick}
+            >
+              <Settings size={22} strokeWidth={2} />
+              <span>Impostazioni</span>
+            </a>
           </>
         )}
 

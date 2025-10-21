@@ -8,7 +8,10 @@ import {
   Mail, 
   Archive,
   Star,
-  User
+  UserX,
+  SlidersHorizontal,
+  X,
+  Search
 } from 'lucide-react'
 import notaryProfileService from '../services/notaryProfileService'
 import NotaryModal from './NotaryModal'
@@ -20,18 +23,25 @@ const DEFAULT_PROFILE_PHOTO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFs
 
 function NotaryCards() {
   const [profiles, setProfiles] = useState([])
+  const [blockedCount, setBlockedCount] = useState(0)
   const [selectedNotary, setSelectedNotary] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [showBooking, setShowBooking] = useState(false)
+  const [searchName, setSearchName] = useState('')
+  const [filterRating, setFilterRating] = useState('all')
+  const [filterCity, setFilterCity] = useState('all')
+  const [showFilters, setShowFilters] = useState(false)
 
   const loadProfiles = async (forceRefresh = false) => {
-    console.log('📋 Caricamento profili dal backend...')
     const notaryProfiles = await notaryProfileService.getAllProfiles(!forceRefresh)
     
-    console.log(`✅ ${notaryProfiles.length} profili caricati`)
+    // Filtra solo i notai con licenza attiva
+    const activeProfiles = notaryProfiles.filter(profile => profile.license_active !== false)
+    const inactiveCount = notaryProfiles.length - activeProfiles.length
+    
     
     // Debug foto profilo
-    notaryProfiles.forEach((profile, index) => {
+    activeProfiles.forEach((profile, index) => {
       const photoInfo = {
         hasPhoto: !!profile.photo,
         isEmpty: profile.photo === '',
@@ -39,24 +49,21 @@ function NotaryCards() {
         photoLength: profile.photo?.length || 0,
         photoStart: profile.photo?.substring(0, 50) || 'N/A'
       }
-      console.log(`📸 Profilo ${index + 1} (${profile.name}):`)
-      console.log('  - hasPhoto:', photoInfo.hasPhoto)
-      console.log('  - isEmpty:', photoInfo.isEmpty)
-      console.log('  - isNull:', photoInfo.isNull)
-      console.log('  - photoLength:', photoInfo.photoLength)
-      console.log('  - photoStart:', photoInfo.photoStart)
     })
     
-    if (notaryProfiles[0]?.services) {
-      console.log('🔧 Servizi profilo 1:', JSON.stringify(notaryProfiles[0].services, null, 2))
-      const enabledServices = Object.entries(notaryProfiles[0].services)
+    if (activeProfiles[0]?.services) {
+      const enabledServices = Object.entries(activeProfiles[0].services)
         .filter(([_, enabled]) => enabled)
         .map(([key]) => key)
-      console.log('✅ Servizi ABILITATI:', enabledServices)
-      console.log('📊 Totale abilitati:', enabledServices.length)
     }
     
-    setProfiles(notaryProfiles)
+    // Ordina alfabeticamente per nome
+    const sortedProfiles = activeProfiles.sort((a, b) => 
+      a.name.localeCompare(b.name, 'it')
+    )
+    
+    setProfiles(sortedProfiles)
+    setBlockedCount(inactiveCount)
   }
 
   useEffect(() => {
@@ -65,16 +72,22 @@ function NotaryCards() {
 
     // Custom event per aggiornamenti interni (quando notaio salva impostazioni)
     const handleProfileUpdate = (event) => {
-      console.log('📡 Ricevuto evento notaryProfileUpdated!')
-      console.log('📊 Dettagli evento:', event.detail)
-      console.log('🔄 Ricaricando profili con forceRefresh...')
       loadProfiles(true) // Force refresh senza cache
     }
 
     // Polling ogni 10 secondi per aggiornamenti real-time tra browser diversi
     const stopPolling = notaryProfileService.startPolling((newProfiles) => {
-      console.log(`🔄 Polling: ${newProfiles.length} profili aggiornati`)
-      setProfiles(newProfiles)
+      // Filtra solo i notai con licenza attiva
+      const activeProfiles = newProfiles.filter(profile => profile.license_active !== false)
+      const inactiveCount = newProfiles.length - activeProfiles.length
+      
+      // Ordina alfabeticamente per nome
+      const sortedProfiles = activeProfiles.sort((a, b) => 
+        a.name.localeCompare(b.name, 'it')
+      )
+      
+      setProfiles(sortedProfiles)
+      setBlockedCount(inactiveCount)
     }, 10000)
 
     window.addEventListener('notaryProfileUpdated', handleProfileUpdate)
@@ -124,6 +137,19 @@ function NotaryCards() {
     return labels[serviceKey] || ''
   }
 
+  const getServiceTooltip = (serviceKey) => {
+    const tooltips = {
+      documents: 'Gestione e condivisione documenti',
+      agenda: 'Prenota appuntamenti online',
+      chat: 'Videochiamate e consulenze online',
+      acts: 'Consultazione atti notarili',
+      signature: 'Firma digitale documenti',
+      pec: 'Comunicazione via PEC certificata',
+      conservation: 'Conservazione digitale a norma'
+    }
+    return tooltips[serviceKey] || ''
+  }
+
   if (profiles.length === 0) {
     return (
       <div className="notary-cards-empty">
@@ -142,12 +168,227 @@ function NotaryCards() {
     setShowBooking(true)
   }
 
+  // Funzione per estrarre le iniziali dal nome (campo "Nome e Cognome" dalla tab Generali)
+  const getInitials = (name) => {
+    if (!name) return 'NN'
+    
+    const parts = name.trim().split(' ').filter(p => p.length > 0)
+    let initials = ''
+    
+    if (parts.length === 1) {
+      // Se c'è solo una parola, prendi le prime 2 lettere
+      initials = parts[0].substring(0, 2).toUpperCase()
+    } else {
+      // Se ci sono più parole, prendi prima lettera della prima parola + prima lettera dell'ultima parola
+      initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    
+    return initials
+  }
+
+  // Applica filtri
+  const filteredProfiles = profiles.filter(profile => {
+    // Filtro per nome e cognome
+    if (searchName.trim() !== '') {
+      const searchLower = searchName.toLowerCase().trim()
+      const profileName = profile.name.toLowerCase()
+      if (!profileName.includes(searchLower)) return false
+    }
+    
+    // Filtro per rating
+    if (filterRating !== 'all') {
+      const rating = parseFloat(profile.rating) || 0
+      if (filterRating === '5' && rating < 5) return false
+      if (filterRating === '4' && rating < 4) return false
+      if (filterRating === '3' && rating < 3) return false
+    }
+    
+    // Filtro per città
+    if (filterCity !== 'all') {
+      const profileCity = profile.address.split('-')[1]?.trim() || ''
+      if (!profileCity.toLowerCase().includes(filterCity.toLowerCase())) return false
+    }
+    
+    return true
+  })
+  
+  // Estrai città uniche per il filtro
+  const uniqueCities = [...new Set(profiles.map(p => {
+    const city = p.address.split('-')[1]?.trim() || 'N/A'
+    return city
+  }))].sort()
+  
+  // Calcola quante card placeholder mostrare
+  const maxVisibleCards = 5
+  const scrollHintCard = 1 // Una card extra come hint per lo scrolling
+  
+  // Placeholder normali (fino a 5 card totali)
+  const normalPlaceholders = filteredProfiles.length < maxVisibleCards 
+    ? Math.min(blockedCount, maxVisibleCards - filteredProfiles.length) 
+    : 0
+  
+  // Aggiungi sempre una sesta card come hint per lo scrolling
+  const totalPlaceholders = normalPlaceholders + scrollHintCard
+  const placeholderCards = Array(totalPlaceholders).fill(null)
+  
+  // Disabilita lo scroll se ci sono meno di 6 notai attivi
+  const shouldEnableScroll = filteredProfiles.length >= 6
+  
+
+  // Conta filtri attivi
+  const activeFiltersCount = [
+    searchName.trim() !== '',
+    filterRating !== 'all',
+    filterCity !== 'all'
+  ].filter(Boolean).length
+  
+  const resetFilters = () => {
+    setSearchName('')
+    setFilterRating('all')
+    setFilterCity('all')
+  }
+
   return (
     <>
       <div className="notary-cards-section">
-        <h2 className="notary-cards-title">Notai Disponibili</h2>
-        <div className="notary-cards-grid">
-          {profiles.map((profile) => (
+        {/* Header con titolo e filtri */}
+        <div className="notary-cards-header">
+          <h2 className="notary-cards-title">Notai Disponibili</h2>
+          
+          {/* Pulsante filtri */}
+          <button 
+            className="filter-button"
+            onClick={() => setShowFilters(true)}
+          >
+            <SlidersHorizontal size={18} />
+            <span>Filtri</span>
+            {activeFiltersCount > 0 && (
+              <span className="filter-badge">{activeFiltersCount}</span>
+            )}
+          </button>
+        </div>
+        
+        {/* Modale Filtri */}
+        {showFilters && (
+          <div className="filter-modal-overlay" onClick={() => setShowFilters(false)}>
+            <div className="filter-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="filter-modal-header">
+                <h3 className="filter-modal-title">
+                  <SlidersHorizontal size={20} />
+                  Filtra Notai
+                </h3>
+                <button 
+                  className="filter-modal-close"
+                  onClick={() => setShowFilters(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="filter-modal-body">
+                {/* Campo Ricerca Nome */}
+                <div className="filter-section">
+                  <label className="filter-label">Cerca per Nome e Cognome</label>
+                  <div className="search-input-wrapper">
+                    <Search size={18} />
+                    <input
+                      type="text"
+                      placeholder="Inserisci nome o cognome..."
+                      value={searchName}
+                      onChange={(e) => setSearchName(e.target.value)}
+                      className="search-input"
+                    />
+                    {searchName && (
+                      <button 
+                        className="search-clear"
+                        onClick={() => setSearchName('')}
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Filtro Rating */}
+                <div className="filter-section">
+                  <label className="filter-label">Rating</label>
+                  <div className="filter-options">
+                    <button 
+                      className={`filter-option ${filterRating === 'all' ? 'active' : ''}`}
+                      onClick={() => setFilterRating('all')}
+                    >
+                      Tutti
+                    </button>
+                    <button 
+                      className={`filter-option ${filterRating === '5' ? 'active' : ''}`}
+                      onClick={() => setFilterRating('5')}
+                    >
+                      <Star size={14} fill="#FFB800" stroke="#FFB800" />
+                      5 stelle
+                    </button>
+                    <button 
+                      className={`filter-option ${filterRating === '4' ? 'active' : ''}`}
+                      onClick={() => setFilterRating('4')}
+                    >
+                      <Star size={14} fill="#FFB800" stroke="#FFB800" />
+                      4+ stelle
+                    </button>
+                    <button 
+                      className={`filter-option ${filterRating === '3' ? 'active' : ''}`}
+                      onClick={() => setFilterRating('3')}
+                    >
+                      <Star size={14} fill="#FFB800" stroke="#FFB800" />
+                      3+ stelle
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Filtro Città */}
+                <div className="filter-section">
+                  <label className="filter-label">Città</label>
+                  <div className="filter-options">
+                    <button 
+                      className={`filter-option ${filterCity === 'all' ? 'active' : ''}`}
+                      onClick={() => setFilterCity('all')}
+                    >
+                      Tutte
+                    </button>
+                    {uniqueCities.map(city => (
+                      <button 
+                        key={city}
+                        className={`filter-option ${filterCity === city ? 'active' : ''}`}
+                        onClick={() => setFilterCity(city)}
+                      >
+                        {city}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="filter-modal-footer">
+                {activeFiltersCount > 0 && (
+                  <button 
+                    className="filter-reset-btn"
+                    onClick={resetFilters}
+                  >
+                    <X size={16} />
+                    Resetta filtri
+                  </button>
+                )}
+                <button 
+                  className="filter-apply-btn"
+                  onClick={() => setShowFilters(false)}
+                >
+                  Applica
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div className={`notary-cards-grid ${!shouldEnableScroll ? 'no-scroll' : ''}`}>
+          {filteredProfiles.map((profile) => (
             <div 
               key={profile.id} 
               className="notary-card"
@@ -164,24 +405,14 @@ function NotaryCards() {
                                      !profile.photo.includes('Logo_icona') &&
                                      profile.photo.startsWith('data:image')
                 
-                console.log(`🖼️ RENDER ${profile.name}:`)
-                console.log('  - photo value:', profile.photo === '' ? '""(EMPTY)' : (profile.photo === null ? 'null' : `${profile.photo?.length} chars`))
-                console.log('  - hasValidPhoto:', hasValidPhoto)
-                console.log('  - willShowPlaceholder:', !hasValidPhoto)
-                console.log('  - showing:', hasValidPhoto ? 'FOTO REALE' : '🔵 LOGO SU BLU')
                 
                 if (hasValidPhoto) {
                   return <img src={profile.photo} alt={profile.name} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
                 } else {
-                  console.log(`🎨 RENDERING PLACEHOLDER per ${profile.name} senza foto`)
+                  const initials = getInitials(profile.name)
                   return (
                     <div className="notary-photo-placeholder">
-                      <User 
-                        size={64} 
-                        color="white" 
-                        strokeWidth={1.5}
-                        style={{ opacity: 0.9 }}
-                      />
+                      <span className="notary-initials">{initials}</span>
                     </div>
                   )
                 }
@@ -207,21 +438,22 @@ function NotaryCards() {
               <span className="notary-services-title">Servizi Offerti</span>
               <div className="notary-services-grid">
                 {(() => {
-                  const enabledServices = Object.entries(profile.services || {})
-                    .filter(([_, enabled]) => enabled)
+                  // Ordine fisso dei servizi (stesso ordine della tab Vetrina)
+                  const serviceOrder = ['documents', 'agenda', 'chat', 'acts', 'signature', 'pec', 'conservation']
                   
-                  console.log(`🎨 Rendering ${enabledServices.length} servizi per ${profile.name}:`, 
-                    enabledServices.map(([key]) => key))
+                  const enabledServices = serviceOrder
+                    .filter(key => profile.services?.[key] === true)
                   
-                  return enabledServices.map(([key, enabled], index, array) => {
-                    const icon = getServiceIcon(key, enabled)
+                  
+                  return enabledServices.map((key, index, array) => {
+                    const icon = getServiceIcon(key, true)
                     if (!icon) return null
                     
                     return (
                       <React.Fragment key={key}>
                         <div 
                           className="notary-service-item" 
-                          title={getServiceLabel(key)}
+                          title={getServiceTooltip(key)}
                         >
                           {icon}
                         </div>
@@ -234,6 +466,38 @@ function NotaryCards() {
             </div>
           </div>
         ))}
+
+        {/* Card Placeholder per notai bloccati - Stile identico alle card normali */}
+        {placeholderCards.map((_, index) => {
+          const isScrollHint = index === placeholderCards.length - 1 // Ultima card è lo scroll hint
+          return (
+            <div 
+              key={`placeholder-${index}`} 
+              className={`notary-card notary-card-placeholder ${isScrollHint && !shouldEnableScroll ? 'scroll-hint' : ''}`}
+            >
+              {/* Foto placeholder con icona */}
+              <div className="notary-photo">
+                <UserX size={48} className="placeholder-icon" strokeWidth={1.5} />
+              </div>
+
+              {/* Nome + Rating */}
+              <div className="notary-card-header">
+                <div className="notary-info">
+                  <h3 className="placeholder-name">Notaio non disponibile</h3>
+                </div>
+              </div>
+
+              {/* Indirizzo */}
+              <p className="placeholder-address">Questo notaio è attualmente disattivato</p>
+
+              {/* Servizi */}
+              <div className="notary-services">
+                <span className="notary-services-title">Servizi Offerti</span>
+                <div className="placeholder-services-empty">Nessun servizio disponibile</div>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
 

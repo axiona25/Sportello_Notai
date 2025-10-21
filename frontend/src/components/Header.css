@@ -118,6 +118,20 @@
   object-fit: cover;
 }
 
+.user-avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(to right, #4FADFF, #1668B0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
 .user-name {
   font-size: 14px;
   font-weight: 400;

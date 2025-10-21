@@ -7,10 +7,11 @@ import DeedDetailCard from './DeedDetailCard'
 import AdminSystemSummary from './AdminSystemSummary'
 import NotariesManagement from './NotariesManagement'
 import PartnersManagement from './PartnersManagement'
+import SettingsAdmin from './SettingsAdmin'
 import adminService from '../services/adminService'
 import './DashboardAdmin.css'
 
-function DashboardAdmin({ onLogout }) {
+function DashboardAdmin({ onLogout, user }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedStat, setSelectedStat] = useState(null)
   const [searchValue, setSearchValue] = useState('')
@@ -145,6 +146,10 @@ function DashboardAdmin({ onLogout }) {
     setCurrentView('partners')
   }
 
+  const handleNavigateToSettings = () => {
+    setCurrentView('settings')
+  }
+
   const handleBackToDashboard = () => {
     setCurrentView('dashboard')
   }
@@ -158,6 +163,8 @@ function DashboardAdmin({ onLogout }) {
         onNavigateToDashboard={handleBackToDashboard}
         onNavigateToNotaries={handleNavigateToNotaries}
         onNavigateToPartners={handleNavigateToPartners}
+        onNavigateToSettings={handleNavigateToSettings}
+        user={user}
       />
     )
   }
@@ -170,7 +177,30 @@ function DashboardAdmin({ onLogout }) {
         onNavigateToDashboard={handleBackToDashboard}
         onNavigateToNotaries={handleNavigateToNotaries}
         onNavigateToPartners={handleNavigateToPartners}
+        onNavigateToSettings={handleNavigateToSettings}
+        user={user}
       />
+    )
+  }
+
+  if (currentView === 'settings') {
+    return (
+      <div className="dashboard-admin">
+        <Sidebar 
+          onLogout={onLogout} 
+          userRole="admin"
+          onNavigateToDashboard={handleBackToDashboard}
+          onNavigateToNotaries={handleNavigateToNotaries}
+          onNavigateToPartners={handleNavigateToPartners}
+          onNavigateToSettings={handleNavigateToSettings}
+          currentView="settings"
+        />
+        <SettingsAdmin
+          searchValue={searchValue}
+          onSearchChange={handleSearchChange}
+          user={user}
+        />
+      </div>
     )
   }
 
@@ -182,6 +212,7 @@ function DashboardAdmin({ onLogout }) {
         userRole="admin"
         onNavigateToNotaries={handleNavigateToNotaries}
         onNavigateToPartners={handleNavigateToPartners}
+        onNavigateToSettings={handleNavigateToSettings}
         onNavigateToDashboard={handleBackToDashboard}
         currentView={currentView}
       />

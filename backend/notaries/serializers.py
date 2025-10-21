@@ -11,6 +11,7 @@ class NotarySerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source='user.email', read_only=True)
     latitude = serializers.SerializerMethodField()
     longitude = serializers.SerializerMethodField()
+    foto = serializers.CharField(source='showcase_photo', allow_blank=True, required=False)
     
     class Meta:
         model = Notary
@@ -21,6 +22,7 @@ class NotarySerializer(serializers.ModelSerializer):
             'address_cap', 'address_country',
             'latitude', 'longitude',
             'cover_image_url', 'profile_image_url',
+            'foto', 'showcase_photo',
             'services', 'tariffe',
             'total_reviews', 'average_rating', 'total_acts',
             'working_hours',
@@ -64,10 +66,10 @@ class NotaryShowcaseSerializer(serializers.ModelSerializer):
         decimal_places=2,
         read_only=True
     )
-    photo = serializers.CharField(source='showcase_photo', allow_blank=True)
+    photo = serializers.SerializerMethodField()
     experience = serializers.IntegerField(source='showcase_experience')
     languages = serializers.CharField(source='showcase_languages')
-    description = serializers.CharField(source='showcase_description', allow_blank=True)
+    description = serializers.CharField(source='showcase_description', allow_blank=True, required=False, default='')
     services = serializers.JSONField(source='showcase_services')
     availability = serializers.SerializerMethodField()
     
@@ -76,9 +78,13 @@ class NotaryShowcaseSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'title', 'address', 'rating',
             'photo', 'experience', 'languages', 'description',
-            'services', 'availability', 'updated_at'
+            'services', 'availability', 'updated_at', 'license_active'
         ]
-        read_only_fields = ['id', 'rating', 'updated_at']
+        read_only_fields = ['id', 'rating', 'updated_at', 'license_active']
+    
+    def get_photo(self, obj):
+        """Get showcase photo - always return the field even if empty."""
+        return obj.showcase_photo or ''
     
     def get_title(self, obj):
         """Generate title from specializations or default."""
@@ -104,6 +110,21 @@ class NotaryShowcaseSerializer(serializers.ModelSerializer):
             'enabled': obj.showcase_availability_enabled,
             'hours': obj.showcase_availability_hours or 'Lun-Ven 9:00-18:00'
         }
+    
+    def update(self, instance, validated_data):
+        """Handle photo update from request data."""
+        # Il photo viene passato come dato diretto, non in validated_data source mapping
+        if 'photo' in self.initial_data:
+            instance.showcase_photo = self.initial_data['photo']
+        
+        # Altri campi
+        instance.showcase_experience = validated_data.get('showcase_experience', instance.showcase_experience)
+        instance.showcase_languages = validated_data.get('showcase_languages', instance.showcase_languages)
+        instance.showcase_description = validated_data.get('showcase_description', instance.showcase_description)
+        instance.showcase_services = validated_data.get('showcase_services', instance.showcase_services)
+        
+        instance.save()
+        return instance
 
 
 class ClientSerializer(serializers.ModelSerializer):
@@ -324,6 +345,7 @@ class AdminNotaryListSerializer(serializers.ModelSerializer):
     
     user_email = serializers.EmailField(source='user.email', read_only=True)
     license_status = serializers.SerializerMethodField()
+    foto = serializers.CharField(source='showcase_photo', allow_blank=True, required=False, read_only=True)
     
     class Meta:
         model = Notary
@@ -333,6 +355,8 @@ class AdminNotaryListSerializer(serializers.ModelSerializer):
             'phone', 'pec_address',
             'total_reviews', 'average_rating',
             'license_active', 'license_expiry_date', 'license_status',
+            'showcase_photo', 'foto',
+            'license_payment_amount', 'license_payment_frequency',
             'created_at'
         ]
         read_only_fields = ['id', 'created_at']

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import Calendar from './Calendar'
@@ -14,12 +14,36 @@ import AttiSidebarNotaio from './AttiSidebarNotaio'
 import AttiContent from './AttiContent'
 import './DashboardNotaio.css'
 
-function DashboardNotaio({ onLogout, user }) {
+function DashboardNotaio({ onLogout, user: initialUser }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [searchValue, setSearchValue] = useState('')
   const [currentView, setCurrentView] = useState('dashboard') // 'dashboard', 'settings', 'documenti', o 'atti'
   const [attiFilter, setAttiFilter] = useState(null) // Filtro per gli atti (cliente)
+  const [user, setUser] = useState(initialUser)
+
+  // Ascolta gli aggiornamenti dell'utente dal localStorage
+  useEffect(() => {
+    const handleUserUpdate = (event) => {
+      setUser(event.detail.user)
+    }
+
+    // Listener per aggiornamenti da altre tab/browser tramite localStorage
+    const handleStorageChange = (event) => {
+      if (event.key === 'user') {
+        const updatedUser = JSON.parse(event.newValue || '{}')
+        setUser(updatedUser)
+      }
+    }
+
+    window.addEventListener('userUpdated', handleUserUpdate)
+    window.addEventListener('storage', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('userUpdated', handleUserUpdate)
+      window.removeEventListener('storage', handleStorageChange)
+    }
+  }, [])
   
   // Ottieni nome del notaio
   const getNotaryName = () => {

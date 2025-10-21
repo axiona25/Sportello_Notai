@@ -20,6 +20,7 @@ from .serializers import (
     AppointmentSerializer, AvailableSlotSerializer
 )
 from accounts.models import UserRole
+from appointments.models import DisponibilitaNotaio, Appuntamento, GiornoSettimana
 
 
 class NotaryListView(generics.ListAPIView):
@@ -214,22 +215,16 @@ class NotaryShowcaseListView(generics.ListAPIView):
     serializer_class = NotaryShowcaseSerializer
     
     def get_queryset(self):
-        """Return only notaries with valid licenses."""
-        from django.utils import timezone
-        today = timezone.now().date()
-        
-        # Filtra solo notai con licenza attiva e NON scaduta
-        queryset = Notary.objects.select_related('user').filter(
-            license_active=True
-        ).filter(
-            Q(license_expiry_date__isnull=True) | Q(license_expiry_date__gte=today)
-        )
+        """Return all notaries with license status info (frontend will filter)."""
+        # Restituisce TUTTI i notai con il campo license_active
+        # Il frontend decide quali mostrare e quanti contare per i placeholder
+        queryset = Notary.objects.select_related('user').all()
         
         return queryset
     
     @extend_schema(
         summary="Get all notary public showcases",
-        description="Returns a list of all notary public profiles with valid licenses. No authentication required."
+        description="Returns a list of all notary public profiles with license status. Frontend filters based on license_active field. No authentication required."
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
@@ -311,7 +306,7 @@ class AvailableSlotsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Get notary
+        # Get notary from Notary model
         try:
             notary = Notary.objects.get(id=notary_id)
         except Notary.DoesNotExist:
@@ -320,46 +315,67 @@ class AvailableSlotsView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        # ⚠️ VERIFICA LICENZA NOTAIO
-        if not notary.is_license_valid():
+        # ⚠️ VERIFICA STATO NOTARY (unified)
+        if not notary.license_active or not notary.is_verified:
             return Response(
                 {
                     'error': 'This notary cannot accept new appointments',
-                    'reason': 'license_expired',
-                    'message': 'La licenza del notaio è scaduta o disattivata',
+                    'reason': 'notary_inactive',
+                    'message': 'Il notaio non è attivo o verificato',
                     'slots': []  # Nessuno slot disponibile
                 },
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Get notary's working hours
-        availabilities = NotaryAvailability.objects.filter(
-            notary=notary,
-            is_available=True
+        # Get notary's working hours from DisponibilitaNotaio (now using notary field)
+        availabilities = DisponibilitaNotaio.objects.filter(
+            notary=notary,  # ✅ Unified: usa il campo notary
+            is_active=True,
+            permetti_prenotazioni_online=True
+        ).filter(
+            Q(data_inizio_validita__lte=start_date) &
+            (Q(data_fine_validita__gte=start_date) | Q(data_fine_validita__isnull=True))
         )
+        
+        # Map GiornoSettimana to Python weekday (0=Mon, 6=Sun)
+        giorno_to_weekday = {
+            'lunedi': 0,
+            'martedi': 1,
+            'mercoledi': 2,
+            'giovedi': 3,
+            'venerdi': 4,
+            'sabato': 5,
+            'domenica': 6
+        }
         
         # Organize by day of week
         hours_by_day = defaultdict(list)
         for avail in availabilities:
-            hours_by_day[avail.day_of_week].append({
-                'start': avail.start_time,
-                'end': avail.end_time
-            })
+            weekday = giorno_to_weekday.get(avail.giorno_settimana)
+            if weekday is not None:
+                hours_by_day[weekday].append({
+                    'start': avail.ora_inizio,
+                    'end': avail.ora_fine
+                })
         
-        # Get existing appointments in date range
-        existing_appointments = Appointment.objects.filter(
-            notary=notary,
-            date__gte=start_date,
-            date__lte=end_date,
-            status__in=['pending', 'accepted']
-        ).values('date', 'start_time', 'end_time')
+        # Get existing appointments in date range (unified: using notary)
+        existing_appointments = Appuntamento.objects.filter(
+            notary=notary,  # ✅ Unified: usa il campo notary
+            start_time__date__gte=start_date,
+            start_time__date__lte=end_date,
+            status__in=['richiesto', 'approvato', 'confermato']
+        ).values('start_time', 'end_time')
         
         # Organize appointments by date
         appointments_by_date = defaultdict(list)
         for apt in existing_appointments:
-            appointments_by_date[apt['date']].append({
-                'start': apt['start_time'],
-                'end': apt['end_time']
+            apt_date = apt['start_time'].date() if isinstance(apt['start_time'], datetime) else apt['start_time']
+            apt_start_time = apt['start_time'].time() if isinstance(apt['start_time'], datetime) else apt['start_time']
+            apt_end_time = apt['end_time'].time() if isinstance(apt['end_time'], datetime) else apt['end_time']
+            
+            appointments_by_date[apt_date].append({
+                'start': apt_start_time,
+                'end': apt_end_time
             })
         
         # Calculate available slots
@@ -435,7 +451,7 @@ class AppointmentCreateView(generics.CreateAPIView):
         """Create appointment with concurrency lock."""
         
         # Only clients can book appointments
-        if request.user.role != 'CLIENTE':
+        if request.user.role != 'cliente':
             return Response(
                 {'error': 'Only clients can book appointments'},
                 status=status.HTTP_403_FORBIDDEN
@@ -504,7 +520,7 @@ class AppointmentListView(generics.ListAPIView):
         """Filter appointments by user role."""
         user = self.request.user
         
-        if user.role == 'NOTAIO':
+        if user.role == 'notaio':
             # Notary sees appointments for their office
             return Appointment.objects.filter(
                 notary__user=user
@@ -530,7 +546,7 @@ class AppointmentDetailView(generics.RetrieveUpdateAPIView):
         """Filter by user role."""
         user = self.request.user
         
-        if user.role == 'NOTAIO':
+        if user.role == 'notaio':
             return Appointment.objects.filter(notary__user=user)
         else:
             return Appointment.objects.filter(client=user)
@@ -543,7 +559,7 @@ class AppointmentDetailView(generics.RetrieveUpdateAPIView):
         """Only allow specific updates based on user role."""
         appointment = self.get_object()
         
-        if request.user.role == 'NOTAIO':
+        if request.user.role == 'notaio':
             # Notary can update status and notes
             allowed_fields = ['status', 'notary_notes', 'rejection_reason']
         else:
@@ -586,7 +602,7 @@ class AppointmentActionView(APIView):
     def post(self, request, appointment_id):
         """Accept or reject appointment."""
         
-        if request.user.role != 'NOTAIO':
+        if request.user.role != 'notaio':
             return Response(
                 {'error': 'Only notaries can accept/reject appointments'},
                 status=status.HTTP_403_FORBIDDEN
