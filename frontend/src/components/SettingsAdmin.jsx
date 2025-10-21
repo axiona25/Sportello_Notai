@@ -1,410 +1,564 @@
 import React, { useState, useEffect } from 'react'
 import { 
   Settings as SettingsIcon, 
-  Calendar,
   Save,
   X,
   Plus,
   Edit2,
   Trash2,
   FileSignature,
-  Users,
+  Clock,
   FileText,
-  Archive,
-  FolderOpen
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react'
 import Header from './Header'
-import apiClient from '../services/apiClient'
+import actCategoriesService from '../services/actCategoriesService'
+import { useToast } from '../contexts/ToastContext'
 import './Settings.css'
 
 function SettingsAdmin({ searchValue, onSearchChange, user }) {
   const [activeTab, setActiveTab] = useState(0)
+  const [isEditing, setIsEditing] = useState(false)
+  const { showToast } = useToast()
   
-  // State per tracciare se ogni tab è in modalità editing o saved
-  const [tabStates, setTabStates] = useState({
-    0: 'saved', // 'saved' o 'editing'
-  })
-
-  // State per le tipologie appuntamento
-  const [appointmentTypes, setAppointmentTypes] = useState([])
+  // State per le tipologie atto
+  const [actCategories, setActCategories] = useState([])
   const [loading, setLoading] = useState(true)
-  const [editingType, setEditingType] = useState(null)
-  const [isCreating, setIsCreating] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [editingCategory, setEditingCategory] = useState(null)
+  const [documentTypes, setDocumentTypes] = useState([])
   
-  // Form state per nuova/modifica tipologia
-  const [typeForm, setTypeForm] = useState({
-    code: '',
+  // Form state per nuova/modifica categoria
+  const [categoryForm, setCategoryForm] = useState({
     name: '',
     description: '',
-    default_duration_minutes: 30,
-    icon: 'Calendar',
-    color: '#4FADFF',
-    order: 0,
+    estimated_duration_minutes: 60,
     is_active: true
   })
 
-  // Carica le tipologie al mount
+  const tabs = [
+    { id: 0, label: 'Tipologie Atti', icon: FileSignature }
+  ]
+
   useEffect(() => {
-    loadAppointmentTypes()
+    loadActCategories()
+    loadDocumentTypes()
   }, [])
 
-  const loadAppointmentTypes = async () => {
+  const loadActCategories = async () => {
+    setLoading(true)
     try {
-      setLoading(true)
-      const response = await apiClient.get('/ui/appointment-types/')
-      
-      // apiClient.get può ritornare direttamente l'array o response.data
-      const data = response.data || response.results || response || []
-      
-      setAppointmentTypes(Array.isArray(data) ? data : [])
+      const data = await actCategoriesService.getAll()
+      console.log('📋 Categorie atto caricate:', data.length)
+      setActCategories(Array.isArray(data) ? data : [])
     } catch (error) {
-      console.error('Errore caricamento tipologie:', error)
-      setAppointmentTypes([])
+      console.error('Errore caricamento categorie:', error)
+      showToast('Errore caricamento tipologie atto', 'error')
+      setActCategories([])
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSaveOrEdit = async () => {
-    const currentState = tabStates[activeTab]
-    if (currentState === 'editing') {
-      // SALVA
-      try {
-        if (isCreating) {
-          await apiClient.post('/ui/appointment-types/', typeForm)
-        } else if (editingType) {
-          await apiClient.patch(`/ui/appointment-types/${editingType.id}/`, typeForm)
-        }
-        
-        await loadAppointmentTypes()
-        setEditingType(null)
-        setIsCreating(false)
-        resetForm()
-        
-        setTabStates(prev => ({
-          ...prev,
-          [activeTab]: 'saved'
-        }))
-      } catch (error) {
-        console.error('Errore salvataggio:', error)
-        alert('Errore nel salvataggio')
-      }
-    } else {
-      // MODIFICA
-      setTabStates(prev => ({
-        ...prev,
-        [activeTab]: 'editing'
-      }))
-    }
-  }
-
-  const handleCancel = () => {
-    setTabStates(prev => ({
-      ...prev,
-      [activeTab]: 'saved'
-    }))
-    setEditingType(null)
-    setIsCreating(false)
-    resetForm()
-  }
-
-  const handleDelete = async (id) => {
-    if (!confirm('Sei sicuro di voler eliminare questa tipologia?')) return
-    
+  const loadDocumentTypes = async () => {
     try {
-      await apiClient.delete(`/ui/appointment-types/${id}/`)
-      await loadAppointmentTypes()
+      const data = await actCategoriesService.getAllDocumentTypes()
+      setDocumentTypes(Array.isArray(data) ? data : [])
     } catch (error) {
-      console.error('Errore eliminazione:', error)
-      alert('Errore nell\'eliminazione')
+      console.error('Errore caricamento tipi documento:', error)
     }
   }
 
-  const handleEditType = (type) => {
-    setEditingType(type)
-    setTypeForm({
-      code: type.code,
-      name: type.name,
-      description: type.description,
-      default_duration_minutes: type.default_duration_minutes,
-      icon: type.icon,
-      color: type.color,
-      order: type.order,
-      is_active: type.is_active
-    })
-    setTabStates(prev => ({ ...prev, [activeTab]: 'editing' }))
+  const handleEditMode = () => {
+    setIsEditing(true)
   }
 
-  const handleNewType = () => {
-    setIsCreating(true)
-    resetForm()
-    setTabStates(prev => ({ ...prev, [activeTab]: 'editing' }))
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    loadActCategories() // Ricarica per annullare modifiche
   }
 
-  const resetForm = () => {
-    setTypeForm({
-      code: '',
+  const handleSaveChanges = async () => {
+    setIsEditing(false)
+    showToast('Modifiche salvate con successo', 'success')
+  }
+
+  const handleOpenModal = (category = null) => {
+    if (category) {
+      setEditingCategory(category)
+      setCategoryForm({
+        name: category.name,
+        description: category.description || '',
+        estimated_duration_minutes: category.estimated_duration_minutes || 60,
+        is_active: category.is_active
+      })
+    } else {
+      setEditingCategory(null)
+      setCategoryForm({
+        name: '',
+        description: '',
+        estimated_duration_minutes: 60,
+        is_active: true
+      })
+    }
+    setShowModal(true)
+  }
+
+  const handleCloseModal = () => {
+    setShowModal(false)
+    setEditingCategory(null)
+    setCategoryForm({
       name: '',
       description: '',
-      default_duration_minutes: 30,
-      icon: 'Calendar',
-      color: '#4FADFF',
-      order: appointmentTypes.length + 1,
+      estimated_duration_minutes: 60,
       is_active: true
     })
   }
 
-  const handleFormChange = (field, value) => {
-    setTypeForm(prev => ({ ...prev, [field]: value }))
-  }
-
-  // Icon mapping per visualizzazione
-  const iconMap = {
-    FileSignature: FileSignature,
-    Users: Users,
-    FileText: FileText,
-    Calendar: Calendar,
-    Archive: Archive,
-    FolderOpen: FolderOpen
-  }
-
-  const tabs = [
-    { id: 0, label: 'Tipologie Appuntamenti', icon: Calendar }
-  ]
-
-  const renderTabContent = () => {
-    const isEditing = tabStates[activeTab] === 'editing'
-
-    switch (activeTab) {
-      case 0:
-        return renderTipologieAppuntamenti(isEditing)
-      default:
-        return null
+  const handleSaveCategory = async () => {
+    try {
+      if (editingCategory) {
+        // Modifica esistente
+        await actCategoriesService.update(editingCategory.id, categoryForm)
+        showToast('Tipologia atto aggiornata', 'success')
+      } else {
+        // Nuova categoria (nota: richiede anche main_category e code)
+        showToast('Creazione nuove categorie non implementata in questa interfaccia', 'warning')
+        handleCloseModal()
+        return
+      }
+      
+      await loadActCategories()
+      handleCloseModal()
+    } catch (error) {
+      console.error('Errore salvataggio categoria:', error)
+      showToast('Errore salvataggio tipologia atto', 'error')
     }
   }
 
-  const renderTipologieAppuntamenti = (isEditing) => {
-    return (
-      <div className="settings-tab two-columns">
-        <div className="settings-section">
-          <h3 className="section-title">Gestione Tipologie Appuntamento</h3>
+  const handleDeleteCategory = async (categoryId) => {
+    if (!window.confirm('Sei sicuro di voler eliminare questa tipologia di atto?')) {
+      return
+    }
 
-          {loading ? (
-            <div className="loading-state">Caricamento...</div>
-          ) : (
-            <>
-              {/* Form di modifica/creazione */}
-              {(isCreating || editingType) && isEditing && (
-                <div className="appointment-type-form">
-                  <h4 className="form-subtitle">{isCreating ? 'Nuova Tipologia' : 'Modifica Tipologia'}</h4>
-                  
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Codice *</label>
-                      <input
-                        type="text"
-                        value={typeForm.code}
-                        onChange={(e) => handleFormChange('code', e.target.value)}
-                        placeholder="es: rogito"
-                        disabled={!isCreating}
-                      />
-                    </div>
+    try {
+      await actCategoriesService.delete(categoryId)
+      showToast('Tipologia atto eliminata', 'success')
+      await loadActCategories()
+    } catch (error) {
+      console.error('Errore eliminazione categoria:', error)
+      showToast('Errore eliminazione tipologia atto', 'error')
+    }
+  }
 
-                    <div className="form-group">
-                      <label>Nome *</label>
-                      <input
-                        type="text"
-                        value={typeForm.name}
-                        onChange={(e) => handleFormChange('name', e.target.value)}
-                        placeholder="es: Rogito Notarile"
-                      />
-                    </div>
-
-                    <div className="form-group full-width">
-                      <label>Descrizione</label>
-                      <textarea
-                        value={typeForm.description}
-                        onChange={(e) => handleFormChange('description', e.target.value)}
-                        placeholder="Breve descrizione del servizio"
-                        rows="3"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Durata (minuti) *</label>
-                      <input
-                        type="number"
-                        value={typeForm.default_duration_minutes}
-                        onChange={(e) => handleFormChange('default_duration_minutes', parseInt(e.target.value))}
-                        min="5"
-                        max="300"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Icona</label>
-                      <select
-                        value={typeForm.icon}
-                        onChange={(e) => handleFormChange('icon', e.target.value)}
-                      >
-                        <option value="Calendar">Calendar</option>
-                        <option value="FileSignature">FileSignature</option>
-                        <option value="Users">Users</option>
-                        <option value="FileText">FileText</option>
-                        <option value="Archive">Archive</option>
-                        <option value="FolderOpen">FolderOpen</option>
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label>Colore</label>
-                      <div className="color-picker-wrapper">
-                        <input
-                          type="color"
-                          value={typeForm.color}
-                          onChange={(e) => handleFormChange('color', e.target.value)}
-                        />
-                        <span className="color-value">{typeForm.color}</span>
-                      </div>
-                    </div>
-
-                    <div className="form-group">
-                      <label>Ordine</label>
-                      <input
-                        type="number"
-                        value={typeForm.order}
-                        onChange={(e) => handleFormChange('order', parseInt(e.target.value))}
-                        min="0"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={typeForm.is_active}
-                          onChange={(e) => handleFormChange('is_active', e.target.checked)}
-                        />
-                        Attivo
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Lista tipologie esistenti - SEMPRE VISIBILE */}
-              <div className="appointment-types-list">
-                {appointmentTypes && appointmentTypes.length > 0 ? appointmentTypes.map(type => {
-                  const IconComponent = iconMap[type.icon] || Calendar
-                  
-                  return (
-                    <div 
-                      key={type.id} 
-                      className={`appointment-type-card ${!type.is_active ? 'inactive' : ''}`}
-                    >
-                      <div className="type-icon" style={{ backgroundColor: `${type.color}20`, color: type.color }}>
-                        <IconComponent size={24} />
-                      </div>
-                      
-                      <div className="type-info">
-                        <div className="type-header">
-                          <h4>{type.name}</h4>
-                          {!type.is_active && <span className="badge-inactive">Disattivo</span>}
-                        </div>
-                        <p className="type-description">{type.description}</p>
-                        <div className="type-meta">
-                          <span className="type-duration">{type.default_duration_minutes} min</span>
-                          <span className="type-code">#{type.code}</span>
-                        </div>
-                      </div>
-                      
-                      {isEditing && (
-                        <div className="type-actions">
-                          <button 
-                            className="btn-icon"
-                            onClick={() => handleEditType(type)}
-                            title="Modifica"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                          <button 
-                            className="btn-icon btn-danger"
-                            onClick={() => handleDelete(type.id)}
-                            title="Elimina"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )
-                }) : (
-                  <div className="loading-state">
-                    Nessuna tipologia di appuntamento trovata.
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    )
+  const handleToggleActive = async (category) => {
+    try {
+      await actCategoriesService.update(category.id, {
+        ...category,
+        is_active: !category.is_active
+      })
+      showToast(
+        category.is_active ? 'Tipologia disattivata' : 'Tipologia attivata',
+        'success'
+      )
+      await loadActCategories()
+    } catch (error) {
+      console.error('Errore toggle active:', error)
+      showToast('Errore modifica stato', 'error')
+    }
   }
 
   return (
-    <div className="settings-page">
-      <Header searchValue={searchValue} onSearchChange={onSearchChange} user={user} />
+    <div className="dashboard-container">
+      <Header 
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Cerca impostazioni..."
+        user={user}
+      />
       
-      <div className="settings-content-wrapper">
-        <div className="settings-header">
-          <div className="settings-welcome-group">
-            <h1 className="settings-welcome-title">Impostazioni Admin</h1>
-          </div>
-        </div>
-
-        <div className="settings-tabs-container">
-          <div className="settings-tabs">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <button
-                  key={tab.id}
-                  className={`settings-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  <Icon size={18} />
-                  <span>{tab.label}</span>
-                </button>
-              )
-            })}
-          </div>
-
-          <div className="settings-actions">
-            {tabStates[activeTab] === 'editing' && (
-              <button className="btn-secondary" onClick={handleCancel}>
-                Annulla
-              </button>
-            )}
-            <button className="btn-primary" onClick={handleSaveOrEdit}>
-              <Save size={18} />
-              {tabStates[activeTab] === 'editing' ? 'Salva Modifiche' : 'Modifica'}
-            </button>
-            {tabStates[activeTab] === 'editing' && activeTab === 0 && (
-              <button 
-                className="btn-primary"
-                onClick={handleNewType}
-              >
-                <Plus size={18} />
-                Nuovo
-              </button>
-            )}
-          </div>
-        </div>
-
+      <div className="dashboard-content">
         <div className="settings-container">
-          <div className="settings-content">
-            {renderTabContent()}
+          {/* Header */}
+          <div className="settings-header">
+            <div className="settings-header-left">
+              <SettingsIcon size={28} />
+              <h1>Impostazioni Amministrazione</h1>
+            </div>
           </div>
+
+          {/* Tabs Container */}
+          <div className="settings-tabs-container">
+            <div className="settings-tabs">
+              {tabs.map(tab => {
+                const TabIcon = tab.icon
+                return (
+                  <button
+                    key={tab.id}
+                    className={`settings-tab ${activeTab === tab.id ? 'active' : ''}`}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    <TabIcon size={18} />
+                    <span>{tab.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="settings-actions">
+              {!isEditing ? (
+                <>
+                  <button className="btn-primary" onClick={handleEditMode}>
+                    <Edit2 size={18} />
+                    <span>Modifica</span>
+                  </button>
+                  <button className="btn-primary" onClick={() => handleOpenModal()}>
+                    <Plus size={18} />
+                    <span>Nuovo</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="btn-secondary" onClick={handleCancelEdit}>
+                    <X size={18} />
+                    <span>Annulla</span>
+                  </button>
+                  <button className="btn-primary" onClick={handleSaveChanges}>
+                    <Save size={18} />
+                    <span>Salva Modifiche</span>
+                  </button>
+                  <button className="btn-primary" onClick={() => handleOpenModal()}>
+                    <Plus size={18} />
+                    <span>Nuovo</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="settings-content">
+            {activeTab === 0 && (
+              <div className="settings-tab two-columns">
+                <div className="settings-section full-width">
+                  <h3>Tipologie di Atto Notarile</h3>
+                  <p className="section-description">
+                    Gestisci le tipologie di atto disponibili per la prenotazione appuntamenti
+                  </p>
+
+                  {loading ? (
+                    <div className="loading-state">Caricamento...</div>
+                  ) : actCategories.length === 0 ? (
+                    <div className="loading-state">Nessuna tipologia di atto trovata.</div>
+                  ) : (
+                    <div className="appointment-types-list">
+                      {actCategories.map(category => (
+                        <div key={category.id} className="appointment-type-card">
+                          <div className="type-card-header">
+                            <div className="type-card-icon">
+                              <FileSignature size={24} />
+                            </div>
+                            <div className="type-card-info">
+                              <h4>{category.name}</h4>
+                              <p className="type-code">{category.code}</p>
+                              {category.main_category_name && (
+                                <p className="type-category">{category.main_category_name}</p>
+                              )}
+                            </div>
+                            <div className="type-card-actions">
+                              {isEditing && (
+                                <>
+                                  <button
+                                    className="btn-icon"
+                                    onClick={() => handleOpenModal(category)}
+                                    title="Modifica"
+                                  >
+                                    <Edit2 size={18} />
+                                  </button>
+                                  <button
+                                    className="btn-icon btn-icon-danger"
+                                    onClick={() => handleToggleActive(category)}
+                                    title={category.is_active ? 'Disattiva' : 'Attiva'}
+                                  >
+                                    {category.is_active ? (
+                                      <CheckCircle size={18} />
+                                    ) : (
+                                      <AlertCircle size={18} />
+                                    )}
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="type-card-body">
+                            {category.description && (
+                              <p className="type-description">{category.description}</p>
+                            )}
+                            
+                            <div className="type-card-meta">
+                              <div className="type-meta-item">
+                                <Clock size={16} />
+                                <span>{category.estimated_duration_minutes} minuti</span>
+                              </div>
+                              <div className="type-meta-item">
+                                <FileText size={16} />
+                                <span>{category.document_count || 0} documenti</span>
+                              </div>
+                              <div className="type-meta-item">
+                                <span className={`status-badge ${category.is_active ? 'active' : 'inactive'}`}>
+                                  {category.is_active ? 'Attivo' : 'Non Attivo'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Modal Edit/Create */}
+      {showModal && (
+        <ActCategoryModal
+          category={editingCategory}
+          categoryForm={categoryForm}
+          setCategoryForm={setCategoryForm}
+          documentTypes={documentTypes}
+          onClose={handleCloseModal}
+          onSave={handleSaveCategory}
+        />
+      )}
+    </div>
+  )
+}
+
+// Componente Modale separato
+function ActCategoryModal({ category, categoryForm, setCategoryForm, documentTypes, onClose, onSave }) {
+  const [activeModalTab, setActiveModalTab] = useState(0)
+  const [requiredDocuments, setRequiredDocuments] = useState([])
+  const [availableDocuments, setAvailableDocuments] = useState([])
+  const { showToast } = useToast()
+
+  useEffect(() => {
+    if (category) {
+      // Carica documenti richiesti esistenti
+      setRequiredDocuments(category.required_documents || [])
+      
+      // Filtra documenti disponibili (escludi quelli già richiesti)
+      const requiredIds = (category.required_documents || []).map(rd => rd.document.id)
+      setAvailableDocuments(
+        documentTypes.filter(dt => !requiredIds.includes(dt.id))
+      )
+    } else {
+      setRequiredDocuments([])
+      setAvailableDocuments(documentTypes)
+    }
+  }, [category, documentTypes])
+
+  const handleAddDocument = async (documentTypeId) => {
+    if (!category) return
+    
+    try {
+      await actCategoriesService.addDocument(category.id, {
+        document_type_id: documentTypeId,
+        is_mandatory: true,
+        order: requiredDocuments.length
+      })
+      
+      showToast('Documento aggiunto', 'success')
+      
+      // Ricarica la categoria per aggiornare i documenti
+      const updated = await actCategoriesService.getById(category.id)
+      setRequiredDocuments(updated.required_documents || [])
+      
+      const requiredIds = (updated.required_documents || []).map(rd => rd.document.id)
+      setAvailableDocuments(documentTypes.filter(dt => !requiredIds.includes(dt.id)))
+    } catch (error) {
+      console.error('Errore aggiunta documento:', error)
+      showToast('Errore aggiunta documento', 'error')
+    }
+  }
+
+  const handleRemoveDocument = async (documentLinkId) => {
+    if (!category) return
+    
+    try {
+      await actCategoriesService.removeDocument(category.id, documentLinkId)
+      showToast('Documento rimosso', 'success')
+      
+      // Aggiorna lo stato locale
+      setRequiredDocuments(requiredDocuments.filter(rd => rd.id !== documentLinkId))
+      
+      // Ricarica documenti disponibili
+      const updated = await actCategoriesService.getById(category.id)
+      const requiredIds = (updated.required_documents || []).map(rd => rd.document.id)
+      setAvailableDocuments(documentTypes.filter(dt => !requiredIds.includes(dt.id)))
+    } catch (error) {
+      console.error('Errore rimozione documento:', error)
+      showToast('Errore rimozione documento', 'error')
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-container modal-large" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>{category ? 'Modifica Tipologia Atto' : 'Nuova Tipologia Atto'}</h2>
+          <button className="modal-close" onClick={onClose}>
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Tabs Modale */}
+        <div className="modal-tabs">
+          <button
+            className={`modal-tab ${activeModalTab === 0 ? 'active' : ''}`}
+            onClick={() => setActiveModalTab(0)}
+          >
+            <FileSignature size={18} />
+            <span>Dettagli</span>
+          </button>
+          {category && (
+            <button
+              className={`modal-tab ${activeModalTab === 1 ? 'active' : ''}`}
+              onClick={() => setActiveModalTab(1)}
+            >
+              <FileText size={18} />
+              <span>Documenti Richiesti ({requiredDocuments.length})</span>
+            </button>
+          )}
+        </div>
+
+        <div className="modal-body">
+          {/* Tab 0: Dettagli */}
+          {activeModalTab === 0 && (
+            <div className="form-grid">
+              <div className="form-group full-width">
+                <label>Nome Tipologia *</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={categoryForm.name}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                  placeholder="Es: Compravendita Immobiliare"
+                />
+              </div>
+
+              <div className="form-group full-width">
+                <label>Descrizione</label>
+                <textarea
+                  className="form-input"
+                  value={categoryForm.description}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
+                  placeholder="Descrizione della tipologia di atto..."
+                  rows="3"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Durata Stimata (minuti) *</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={categoryForm.estimated_duration_minutes}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, estimated_duration_minutes: parseInt(e.target.value) })}
+                  min="15"
+                  step="15"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={categoryForm.is_active}
+                    onChange={(e) => setCategoryForm({ ...categoryForm, is_active: e.target.checked })}
+                  />
+                  <span>Tipologia Attiva</span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* Tab 1: Documenti */}
+          {activeModalTab === 1 && category && (
+            <div className="documents-management">
+              <div className="documents-section">
+                <h3>Documenti Richiesti</h3>
+                {requiredDocuments.length === 0 ? (
+                  <p className="empty-state">Nessun documento richiesto</p>
+                ) : (
+                  <div className="documents-list">
+                    {requiredDocuments.map(reqDoc => (
+                      <div key={reqDoc.id} className="document-item">
+                        <div className="document-info">
+                          <FileText size={18} />
+                          <div>
+                            <strong>{reqDoc.document.name}</strong>
+                            <p>{reqDoc.document.description}</p>
+                            <span className="document-category">{reqDoc.document.category}</span>
+                          </div>
+                        </div>
+                        <button
+                          className="btn-icon btn-icon-danger"
+                          onClick={() => handleRemoveDocument(reqDoc.id)}
+                          title="Rimuovi documento"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="documents-section">
+                <h3>Aggiungi Documento</h3>
+                {availableDocuments.length === 0 ? (
+                  <p className="empty-state">Tutti i documenti sono già richiesti</p>
+                ) : (
+                  <div className="documents-list">
+                    {availableDocuments.map(doc => (
+                      <div key={doc.id} className="document-item">
+                        <div className="document-info">
+                          <FileText size={18} />
+                          <div>
+                            <strong>{doc.name}</strong>
+                            <p>{doc.description}</p>
+                            <span className="document-category">{doc.category}</span>
+                          </div>
+                        </div>
+                        <button
+                          className="btn-icon"
+                          onClick={() => handleAddDocument(doc.id)}
+                          title="Aggiungi documento"
+                        >
+                          <Plus size={18} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>
+            Annulla
+          </button>
+          <button className="btn-primary" onClick={onSave}>
+            <Save size={18} />
+            <span>Salva</span>
+          </button>
         </div>
       </div>
     </div>

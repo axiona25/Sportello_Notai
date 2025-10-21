@@ -1,0 +1,232 @@
+/* Stile per appuntamenti provvisori */
+.appointment-card.provisional {
+  position: relative;
+  border: 2px solid #FFA500;
+  background: linear-gradient(135deg, #FFF9F0 0%, #FFFFFF 100%);
+}
+
+.appointment-card.provisional.selected {
+  border-color: #FF8C00;
+  box-shadow: 0 4px 16px rgba(255, 165, 0, 0.3);
+}
+
+/* Badge Provvisorio */
+.provisional-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #FFA500 0%, #FF8C00 100%);
+  color: white;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.provisional-badge svg {
+  flex-shrink: 0;
+}
+
+/* Nome Cliente */
+.appointment-client {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #555;
+  margin: 8px 0;
+  font-weight: 500;
+}
+
+.appointment-client svg {
+  flex-shrink: 0;
+  color: #777;
+}
+
+/* Pulsanti Azione */
+.provisional-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.provisional-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.provisional-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.provisional-btn svg {
+  flex-shrink: 0;
+}
+
+.provisional-btn-confirm {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: white;
+}
+
+.provisional-btn-confirm:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.provisional-btn-reject {
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  color: white;
+}
+
+.provisional-btn-reject:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Modale Rifiuto */
+.provisional-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+}
+
+.provisional-modal {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.provisional-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.provisional-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  color: #1F2937;
+}
+
+.provisional-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6B7280;
+  transition: color 0.2s ease;
+}
+
+.provisional-modal-close:hover {
+  color: #1F2937;
+}
+
+.provisional-modal-body {
+  padding: 24px;
+}
+
+.provisional-modal-label {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  color: #374151;
+  margin-bottom: 12px;
+}
+
+.provisional-modal-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Poppins', sans-serif;
+  color: #1F2937;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.provisional-modal-textarea:focus {
+  outline: none;
+  border-color: #3B82F6;
+}
+
+.provisional-modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px;
+  background: #F9FAFB;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.provisional-modal-btn {
+  flex: 1;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.provisional-modal-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.provisional-modal-btn-cancel {
+  background: #E5E7EB;
+  color: #374151;
+}
+
+.provisional-modal-btn-cancel:hover {
+  background: #D1D5DB;
+}
+
+.provisional-modal-btn-confirm {
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  color: white;
+}
+
+.provisional-modal-btn-confirm:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+

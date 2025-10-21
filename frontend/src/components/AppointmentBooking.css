@@ -254,11 +254,58 @@
   gap: 20px;
 }
 
+/* Pagination Controls */
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 6px 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #4FADFF 0%, #1668B0 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 173, 255, 0.4);
+}
+
+.pagination-btn:disabled {
+  background: #E5E7EB;
+  color: #9CA3AF;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pagination-info {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  color: #1F2937;
+  min-width: 60px;
+  text-align: center;
+}
+
 /* Service Grid */
 .service-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(4, 1fr); /* Fisso a 4 colonne */
   gap: 12px;
+  max-height: 500px; /* Limita altezza per mostrare max 3 righe */
 }
 
 .service-card {
@@ -266,14 +313,15 @@
   background: white;
   border: 1.5px solid #E2E8F0;
   border-radius: 10px;
-  padding: 14px 12px;
+  padding: 16px 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  min-height: 140px;
 }
 
 .service-card:hover {
@@ -312,33 +360,20 @@
   box-shadow: 0 3px 8px rgba(79, 173, 255, 0.3);
 }
 
-.service-card-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-}
-
-.service-card-content h4 {
+.service-card-title {
   font-family: 'Poppins', sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: #1E293B;
   margin: 0;
   line-height: 1.3;
-}
-
-.service-card-content p {
-  font-family: 'Poppins', sans-serif;
-  font-size: 11px;
-  color: #64748B;
-  margin: 0;
-  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  flex: 1;
 }
 
 .service-card-duration {
@@ -349,15 +384,17 @@
   font-family: 'Poppins', sans-serif;
   font-size: 11px;
   font-weight: 600;
-  color: white;
-  background: #1668B0;
-  padding: 4px 10px;
+  color: #1668B0;
+  background: linear-gradient(135deg, rgba(79, 173, 255, 0.15) 0%, rgba(22, 104, 176, 0.15) 100%);
+  padding: 5px 12px;
   border-radius: 12px;
-  margin-top: 4px;
+  margin-top: auto;
+  width: fit-content;
 }
 
 .service-card.selected .service-card-duration {
   background: linear-gradient(135deg, #4FADFF 0%, #1668B0 100%);
+  color: white;
 }
 
 .service-card-check {

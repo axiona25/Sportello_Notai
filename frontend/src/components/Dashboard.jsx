@@ -4,6 +4,7 @@ import Header from './Header'
 import Calendar from './Calendar'
 import AppointmentCard from './AppointmentCard'
 import DeedDetailCard from './DeedDetailCard'
+import AppointmentDetailModal from './AppointmentDetailModal'
 import NotarySelection from './NotarySelection'
 import NotaryCards from './NotaryCards'
 import AttiSidebar from './AttiSidebar'
@@ -13,6 +14,7 @@ import './Dashboard.css'
 function Dashboard({ onLogout, user: initialUser }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false)
   const [searchValue, setSearchValue] = useState('')
   const [currentView, setCurrentView] = useState('dashboard') // 'dashboard' o 'atti'
   const [attiFilter, setAttiFilter] = useState(null) // Filtro per gli atti (notaio/cliente)
@@ -159,7 +161,16 @@ function Dashboard({ onLogout, user: initialUser }) {
   const handleAppointmentSelect = (appointment) => {
     if (appointment.type !== 'empty') {
       setSelectedAppointment(appointment)
+      // Se è un appuntamento (non un documento), apri la modale
+      if (appointment.type === 'appointment') {
+        setShowAppointmentModal(true)
+      }
     }
+  }
+
+  // Handler per chiusura modale
+  const handleCloseAppointmentModal = () => {
+    setShowAppointmentModal(false)
   }
 
   // Handler per ricerca
@@ -291,6 +302,14 @@ function Dashboard({ onLogout, user: initialUser }) {
           ) : null}
         </div>
       </div>
+
+      {/* Modale Dettaglio Appuntamento con Documenti */}
+      {showAppointmentModal && selectedAppointment && (
+        <AppointmentDetailModal
+          appointment={selectedAppointment}
+          onClose={handleCloseAppointmentModal}
+        />
+      )}
     </div>
   )
 }

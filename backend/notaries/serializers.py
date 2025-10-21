@@ -2,7 +2,8 @@
 Serializers for notaries.
 """
 from rest_framework import serializers
-from .models import Notary, Client, Collaborator, NotaryAvailability, Appointment
+from .models import Notary, Client, Collaborator, NotaryAvailability
+from appointments.models import Appuntamento as Appointment
 
 
 class NotarySerializer(serializers.ModelSerializer):
@@ -193,6 +194,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
     client_name = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     type_display = serializers.CharField(source='get_appointment_type_display', read_only=True)
+    tipologia_atto_nome = serializers.CharField(source='tipologia_atto.name', read_only=True)
     
     class Meta:
         model = Appointment
@@ -200,7 +202,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
             'id', 'notary', 'notary_name', 'client', 'client_email', 'client_name',
             'appointment_type', 'type_display', 'date', 'start_time', 'end_time',
             'duration_minutes', 'status', 'status_display', 'notes', 'notary_notes',
-            'rejection_reason', 'created_at', 'updated_at'
+            'rejection_reason', 'tipologia_atto', 'tipologia_atto_nome',
+            'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
     

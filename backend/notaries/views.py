@@ -22,6 +22,9 @@ from .serializers import (
 from accounts.models import UserRole
 from appointments.models import DisponibilitaNotaio, Appuntamento, GiornoSettimana
 
+# Alias per compatibilità con codice esistente
+Appointment = Appuntamento
+
 
 class NotaryListView(generics.ListAPIView):
     """List all notaries with filtering and search."""

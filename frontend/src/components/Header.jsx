@@ -1,5 +1,6 @@
 import React from 'react'
-import { Search, Bell } from 'lucide-react'
+import { Search } from 'lucide-react'
+import NotificationBell from './NotificationBell'
 import './Header.css'
 
 function Header({ searchValue = '', onSearchChange, searchPlaceholder = 'Cerca appuntamenti...', user = null }) {
@@ -87,9 +88,7 @@ function Header({ searchValue = '', onSearchChange, searchPlaceholder = 'Cerca a
       </div>
 
       <div className="header-right">
-        <button className="notification-btn">
-          <Bell size={20} />
-        </button>
+        <NotificationBell />
         <div className="user-profile">
           {userAvatar ? (
             <img 

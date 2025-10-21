@@ -44,6 +44,12 @@ class NotarialActCategory(models.Model):
     order = models.IntegerField(default=0, help_text='Display order within main category')
     is_active = models.BooleanField(default=True)
     
+    # Durata stimata appuntamento
+    estimated_duration_minutes = models.IntegerField(
+        default=60,
+        help_text='Durata stimata in minuti per questo tipo di atto'
+    )
+    
     # Campi aggiuntivi per configurazione
     requires_property = models.BooleanField(default=False, help_text='Requires property data')
     requires_bank = models.BooleanField(default=False, help_text='Requires bank data')

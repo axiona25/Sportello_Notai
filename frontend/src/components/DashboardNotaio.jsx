@@ -3,6 +3,8 @@ import Sidebar from './Sidebar'
 import Header from './Header'
 import Calendar from './Calendar'
 import AppointmentCard from './AppointmentCard'
+import ProvisionalAppointmentCard from './ProvisionalAppointmentCard'
+import DocumentVerificationModal from './DocumentVerificationModal'
 import DeedDetailCard from './DeedDetailCard'
 import NotaryMetrics from './NotaryMetrics'
 import StudioActivity from './StudioActivity'
@@ -12,15 +14,50 @@ import DocumentiSidebar from './DocumentiSidebar'
 import DocumentiContent from './DocumentiContent'
 import AttiSidebarNotaio from './AttiSidebarNotaio'
 import AttiContent from './AttiContent'
+import appointmentService from '../services/appointmentService'
 import './DashboardNotaio.css'
 
 function DashboardNotaio({ onLogout, user: initialUser }) {
   const [selectedDate, setSelectedDate] = useState(2)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
+  const [showVerificationModal, setShowVerificationModal] = useState(false)
   const [searchValue, setSearchValue] = useState('')
   const [currentView, setCurrentView] = useState('dashboard') // 'dashboard', 'settings', 'documenti', o 'atti'
   const [attiFilter, setAttiFilter] = useState(null) // Filtro per gli atti (cliente)
   const [user, setUser] = useState(initialUser)
+  const [provisionalAppointments, setProvisionalAppointments] = useState([]) // Appuntamenti provvisori
+  const [loadingAppointments, setLoadingAppointments] = useState(false)
+
+  // Carica appuntamenti provvisori dal backend
+  useEffect(() => {
+    loadProvisionalAppointments()
+  }, [])
+
+  const loadProvisionalAppointments = async () => {
+    try {
+      setLoadingAppointments(true)
+      // Carica tutti gli appuntamenti e filtra quelli con stato PROVVISORIO
+      const result = await appointmentService.getNotaryAppointments()
+      if (result.success && Array.isArray(result.data)) {
+        const provisional = result.data.filter(app => app.stato === 'PROVVISORIO')
+        setProvisionalAppointments(provisional)
+      }
+    } catch (error) {
+      console.error('Errore caricamento appuntamenti provvisori:', error)
+    } finally {
+      setLoadingAppointments(false)
+    }
+  }
+
+  const handleAppointmentConfirm = (appointmentId) => {
+    // Rimuovi l'appuntamento dalla lista provvisori
+    setProvisionalAppointments(prev => prev.filter(app => app.id !== appointmentId))
+  }
+
+  const handleAppointmentReject = (appointmentId) => {
+    // Rimuovi l'appuntamento dalla lista provvisori
+    setProvisionalAppointments(prev => prev.filter(app => app.id !== appointmentId))
+  }
 
   // Ascolta gli aggiornamenti dell'utente dal localStorage
   useEffect(() => {
@@ -163,7 +200,20 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
   const handleAppointmentSelect = (appointment) => {
     if (appointment.type !== 'empty') {
       setSelectedAppointment(appointment)
+      // Se è un appuntamento confermato con documenti, apri la modale verifica
+      if (appointment.type === 'appointment' && appointment.stato === 'CONFERMATO') {
+        setShowVerificationModal(true)
+      }
     }
+  }
+
+  const handleCloseVerificationModal = () => {
+    setShowVerificationModal(false)
+  }
+
+  const handleDocumentVerified = () => {
+    // Ricarica gli appuntamenti dopo la verifica di un documento
+    loadProvisionalAppointments()
   }
 
   // Handler per ricerca
@@ -377,9 +427,22 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
             </div>
 
             <div className="dashboard-center">
-              {currentAppointments.length === 0 ? (
+              {/* Appuntamenti Provvisori */}
+              {provisionalAppointments.map((appointment) => (
+                <ProvisionalAppointmentCard
+                  key={`provisional-${appointment.id}`}
+                  appointment={appointment}
+                  onClick={() => handleAppointmentSelect(appointment)}
+                  isSelected={selectedAppointment?.id === appointment.id}
+                  onConfirm={handleAppointmentConfirm}
+                  onReject={handleAppointmentReject}
+                />
+              ))}
+
+              {/* Appuntamenti Normali */}
+              {currentAppointments.length === 0 && provisionalAppointments.length === 0 ? (
                 <AppointmentCard type="empty" emptySlots={4} />
-              ) : currentAppointments.length === 4 ? (
+              ) : currentAppointments.length + provisionalAppointments.length === 4 ? (
                 currentAppointments.map((appointment) => (
                   <AppointmentCard 
                     key={appointment.id} 
@@ -388,7 +451,7 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
                     isSelected={selectedAppointment?.id === appointment.id}
                   />
                 ))
-              ) : (
+              ) : currentAppointments.length + provisionalAppointments.length < 4 ? (
                 <>
                   {currentAppointments.map((appointment) => (
                     <AppointmentCard 
@@ -401,9 +464,18 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
                   <AppointmentCard 
                     key="empty" 
                     type="empty" 
-                    emptySlots={4 - currentAppointments.length}
+                    emptySlots={4 - currentAppointments.length - provisionalAppointments.length}
                   />
                 </>
+              ) : (
+                currentAppointments.slice(0, 4 - provisionalAppointments.length).map((appointment) => (
+                  <AppointmentCard 
+                    key={appointment.id} 
+                    {...appointment}
+                    onClick={() => handleAppointmentSelect(appointment)}
+                    isSelected={selectedAppointment?.id === appointment.id}
+                  />
+                ))
               )}
             </div>
 
@@ -427,6 +499,15 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
           </div>
         </div>
       </div>
+
+      {/* Modale Verifica Documenti */}
+      {showVerificationModal && selectedAppointment && (
+        <DocumentVerificationModal
+          appointment={selectedAppointment}
+          onClose={handleCloseVerificationModal}
+          onDocumentVerified={handleDocumentVerified}
+        />
+      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   X, 
   Calendar, 
@@ -19,19 +19,75 @@ import {
 } from 'lucide-react'
 import AppointmentCalendar from './AppointmentCalendar'
 import appointmentService from '../services/appointmentService'
+import appointmentExtendedService from '../services/appointmentExtendedService'
 import { useToast } from '../contexts/ToastContext'
 import './AppointmentBooking.css'
 
 function AppointmentBooking({ notary, onClose, onSuccess }) {
   const [currentStep, setCurrentStep] = useState(1)
-  const [selectedService, setSelectedService] = useState(null)
+  const [selectedActType, setSelectedActType] = useState(null) // Cambiato da selectedService
+  const [actCategories, setActCategories] = useState([]) // Tipologie di atto dal backend
+  const [loadingCategories, setLoadingCategories] = useState(true)
+  const [currentPage, setCurrentPage] = useState(0) // Paginazione card
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [selectedModes, setSelectedModes] = useState([])
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const { showToast } = useToast()
+  
+  const CARDS_PER_PAGE = 12 // Mostra 12 card per pagina
 
-  // Servizi disponibili con durata
+  // Carica le tipologie di atto dal backend
+  useEffect(() => {
+    loadActCategories()
+  }, [])
+
+  const loadActCategories = async () => {
+    try {
+      setLoadingCategories(true)
+      const response = await appointmentExtendedService.getTipologieAtto()
+      
+      // Gestisci vari formati di risposta API
+      let categoriesArray = []
+      if (Array.isArray(response)) {
+        categoriesArray = response
+      } else if (response?.results) {
+        categoriesArray = response.results
+      } else if (response?.data) {
+        categoriesArray = response.data
+      }
+      
+      console.log('📊 Tipologie atto caricate dal backend:', categoriesArray.length)
+      
+      if (categoriesArray.length === 0) {
+        console.log('⚠️  Nessuna categoria ricevuta dal backend, uso fallback')
+        setActCategories([])
+        return
+      }
+      
+      // Converte le tipologie atto nel formato dei servizi esistenti
+      const servicesFromBackend = categoriesArray.map(cat => ({
+        id: cat.code,
+        label: cat.name,
+        duration: cat.estimated_duration_minutes || 60, // ✅ Usa durata dal backend
+        icon: FileSignature, // Default icon, può essere mappata
+        description: cat.description || '',
+        tipologia_atto_id: cat.id // ID per il backend
+      }))
+      
+      setActCategories(servicesFromBackend)
+      console.log('✅ Card configurate:', servicesFromBackend.length)
+    } catch (error) {
+      console.error('❌ Errore caricamento tipologie atto:', error)
+      // In caso di errore, usa i servizi hardcoded come fallback
+      setActCategories([])
+      console.log('⚠️  Fallback a servizi hardcoded')
+    } finally {
+      setLoadingCategories(false)
+    }
+  }
+
+  // Servizi disponibili con durata (FALLBACK se backend non disponibile)
   const services = [
     { 
       id: 'rogito', 
@@ -162,11 +218,43 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
   const totalSteps = 4
 
   const handleServiceSelect = (service) => {
-    setSelectedService(service)
+    // Toggle: se clicchi sulla card già selezionata, la deseleziona
+    if (selectedActType?.id === service.id) {
+      setSelectedActType(null)
+    } else {
+      setSelectedActType(service)
+    }
   }
 
   const handleSlotSelect = (slot) => {
     setSelectedSlot(slot)
+  }
+
+  // Gestione paginazione
+  const handlePrevPage = () => {
+    setCurrentPage(prev => Math.max(0, prev - 1))
+  }
+
+  const handleNextPage = () => {
+    const totalPages = Math.ceil((actCategories.length > 0 ? actCategories : services).length / CARDS_PER_PAGE)
+    setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))
+  }
+
+  // Calcola card da mostrare nella pagina corrente
+  const getPaginatedServices = () => {
+    const allServices = actCategories.length > 0 ? actCategories : services
+    const startIndex = currentPage * CARDS_PER_PAGE
+    const endIndex = startIndex + CARDS_PER_PAGE
+    const paginatedServices = allServices.slice(startIndex, endIndex)
+    
+    console.log(`📄 Pagina ${currentPage + 1}: Mostro ${paginatedServices.length} card (da ${startIndex + 1} a ${Math.min(endIndex, allServices.length)})`)
+    
+    return paginatedServices
+  }
+
+  const getTotalPages = () => {
+    const allServices = actCategories.length > 0 ? actCategories : services
+    return Math.ceil(allServices.length / CARDS_PER_PAGE)
   }
 
   const toggleMode = (modeId) => {
@@ -178,8 +266,8 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
   }
 
   const handleNext = () => {
-    if (currentStep === 1 && !selectedService) {
-      showToast('Seleziona un tipo di servizio', 'warning', 'Attenzione')
+    if (currentStep === 1 && !selectedActType) {
+      showToast('Seleziona un tipo di atto', 'warning', 'Attenzione')
       return
     }
     if (currentStep === 2 && !selectedSlot) {
@@ -202,11 +290,12 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
 
     const appointmentData = {
       notary: notary.id,
-      appointment_type: selectedService.id,
+      appointment_type: selectedActType.id,
+      tipologia_atto: selectedActType.tipologia_atto_id, // Nuovo campo per il backend
       date: selectedSlot.date,
       start_time: selectedSlot.start_time,
       end_time: selectedSlot.end_time,
-      duration_minutes: selectedService.duration,
+      duration_minutes: selectedActType.duration,
       modes: selectedModes,
       notes: notes
     }
@@ -225,7 +314,7 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
           onSuccess({
             ...result.data,
             notary: notary,
-            service: selectedService,
+            service: selectedActType,
             modes: selectedModes
           })
         }
@@ -259,7 +348,7 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
 
   const getStepTitle = () => {
     switch (currentStep) {
-      case 1: return 'Seleziona il Servizio'
+      case 1: return 'Seleziona il Tipo di Atto'
       case 2: return 'Scegli Data e Ora'
       case 3: return 'Seleziona i servizi per il tuo appuntamento'
       case 4: return 'Riepilogo e Conferma'
@@ -327,41 +416,64 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
         <div className="wizard-body">
           <div className="wizard-step-title">
             <h3>{getStepTitle()}</h3>
-            <span className="wizard-step-count">Passo {currentStep} di {totalSteps}</span>
+            {currentStep === 1 ? (
+              <div className="pagination-controls">
+                <button 
+                  className="pagination-btn" 
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 0}
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <span className="pagination-info">
+                  {currentPage + 1} di {getTotalPages()}
+                </span>
+                <button 
+                  className="pagination-btn" 
+                  onClick={handleNextPage}
+                  disabled={currentPage === getTotalPages() - 1}
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+            ) : (
+              <span className="wizard-step-count">Passo {currentStep} di {totalSteps}</span>
+            )}
           </div>
 
           {/* Step 1: Service Selection */}
           {currentStep === 1 && (
             <div className="wizard-content">
-              <div className="service-grid">
-                {services.map(service => {
-                  const Icon = service.icon
-                  return (
-                    <button
-                      key={service.id}
-                      className={`service-card ${selectedService?.id === service.id ? 'selected' : ''}`}
-                      onClick={() => handleServiceSelect(service)}
-                    >
-                      <div className="service-card-icon">
-                        <Icon size={28} />
-                      </div>
-                      <div className="service-card-content">
-                        <h4>{service.label}</h4>
-                        <p>{service.description}</p>
+              {loadingCategories ? (
+                <div className="loading-state">Caricamento tipologie atto...</div>
+              ) : (
+                <div className="service-grid">
+                  {getPaginatedServices().map(service => {
+                    const Icon = service.icon
+                    return (
+                      <button
+                        key={service.id}
+                        className={`service-card ${selectedActType?.id === service.id ? 'selected' : ''}`}
+                        onClick={() => handleServiceSelect(service)}
+                      >
+                        <div className="service-card-icon">
+                          <Icon size={32} />
+                        </div>
+                        <h4 className="service-card-title">{service.label}</h4>
                         <div className="service-card-duration">
                           <Clock size={14} />
-                          <span>{service.duration} minuti</span>
+                          <span>{service.duration} min</span>
                         </div>
-                      </div>
-                      {selectedService?.id === service.id && (
-                        <div className="service-card-check">
-                          <CheckCircle size={20} />
-                        </div>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
+                        {selectedActType?.id === service.id && (
+                          <div className="service-card-check">
+                            <CheckCircle size={20} />
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -371,7 +483,7 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
               <div className="calendar-wrapper">
                 <AppointmentCalendar
                   notaryId={notary.id}
-                  duration={selectedService?.duration || 30}
+                  duration={selectedActType?.duration || 30}
                   onSlotSelect={handleSlotSelect}
                   selectedSlot={selectedSlot}
                 />
@@ -442,10 +554,10 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
                 <h4 className="summary-title">Dettagli Appuntamento</h4>
                 
                 <div className="summary-section">
-                  <div className="summary-label">Servizio</div>
+                  <div className="summary-label">Tipo di Atto</div>
                   <div className="summary-value">
-                    {selectedService.label}
-                    <span className="summary-badge">{selectedService.duration} min</span>
+                    {selectedActType.label}
+                    <span className="summary-badge">{selectedActType.duration} min</span>
                   </div>
                 </div>
 

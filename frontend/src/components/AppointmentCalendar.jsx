@@ -3,19 +3,21 @@ import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight } from 'luci
 import appointmentService from '../services/appointmentService'
 import './AppointmentCalendar.css'
 
-function AppointmentCalendar({ notaryId, onSlotSelect }) {
+function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSlot: externalSelectedSlot }) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(null)
   const [availableSlots, setAvailableSlots] = useState([])
   const [loading, setLoading] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState(null)
 
-  // Load available slots when month changes
+  console.log('📅 Calendario caricato con durata:', duration, 'minuti')
+
+  // Load available slots when month or duration changes
   useEffect(() => {
     if (notaryId) {
       loadSlotsForMonth()
     }
-  }, [currentMonth, notaryId])
+  }, [currentMonth, notaryId, duration])
 
   const loadSlotsForMonth = async () => {
     setLoading(true)
@@ -27,11 +29,15 @@ function AppointmentCalendar({ notaryId, onSlotSelect }) {
     const startDate = formatDate(firstDay)
     const endDate = formatDate(lastDay)
     
-    const result = await appointmentService.getAvailableSlots(notaryId, startDate, endDate, 30)
+    console.log(`🔍 Carico slot per ${startDate} -> ${endDate} con durata ${duration} minuti`)
+    
+    const result = await appointmentService.getAvailableSlots(notaryId, startDate, endDate, duration)
     
     if (result.success) {
+      console.log(`✅ Trovati ${result.data.length} slot disponibili`)
       setAvailableSlots(result.data)
     } else {
+      console.log('❌ Errore caricamento slot')
     }
     
     setLoading(false)

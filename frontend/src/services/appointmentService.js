@@ -59,6 +59,19 @@ class AppointmentService {
   }
 
   /**
+   * Get appointments for current notary
+   * @returns {Promise} List of notary's appointments
+   */
+  async getNotaryAppointments() {
+    try {
+      const response = await apiClient.request('/appointments/gestione-appuntamenti/', { method: 'GET' })
+      return { success: true, data: response }
+    } catch (error) {
+      return { success: false, error: error.message }
+    }
+  }
+
+  /**
    * Get appointment details
    * @param {string} appointmentId - Appointment UUID
    * @returns {Promise} Appointment details

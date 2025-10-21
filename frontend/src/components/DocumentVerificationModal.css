@@ -1,0 +1,150 @@
+/* Document Verification Modal - Specific Styles */
+
+/* Stats Bar */
+.verification-stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  color: #6B7280;
+}
+
+.stat-item svg {
+  flex-shrink: 0;
+}
+
+.stat-accepted {
+  color: #059669;
+}
+
+.stat-rejected {
+  color: #DC2626;
+}
+
+.stat-pending {
+  color: #D97706;
+}
+
+/* Document Item Highlight for Verification */
+.document-item.needs-verification {
+  border-color: #FFA500;
+  background: linear-gradient(135deg, #FFF9F0 0%, #FFFFFF 100%);
+}
+
+/* Internal Note Input */
+.internal-note-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+  color: #1F2937;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+  margin-top: 12px;
+}
+
+.internal-note-input:focus {
+  outline: none;
+  border-color: #4FADFF;
+}
+
+.internal-note-input::placeholder {
+  color: #9CA3AF;
+}
+
+/* Verification Actions */
+.verification-actions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.verification-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.verify-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.verify-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.verify-btn svg {
+  flex-shrink: 0;
+}
+
+.verify-btn-accept {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: white;
+}
+
+.verify-btn-accept:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.verify-btn-reject {
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  color: white;
+}
+
+.verify-btn-reject:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Internal Note Display */
+.document-internal-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  background: #F0F9FF;
+  border-left: 3px solid #3B82F6;
+  border-radius: 8px;
+}
+
+.document-internal-note svg {
+  flex-shrink: 0;
+  color: #3B82F6;
+  margin-top: 2px;
+}
+
+.document-internal-note span {
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+  color: #1E40AF;
+  font-style: italic;
+}
+

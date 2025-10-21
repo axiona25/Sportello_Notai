@@ -2,7 +2,7 @@
 Serializers for acts.
 """
 from rest_framework import serializers
-from .models import Act
+from .models import Act, NotarialActMainCategory, NotarialActCategory, DocumentType, NotarialActCategoryDocument
 
 
 class ActSerializer(serializers.ModelSerializer):
@@ -69,4 +69,57 @@ class ActCloseSerializer(serializers.Serializer):
             raise serializers.ValidationError("Survey obbligatoria non completata")
         
         return data
+
+
+class NotarialActMainCategorySerializer(serializers.ModelSerializer):
+    """Serializer per le categorie principali di atto."""
+    
+    class Meta:
+        model = NotarialActMainCategory
+        fields = ['id', 'name', 'code', 'description', 'order', 'is_active']
+
+
+class DocumentTypeSerializer(serializers.ModelSerializer):
+    """Serializer per i tipi di documento."""
+    
+    class Meta:
+        model = DocumentType
+        fields = [
+            'id', 'name', 'code', 'description', 'category',
+            'required_from', 'is_mandatory', 'is_active'
+        ]
+
+
+class NotarialActCategoryDocumentSerializer(serializers.ModelSerializer):
+    """Serializer per i documenti richiesti per una categoria di atto."""
+    
+    document = DocumentTypeSerializer(source='document_type', read_only=True)
+    document_type_id = serializers.IntegerField(write_only=True, required=False)
+    
+    class Meta:
+        model = NotarialActCategoryDocument
+        fields = [
+            'id', 'document', 'document_type_id', 'is_mandatory', 'order', 'notes'
+        ]
+
+
+class NotarialActCategorySerializer(serializers.ModelSerializer):
+    """Serializer per le categorie specifiche di atto."""
+    
+    main_category_name = serializers.CharField(source='main_category.name', read_only=True)
+    required_documents = NotarialActCategoryDocumentSerializer(many=True, read_only=True)
+    document_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = NotarialActCategory
+        fields = [
+            'id', 'main_category', 'main_category_name',
+            'name', 'code', 'description', 'order', 'is_active',
+            'estimated_duration_minutes',
+            'requires_property', 'requires_bank', 'requires_parties',
+            'required_documents', 'document_count'
+        ]
+    
+    def get_document_count(self, obj):
+        return obj.required_documents.count()
 
