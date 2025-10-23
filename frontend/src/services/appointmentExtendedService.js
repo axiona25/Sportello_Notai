@@ -15,10 +15,10 @@ const appointmentExtendedService = {
         `/appointments/gestione-appuntamenti/${appuntamentoId}/conferma/`,
         data
       )
-      return response.data
+      return { success: true, data: response }
     } catch (error) {
       console.error('Errore conferma appuntamento:', error)
-      throw error
+      return { success: false, error: error.message }
     }
   },
 
@@ -28,7 +28,7 @@ const appointmentExtendedService = {
         `/appointments/gestione-appuntamenti/${appuntamentoId}/rifiuta/`,
         { motivo }
       )
-      return response.data
+      return response
     } catch (error) {
       console.error('Errore rifiuto appuntamento:', error)
       throw error
@@ -44,10 +44,10 @@ const appointmentExtendedService = {
       const response = await apiClient.get(
         `/appointments/documenti-appuntamento/appuntamento/${appuntamentoId}/`
       )
-      return response.data
+      return response || []
     } catch (error) {
       console.error('Errore caricamento documenti appuntamento:', error)
-      throw error
+      return []
     }
   },
 
@@ -65,10 +65,54 @@ const appointmentExtendedService = {
           },
         }
       )
-      return response.data
+      return response
     } catch (error) {
       console.error('Errore upload documento:', error)
       throw error
+    }
+  },
+
+  async uploadDocumentoPerNome(appuntamentoId, nomeDocumento, file) {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('nome_documento', nomeDocumento)
+
+      // ✅ NON impostare Content-Type manualmente con FormData!
+      // Il browser lo imposterà automaticamente con il boundary corretto
+      const response = await apiClient.post(
+        `/appointments/documenti-appuntamento/appuntamento/${appuntamentoId}/upload-per-nome/`,
+        formData
+      )
+      return response
+    } catch (error) {
+      console.error('Errore upload documento per nome:', error)
+      throw error
+    }
+  },
+
+  async rinominaDocumento(documentoId, nuovoNome) {
+    try {
+      const response = await apiClient.patch(
+        `/appointments/documenti-appuntamento/${documentoId}/`,
+        { nome_file: nuovoNome }
+      )
+      return response
+    } catch (error) {
+      console.error('Errore rinomina documento:', error)
+      throw error
+    }
+  },
+
+  async eliminaDocumento(documentoId) {
+    try {
+      const response = await apiClient.delete(
+        `/appointments/documenti-appuntamento/${documentoId}/`
+      )
+      return { success: true, data: response }
+    } catch (error) {
+      console.error('Errore eliminazione documento:', error)
+      return { success: false, error: error.message }
     }
   },
 
@@ -82,9 +126,21 @@ const appointmentExtendedService = {
           note_interne: noteInterne
         }
       )
-      return response.data
+      return response
     } catch (error) {
       console.error('Errore verifica documento:', error)
+      throw error
+    }
+  },
+
+  async inviaDocumentiPerVerifica(appuntamentoId) {
+    try {
+      const response = await apiClient.post(
+        `/appointments/documenti-appuntamento/appuntamento/${appuntamentoId}/invia-per-verifica/`
+      )
+      return response
+    } catch (error) {
+      console.error('Errore invio documenti per verifica:', error)
       throw error
     }
   },
@@ -98,10 +154,10 @@ const appointmentExtendedService = {
       const response = await apiClient.get(
         `/appointments/documenti-richiesti/tipologia/${tipologiaId}/`
       )
-      return response.data
+      return response || []
     } catch (error) {
       console.error('Errore caricamento documenti richiesti:', error)
-      throw error
+      return []
     }
   },
 
@@ -150,7 +206,7 @@ const appointmentExtendedService = {
       const response = await apiClient.post(
         `/appointments/notifiche/${notificaId}/segna-letta/`
       )
-      return response.data
+      return response
     } catch (error) {
       console.error('Errore segna notifica letta:', error)
       throw error
@@ -162,10 +218,95 @@ const appointmentExtendedService = {
       const response = await apiClient.post(
         '/appointments/notifiche/segna-tutte-lette/'
       )
-      return response.data
+      return response
     } catch (error) {
       console.error('Errore segna tutte notifiche lette:', error)
       throw error
+    }
+  },
+
+  // ============================================
+  // APPUNTAMENTI AGENDA
+  // ============================================
+  
+  async getAppuntamentiMese(anno, mese, notaryId = null) {
+    try {
+      let url = `/appointments/appuntamenti/?anno=${anno}&mese=${mese}`
+      if (notaryId) {
+        url += `&notary=${notaryId}`
+      }
+      const response = await apiClient.get(url)
+      return response.data || response.results || response || []
+    } catch (error) {
+      console.error('Errore caricamento appuntamenti mese:', error)
+      return []
+    }
+  },
+
+  async getAppuntamentiGiorno(data, notaryId = null) {
+    try {
+      let url = `/appointments/appuntamenti/?data=${data}`
+      if (notaryId) {
+        url += `&notary=${notaryId}`
+      }
+      const response = await apiClient.get(url)
+      return response.data || response.results || response || []
+    } catch (error) {
+      console.error('Errore caricamento appuntamenti giorno:', error)
+      return []
+    }
+  },
+
+  async getAppuntamentoDettaglio(appuntamentoId) {
+    try {
+      const data = await apiClient.get(`/appointments/appuntamenti/${appuntamentoId}/`)
+      return data
+    } catch (error) {
+      console.error('Errore caricamento dettaglio appuntamento:', error)
+      throw error
+    }
+  },
+
+  // ============================================
+  // MODIFICA/ANNULLA/ELIMINA APPUNTAMENTO
+  // ============================================
+  
+  async aggiornaAppuntamento(appuntamentoId, dati) {
+    try {
+      const response = await apiClient.patch(
+        `/appointments/appuntamenti/${appuntamentoId}/`,
+        dati
+      )
+      return response
+    } catch (error) {
+      console.error('Errore aggiornamento appuntamento:', error)
+      throw error
+    }
+  },
+
+  async annullaAppuntamento(appuntamentoId, motivo) {
+    try {
+      const response = await apiClient.post(
+        `/appointments/appuntamenti/${appuntamentoId}/annulla/`,
+        { motivo }
+      )
+      return response
+    } catch (error) {
+      console.error('Errore annullamento appuntamento:', error)
+      throw error
+    }
+  },
+
+  async eliminaAppuntamento(appuntamentoId) {
+    try {
+      const response = await apiClient.delete(
+        `/appointments/appuntamenti/${appuntamentoId}/`
+      )
+      // ✅ Restituisci sempre un oggetto con success: true
+      return { success: true, data: response }
+    } catch (error) {
+      console.error('Errore eliminazione appuntamento:', error)
+      return { success: false, error: error.message }
     }
   }
 }

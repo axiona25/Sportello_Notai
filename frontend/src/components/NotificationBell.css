@@ -181,6 +181,16 @@
   background: linear-gradient(90deg, rgba(79, 173, 255, 0.08) 0%, #F9FAFB 100%);
 }
 
+.notification-item.read {
+  opacity: 0.7;
+  background: #FAFAFA;
+}
+
+.notification-item.read:hover {
+  opacity: 0.85;
+  background: #F5F5F5;
+}
+
 /* Icona Notifica */
 .notification-icon {
   flex-shrink: 0;
@@ -235,8 +245,9 @@
   font-family: 'Poppins', sans-serif;
   color: #6B7280;
   line-height: 1.5;
+  white-space: pre-line; /* Preserva i line break */
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 5; /* Aumentato a 5 righe per mostrare tutti i dettagli */
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -309,11 +320,128 @@
   transform: translateY(-1px);
 }
 
+/* Azioni Appuntamento */
+.notification-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.notification-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.notification-action-btn.accept {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: white;
+}
+
+.notification-action-btn.accept:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.notification-action-btn.reject {
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  color: white;
+}
+
+.notification-action-btn.reject:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.notification-action-btn.modify {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  color: white;
+}
+
+.notification-action-btn.modify:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
 /* Responsive */
 @media (max-width: 480px) {
   .notification-dropdown {
     width: calc(100vw - 40px);
     max-width: 380px;
   }
+  
+  .notification-actions {
+    flex-direction: column;
+  }
+  
+  .notification-action-btn {
+    width: 100%;
+  }
+}
+
+/* ✅ Notifica Semplificata per Appuntamenti */
+.notification-content-simplified {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 12px;
+}
+
+.notification-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notification-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.notification-status-dot.status-provvisorio {
+  background: #F59E0B; /* Giallo per stato provvisorio */
+}
+
+.notification-title-simple {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  color: #1F2937;
+  line-height: 1.4;
+}
+
+.notification-detail {
+  margin: 0;
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+  color: #6B7280;
+  line-height: 1.5;
+}
+
+.notification-label {
+  font-weight: 600;
+  color: #374151;
 }
 

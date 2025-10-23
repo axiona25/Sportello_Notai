@@ -516,7 +516,7 @@ function NotaryCards() {
         onClose={() => setShowBooking(false)}
         onSuccess={() => {
           setShowBooking(false)
-          alert('Appuntamento prenotato con successo!')
+          // Toast message già gestito in AppointmentBooking
         }}
       />
     )}

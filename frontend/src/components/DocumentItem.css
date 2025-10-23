@@ -1,0 +1,528 @@
+/* Document Item Container - Stile Elegante e Minimalista */
+.document-item {
+  background: #FAFBFC;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 10px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.document-item:hover {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border-color: #D1D5DB;
+}
+
+/* Left colored accent based on status - più sottile */
+.document-item.green {
+  border-left: 3px solid #10B981;
+  background: linear-gradient(90deg, #ECFDF5 0%, #FAFBFC 8%);
+}
+
+.document-item.yellow {
+  border-left: 3px solid #F59E0B;
+  background: linear-gradient(90deg, #FFFBEB 0%, #FAFBFC 8%);
+}
+
+.document-item.red {
+  border-left: 3px solid #EF4444;
+  background: linear-gradient(90deg, #FEF2F2 0%, #FAFBFC 8%);
+}
+
+.document-item.gray {
+  border-left: 3px solid #D1D5DB;
+}
+
+/* Header */
+.document-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.document-item-info {
+  flex: 1;
+}
+
+.document-item-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.document-icon {
+  color: #6B7280;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.document-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #1F2937;
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.document-name-clickable {
+  color: #1668B0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.document-name-clickable:hover {
+  color: #0F4A7A;
+  text-decoration: none;
+}
+
+.document-name-clickable::after {
+  content: "→";
+  margin-left: 6px;
+  font-size: 13px;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.document-name-clickable:hover::after {
+  opacity: 1;
+  margin-left: 8px;
+}
+
+.document-rename-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.document-rename-input:focus {
+  border-color: #1668B0;
+  box-shadow: 0 0 0 3px rgba(22, 104, 176, 0.1);
+}
+
+/* Status Badge - più discreto */
+.document-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid;
+}
+
+.document-status.status-green {
+  background: #ECFDF5;
+  color: #047857;
+  border-color: #A7F3D0;
+}
+
+.document-status.status-yellow {
+  background: #FFFBEB;
+  color: #B45309;
+  border-color: #FDE68A;
+}
+
+.document-status.status-red {
+  background: #FEF2F2;
+  color: #B91C1C;
+  border-color: #FECACA;
+}
+
+.document-status.status-gray {
+  background: #F9FAFB;
+  color: #6B7280;
+  border-color: #E5E7EB;
+}
+
+.document-status svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Body */
+.document-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+
+
+/* Actions - pulsanti più iconici e discreti */
+.document-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.document-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 7px;
+  color: #6B7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.document-action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.document-action-btn:hover:not(:disabled) {
+  background: #F9FAFB;
+  border-color: #1668B0;
+  color: #1668B0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.document-action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background: #F9FAFB;
+  border-color: #E5E7EB;
+  color: #D1D5DB;
+}
+
+.document-action-btn.action-delete:hover:not(:disabled) {
+  border-color: #EF4444;
+  color: #EF4444;
+  background: #FEF2F2;
+}
+
+.document-action-btn.action-verify {
+  border-color: #D1FAE5;
+  color: #10B981;
+  background: #ECFDF5;
+}
+
+.document-action-btn.action-verify:hover:not(:disabled) {
+  background: #D1FAE5;
+  border-color: #10B981;
+  color: #047857;
+}
+
+.document-action-btn.action-reject {
+  border-color: #FECACA;
+  color: #EF4444;
+  background: #FEF2F2;
+}
+
+.document-action-btn.action-reject:hover:not(:disabled) {
+  background: #FEE2E2;
+  border-color: #EF4444;
+  color: #DC2626;
+}
+
+.document-action-btn.action-save {
+  border-color: #10B981;
+  color: #10B981;
+  background: #ECFDF5;
+}
+
+.document-action-btn.action-cancel {
+  border-color: #E5E7EB;
+  color: #9CA3AF;
+}
+
+/* Rejection Note - più discreto e sotto la riga */
+.document-rejection-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #B91C1C;
+}
+
+.document-rejection-note svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  width: 16px;
+  height: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .document-item {
+    padding: 14px 16px;
+  }
+
+  .document-item-row {
+    gap: 10px;
+  }
+
+  .document-item-row .document-name {
+    font-size: 13px;
+  }
+
+  .document-item-row .document-pdf-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .document-item-row .document-pdf-icon .pdf-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .document-item-row .document-status-dot {
+    width: 7px;
+    height: 7px;
+  }
+
+  .document-action-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .document-action-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Layout compatto: tutto su una riga */
+.document-item-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px;
+  width: 100%;
+}
+
+.document-item-row .document-icon {
+  color: #6B7280;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.document-item-row .document-name {
+  flex: 0 1 auto;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #1F2937;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40%;
+}
+
+.document-item-row .document-pdf-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #1668B0 0%, #0F4A7A 100%);
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(22, 104, 176, 0.15);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.document-item-row .document-pdf-icon:hover {
+  background: linear-gradient(135deg, #0F4A7A 0%, #1668B0 100%);
+  box-shadow: 0 4px 10px rgba(22, 104, 176, 0.25);
+  transform: translateY(-1px);
+}
+
+.document-item-row .document-pdf-icon .pdf-icon {
+  color: white;
+  width: 18px;
+  height: 18px;
+}
+
+/* Pulsante Upload Inline (quando documento non è caricato) */
+.document-upload-btn-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: white;
+  color: #1668B0;
+  border: 1.5px dashed #1668B0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.document-upload-btn-inline:hover:not(:disabled) {
+  background: #F0F7FF;
+  border-style: solid;
+  border-color: #0F4A7A;
+  color: #0F4A7A;
+  box-shadow: 0 2px 6px rgba(22, 104, 176, 0.15);
+}
+
+.document-upload-btn-inline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.document-item-row .document-status-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: help;
+  margin-left: auto; /* Spinge il pallino a destra */
+  margin-right: 12px; /* Gap tra pallino e pulsanti */
+}
+
+.document-item-row .document-actions {
+  display: flex !important;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.document-item-row .document-rename-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+/* Animazioni fluide */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.document-item {
+  animation: fadeIn 0.3s ease;
+}
+
+.document-item:nth-child(1) { animation-delay: 0.05s; }
+.document-item:nth-child(2) { animation-delay: 0.1s; }
+.document-item:nth-child(3) { animation-delay: 0.15s; }
+.document-item:nth-child(4) { animation-delay: 0.2s; }
+.document-item:nth-child(5) { animation-delay: 0.25s; }
+
+/* Stili per il tooltip del pallino nel layout compatto */
+.document-item-row .status-dot-tooltip {
+  position: absolute !important;
+  right: calc(100% + 12px) !important;
+  top: 50% !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: translateY(-50%) !important;
+  padding: 5px 9px !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  color: #374151 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #D1D5DB !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.15s ease !important;
+  z-index: 90 !important;
+  line-height: 1.2 !important;
+  max-width: 200px !important;
+}
+
+.document-item-row .status-dot-tooltip::after {
+  display: none !important;
+}
+
+.document-item-row .document-status-dot:hover .status-dot-tooltip {
+  opacity: 1 !important;
+}
+
+/* Pallino di stato con tooltip */
+.document-status-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: help;
+}
+
+.status-dot-gray {
+  background: #9CA3AF;
+  box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.15);
+}
+
+.status-dot-yellow {
+  background: #F59E0B;
+  box-shadow: 0 0 0 1.5px rgba(217, 119, 6, 0.4);
+  border: 1.5px solid #D97706;
+}
+
+.status-dot-green {
+  background: #10B981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.status-dot-red {
+  background: #EF4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+
+/* Animazione pulse per il pallino */
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 1.5px rgba(217, 119, 6, 0.4);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.3);
+    opacity: 0.9;
+  }
+}
+
+.status-dot-yellow {
+  animation: pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 0 1.5px rgba(217, 119, 6, 0.4);
+  border: 1.5px solid #D97706;
+}
+
+.status-dot-green,
+.status-dot-red,
+.status-dot-gray {
+  animation: none;
+}

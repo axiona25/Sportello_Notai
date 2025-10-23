@@ -10,14 +10,19 @@ class AppointmentService {
    * @param {string} startDate - Start date (YYYY-MM-DD)
    * @param {string} endDate - End date (YYYY-MM-DD)
    * @param {number} duration - Duration in minutes (default: 30)
+   * @param {string} excludeAppointmentId - ID dell'appuntamento da escludere dal calcolo (opzionale)
    * @returns {Promise} Available slots
    */
-  async getAvailableSlots(notaryId, startDate, endDate, duration = 30) {
+  async getAvailableSlots(notaryId, startDate, endDate, duration = 30, excludeAppointmentId = null) {
     try {
-      const response = await apiClient.request(
-        `/notaries/${notaryId}/slots/?start_date=${startDate}&end_date=${endDate}&duration=${duration}`,
-        { method: 'GET' }
-      )
+      let url = `/notaries/${notaryId}/slots/?start_date=${startDate}&end_date=${endDate}&duration=${duration}`
+      
+      // Se stiamo modificando un appuntamento, escludi il suo slot dal calcolo
+      if (excludeAppointmentId) {
+        url += `&exclude_appointment_id=${excludeAppointmentId}`
+      }
+      
+      const response = await apiClient.request(url, { method: 'GET' })
       return { success: true, data: response }
     } catch (error) {
       return { success: false, error: error.message }

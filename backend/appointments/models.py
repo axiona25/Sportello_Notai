@@ -273,6 +273,14 @@ class Appuntamento(models.Model):
     is_online = models.BooleanField(default=False)
     meeting_url = models.TextField(blank=True)  # link videoconferenza
     
+    # ✅ Servizi selezionati dal cliente (Step 3 wizard)
+    is_in_person = models.BooleanField(default=False, help_text="Appuntamento in presenza")
+    is_phone = models.BooleanField(default=False, help_text="Chiamata telefonica")
+    has_documents = models.BooleanField(default=False, help_text="Gestione documenti")
+    has_conservation = models.BooleanField(default=False, help_text="Conservazione sostitutiva")
+    has_shared_folder = models.BooleanField(default=False, help_text="Cartella condivisa")
+    has_digital_signature = models.BooleanField(default=False, help_text="Firma digitale")
+    
     # Note
     note_notaio = models.TextField(
         blank=True,

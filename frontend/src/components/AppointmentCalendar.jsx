@@ -1,23 +1,24 @@
 import React, { useState, useEffect } from 'react'
 import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
 import appointmentService from '../services/appointmentService'
+import { isHoliday, isWeekend } from '../utils/holidays'
 import './AppointmentCalendar.css'
 
-function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSlot: externalSelectedSlot }) {
+function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSlot: externalSelectedSlot, excludeAppointmentId = null }) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(null)
   const [availableSlots, setAvailableSlots] = useState([])
   const [loading, setLoading] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState(null)
 
-  console.log('📅 Calendario caricato con durata:', duration, 'minuti')
-
   // Load available slots when month or duration changes
   useEffect(() => {
     if (notaryId) {
       loadSlotsForMonth()
+    } else {
+      console.warn('AppointmentCalendar - No notaryId provided!')
     }
-  }, [currentMonth, notaryId, duration])
+  }, [currentMonth, notaryId, duration, excludeAppointmentId])
 
   const loadSlotsForMonth = async () => {
     setLoading(true)
@@ -29,22 +30,30 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
     const startDate = formatDate(firstDay)
     const endDate = formatDate(lastDay)
     
-    console.log(`🔍 Carico slot per ${startDate} -> ${endDate} con durata ${duration} minuti`)
-    
-    const result = await appointmentService.getAvailableSlots(notaryId, startDate, endDate, duration)
+    const result = await appointmentService.getAvailableSlots(
+      notaryId, 
+      startDate, 
+      endDate, 
+      duration,
+      excludeAppointmentId // Passa l'ID dell'appuntamento da escludere
+    )
     
     if (result.success) {
-      console.log(`✅ Trovati ${result.data.length} slot disponibili`)
       setAvailableSlots(result.data)
     } else {
-      console.log('❌ Errore caricamento slot')
+      console.error('Errore nel caricamento degli slot:', result.error)
     }
     
     setLoading(false)
   }
 
   const formatDate = (date) => {
-    return date.toISOString().split('T')[0]
+    // IMPORTANTE: Non usare toISOString() perché converte in UTC e può cambiare il giorno!
+    // Usa year/month/day locali per mantenere la data esatta selezionata
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
 
   const getDaysInMonth = () => {
@@ -73,11 +82,30 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
   const getSlotsForDate = (date) => {
     if (!date) return []
     const dateStr = formatDate(date)
-    return availableSlots.filter(slot => slot.date === dateStr && slot.is_available)
+    
+    // Filtra slot per questa data E che siano disponibili
+    const allSlotsForDate = availableSlots.filter(slot => slot.date === dateStr)
+    const availableSlotsForDate = allSlotsForDate.filter(slot => slot.is_available === true)
+    
+    return availableSlotsForDate
   }
 
   const hasAvailableSlots = (date) => {
-    return getSlotsForDate(date).length > 0
+    const slots = getSlotsForDate(date)
+    return slots.length > 0
+  }
+
+  // Nuova funzione per verificare se un giorno ha appuntamenti (slot occupati)
+  const hasAppointments = (date) => {
+    if (!date) return false
+    const dateStr = formatDate(date)
+    
+    // Conta quanti slot NON sono disponibili (cioè hanno appuntamenti)
+    const occupiedSlots = availableSlots.filter(slot => 
+      slot.date === dateStr && slot.is_available === false
+    )
+    
+    return occupiedSlots.length > 0
   }
 
   const handlePreviousMonth = () => {
@@ -93,9 +121,29 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
   }
 
   const handleDateClick = (date) => {
-    if (date && hasAvailableSlots(date)) {
-      setSelectedDate(date)
-      setSelectedSlot(null)
+    if (!date) return
+    
+    // Verifica se è un giorno festivo o weekend
+    const holiday = isHoliday(date)
+    const weekend = isWeekend(date)
+    
+    if (holiday || weekend) {
+      // Non permettere la selezione di festivi o weekend
+      return
+    }
+    
+    const hasSlots = hasAvailableSlots(date)
+    
+    if (hasSlots) {
+      // Se il giorno cliccato è già selezionato, deselezionalo
+      if (selectedDate && date.toDateString() === selectedDate.toDateString()) {
+        setSelectedDate(null)
+        setSelectedSlot(null)
+      } else {
+        // Altrimenti selezionalo
+        setSelectedDate(date)
+        setSelectedSlot(null)
+      }
     }
   }
 
@@ -153,17 +201,24 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
               const isToday = date && date.toDateString() === new Date().toDateString()
               const isSelected = date && selectedDate && date.toDateString() === selectedDate.toDateString()
               const hasSlots = date && hasAvailableSlots(date)
+              const holiday = date && isHoliday(date)
+              const weekend = date && isWeekend(date)
+              const isDisabled = holiday || weekend
+              
+              // Mostra puntino BLU solo se ci sono APPUNTAMENTI (slot occupati) in quel giorno
+              const showDot = date && hasAppointments(date) && !isDisabled
 
               return (
                 <div
                   key={index}
-                  className={`calendar-day ${!date ? 'empty' : ''} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''} ${hasSlots ? 'available' : 'unavailable'}`}
+                  className={`calendar-day ${!date ? 'empty' : ''} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''} ${hasSlots && !isDisabled ? 'available' : 'unavailable'} ${isDisabled ? 'holiday' : ''}`}
                   onClick={() => handleDateClick(date)}
+                  title={holiday ? holiday.name : (weekend ? 'Weekend' : '')}
                 >
                   {date && (
                     <>
                       <span className="day-number">{date.getDate()}</span>
-                      {hasSlots && <div className="availability-dot"></div>}
+                      {showDot && <div className="availability-dot"></div>}
                     </>
                   )}
                 </div>

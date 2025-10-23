@@ -169,7 +169,8 @@ class RispostaInvitoSerializer(serializers.Serializer):
 class AppuntamentoSerializer(serializers.ModelSerializer):
     """Serializer completo per l'appuntamento."""
     
-    notaio_nome = serializers.CharField(source='notaio.nome_completo', read_only=True)
+    # ✅ FIX: Usa get_notaio_nome per supportare sia notary (nuovo) che notaio (vecchio)
+    notaio_nome = serializers.SerializerMethodField()
     notaio_dettagli = NotaioSerializer(source='notaio', read_only=True)
     
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -184,20 +185,31 @@ class AppuntamentoSerializer(serializers.ModelSerializer):
     duration_minutes = serializers.IntegerField(read_only=True)
     can_be_modified = serializers.BooleanField(read_only=True)
     
+    # Info cliente e tipologia atto
+    client_name = serializers.SerializerMethodField()
+    created_by_email = serializers.SerializerMethodField()
+    tipologia_atto_nome = serializers.CharField(source='tipologia_atto.name', read_only=True)
+    tipologia_atto_codice = serializers.CharField(source='tipologia_atto.code', read_only=True)
+    
     class Meta:
         model = Appuntamento
         fields = [
             'id', 'notaio', 'notaio_nome', 'notaio_dettagli',
             'act', 'status', 'status_display', 'tipo', 'tipo_display',
+            'tipologia_atto', 'tipologia_atto_nome', 'tipologia_atto_codice',
             'start_time', 'end_time',
             'titolo', 'descrizione',
             'location', 'is_online', 'meeting_url',
+            # ✅ Servizi selezionati dal cliente (Step 3 wizard)
+            'is_in_person', 'is_phone', 'has_documents',
+            'has_conservation', 'has_shared_folder', 'has_digital_signature',
             'note_notaio', 'note_pubbliche',
             'reminder_sent', 'reminder_sent_at', 'invio_reminder_ore_prima',
             'richiede_conferma', 'confermato_at', 'confermato_da',
             'partecipanti', 'numero_partecipanti',
             'is_past', 'duration_minutes', 'can_be_modified',
-            'created_at', 'updated_at', 'created_by_email'
+            'client_name', 'created_by_email',
+            'created_at', 'updated_at'
         ]
         read_only_fields = [
             'id', 'status', 'confermato_at', 'confermato_da',
@@ -207,6 +219,37 @@ class AppuntamentoSerializer(serializers.ModelSerializer):
     
     def get_numero_partecipanti(self, obj):
         return obj.partecipanti.count()
+    
+    def get_notaio_nome(self, obj):
+        """
+        Restituisce il nome completo del notaio.
+        Supporta sia il campo 'notary' (nuovo) che 'notaio' (deprecato) per retrocompatibilità.
+        """
+        # ✅ Prova prima con il campo nuovo 'notary'
+        if obj.notary:
+            return obj.notary.nome_completo
+        # Fallback al campo vecchio 'notaio'
+        elif obj.notaio:
+            return obj.notaio.nome_completo
+        return "N/A"
+    
+    def get_client_name(self, obj):
+        """Restituisce il nome del cliente che ha richiesto l'appuntamento."""
+        # Cerca il partecipante con ruolo 'richiedente'
+        richiedente = obj.partecipanti.filter(ruolo='richiedente').first()
+        if richiedente and richiedente.cliente:
+            nome = richiedente.cliente.nome or ''
+            cognome = richiedente.cliente.cognome or ''
+            return f"{nome} {cognome}".strip() or "Cliente"
+        return "N/A"
+    
+    def get_created_by_email(self, obj):
+        """Restituisce l'email del cliente che ha richiesto l'appuntamento."""
+        # Cerca il partecipante con ruolo 'richiedente'
+        richiedente = obj.partecipanti.filter(ruolo='richiedente').first()
+        if richiedente and richiedente.cliente and richiedente.cliente.user:
+            return richiedente.cliente.user.email
+        return "N/A"
 
 
 class CreaRichiestaAppuntamentoSerializer(serializers.Serializer):
@@ -371,16 +414,48 @@ class DocumentoAppuntamentoSerializer(serializers.ModelSerializer):
         source='document_type',
         write_only=True
     )
+    # ✅ Campi flat per semplificare l'accesso nel frontend
+    document_type_name = serializers.CharField(source='document_type.name', read_only=True)
+    nome_file = serializers.SerializerMethodField()
+    file_path = serializers.SerializerMethodField()
+    dimensione = serializers.SerializerMethodField()
+    
     caricato_da_email = serializers.EmailField(source='caricato_da.email', read_only=True)
     verificato_da_email = serializers.EmailField(source='verificato_da.email', read_only=True)
     stato_display = serializers.CharField(source='get_stato_display', read_only=True)
+    
+    def get_nome_file(self, obj):
+        """Estrae il nome del file dal percorso."""
+        if obj.file:
+            import os
+            return os.path.basename(obj.file.name)
+        return None
+    
+    def get_file_path(self, obj):
+        """Restituisce l'URL completo del file."""
+        if obj.file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return None
+    
+    def get_dimensione(self, obj):
+        """Restituisce la dimensione del file in bytes."""
+        if obj.file:
+            try:
+                return obj.file.size
+            except:
+                return None
+        return None
     
     class Meta:
         model = DocumentoAppuntamento
         fields = [
             'id', 'appuntamento',
-            'document_type', 'document_type_id',
-            'file', 'stato', 'stato_display',
+            'document_type', 'document_type_id', 'document_type_name',
+            'file', 'nome_file', 'file_path', 'dimensione',
+            'stato', 'stato_display',
             'is_obbligatorio',
             'caricato_da', 'caricato_da_email', 'caricato_at',
             'verificato_da', 'verificato_da_email', 'verificato_at',
@@ -457,14 +532,50 @@ class NotificaSerializer(serializers.ModelSerializer):
 class NotificaListSerializer(serializers.ModelSerializer):
     """Serializer semplificato per lista notifiche."""
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+    appuntamento = serializers.UUIDField(source='appuntamento_id', read_only=True)  # ID dell'appuntamento collegato
+    appuntamento_status = serializers.SerializerMethodField()
+    cliente_nome = serializers.SerializerMethodField()  # ✅ Nome del cliente
+    servizio_nome = serializers.SerializerMethodField()  # ✅ Tipo di atto/servizio
+    appuntamento_created_at = serializers.SerializerMethodField()  # ✅ Data creazione appuntamento
     
     class Meta:
         model = Notifica
         fields = [
             'id', 'tipo', 'tipo_display',
             'titolo', 'messaggio', 'link_url',
-            'letta', 'created_at'
+            'letta', 'created_at', 'appuntamento', 'appuntamento_status',
+            'cliente_nome', 'servizio_nome', 'appuntamento_created_at'  # ✅ Nuovi campi
         ]
+    
+    def get_appuntamento_status(self, obj):
+        """Restituisce lo status dell'appuntamento se presente."""
+        if obj.appuntamento:
+            return obj.appuntamento.status
+        return None
+    
+    def get_cliente_nome(self, obj):
+        """Restituisce il nome del cliente dall'appuntamento."""
+        if obj.appuntamento:
+            # Cerca il partecipante richiedente
+            partecipante = obj.appuntamento.partecipanti.filter(ruolo='richiedente').first()
+            if partecipante and partecipante.cliente:
+                user = partecipante.cliente.user
+                if hasattr(user, 'first_name') and user.first_name:
+                    return f"{user.first_name} {user.last_name}".strip()
+                return user.email
+        return None
+    
+    def get_servizio_nome(self, obj):
+        """Restituisce il nome del servizio/atto dall'appuntamento."""
+        if obj.appuntamento and obj.appuntamento.tipologia_atto:
+            return obj.appuntamento.tipologia_atto.name
+        return None
+    
+    def get_appuntamento_created_at(self, obj):
+        """Restituisce la data di creazione dell'appuntamento."""
+        if obj.appuntamento:
+            return obj.appuntamento.created_at
+        return None
 
 
 # ============================================
@@ -478,12 +589,9 @@ class AppuntamentoConfermaSerializer(serializers.Serializer):
 
 class AppuntamentoRifiutaSerializer(serializers.Serializer):
     """Serializer per rifiutare un appuntamento."""
-    motivo = serializers.CharField(required=True, help_text='Motivazione del rifiuto')
-    
-    def validate_motivo(self, value):
-        if not value or len(value.strip()) < 10:
-            raise serializers.ValidationError(
-                'La motivazione deve contenere almeno 10 caratteri'
-            )
-        return value
+    motivo = serializers.CharField(
+        required=False, 
+        allow_blank=True,
+        help_text='Motivazione del rifiuto (opzionale)'
+    )
 

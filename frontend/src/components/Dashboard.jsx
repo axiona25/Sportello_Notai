@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import Calendar from './Calendar'
@@ -9,16 +9,34 @@ import NotarySelection from './NotarySelection'
 import NotaryCards from './NotaryCards'
 import AttiSidebar from './AttiSidebar'
 import AttiContent from './AttiContent'
+import EditAppointmentModal from './EditAppointmentModal'
+import ConfirmDeleteModal from './ConfirmDeleteModal'
+import { parseDateTimeLocal } from '../utils/dateUtils'
+import { useAutoRefresh } from '../hooks/useAutoRefresh'
+import appointmentExtendedService from '../services/appointmentExtendedService'
 import './Dashboard.css'
 
 function Dashboard({ onLogout, user: initialUser }) {
-  const [selectedDate, setSelectedDate] = useState(2)
+  const today = new Date()
+  const [selectedDate, setSelectedDate] = useState(today.getDate())
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [showAppointmentModal, setShowAppointmentModal] = useState(false)
   const [searchValue, setSearchValue] = useState('')
   const [currentView, setCurrentView] = useState('dashboard') // 'dashboard' o 'atti'
   const [attiFilter, setAttiFilter] = useState(null) // Filtro per gli atti (notaio/cliente)
   const [user, setUser] = useState(initialUser)
+  const [currentAppointments, setCurrentAppointments] = useState([])
+  const [loading, setLoading] = useState(false)
+  
+  // Stati per i modali delle azioni
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [appointmentToAction, setAppointmentToAction] = useState(null)
+  
+  // Stati per documenti
+  const [documentiCaricati, setDocumentiCaricati] = useState(0)
+  const [documentiTotali, setDocumentiTotali] = useState(0)
+  const [documentiApprovati, setDocumentiApprovati] = useState(0)
 
   // Ascolta gli aggiornamenti dell'utente dal localStorage
   useEffect(() => {
@@ -51,8 +69,91 @@ function Dashboard({ onLogout, user: initialUser }) {
     return user?.email?.split('@')[0] || 'Utente'
   }
 
-  // Database degli appuntamenti per data
-  const appointmentsByDate = {
+  // Gestisci aggiornamenti appuntamenti dal calendario
+  const handleAppointmentsUpdate = useCallback((appointments) => {
+    // Trasforma gli appuntamenti in formato compatibile con AppointmentCard
+    const formattedAppointments = appointments.map(app => {
+      const startDate = parseDateTimeLocal(app.start_time)
+      const endDate = parseDateTimeLocal(app.end_time)
+      
+      // ✅ Determina TUTTI i servizi selezionati (mappatura dal backend)
+      const services = []
+      if (app.is_in_person) services.push('presence')
+      if (app.is_online) services.push('video')
+      if (app.is_phone) services.push('phone')
+      if (app.has_conservation) services.push('conservation')
+      if (app.has_shared_folder) services.push('shared_folder')
+      if (app.has_digital_signature) services.push('digital_signature')
+      
+      return {
+        id: app.id,
+        type: 'appointment',
+        title: app.titolo || `${app.tipologia_atto_nome || 'Appuntamento'}`,
+        appointmentType: app.tipologia_atto_nome || 'Appuntamento',
+        tipologia_atto_codice: app.tipologia_atto_codice, // ✅ Codice atto per documenti
+        notaryName: app.notaio_nome || 'Notaio',  // ✅ Usa notaio_nome dal backend (Nome e Cognome completo)
+        location: app.location || 'Da definire',
+        date: startDate.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' }), // ✅ Data formattata
+        time: `${startDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - ${endDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`,
+        status: app.status,
+        services: services,
+        showActions: true, // Abilita azioni per il cliente
+        userRole: 'client',
+        appointmentData: app, // Dati completi per le azioni
+        rawData: app // Dati completi per il dettaglio
+      }
+    })
+    
+    // Aggiorna solo se ci sono cambiamenti (evita re-render inutili)
+    setCurrentAppointments(prev => {
+      const hasChanged = JSON.stringify(prev) !== JSON.stringify(formattedAppointments)
+      return hasChanged ? formattedAppointments : prev
+    })
+  }, [])
+
+  // Handler per modifica appuntamento (cliente)
+  const handleEditAppointment = useCallback((appointment) => {
+    setAppointmentToAction(appointment)
+    setShowEditModal(true)
+  }, [])
+
+  // Handler per eliminazione appuntamento (cliente)
+  const handleDeleteAppointment = useCallback((appointment) => {
+    setAppointmentToAction(appointment)
+    setShowDeleteModal(true)
+  }, [])
+
+  // Conferma modifica appuntamento
+  const handleEditSuccess = useCallback(() => {
+    setShowEditModal(false)
+    setAppointmentToAction(null)
+    // Trigger calendar refresh
+    window.dispatchEvent(new Event('calendarUpdate'))
+  }, [])
+
+  // Conferma eliminazione appuntamento
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!appointmentToAction) return
+
+    try {
+      const result = await appointmentExtendedService.eliminaAppuntamento(appointmentToAction.id)
+      if (result.success) {
+        setShowDeleteModal(false)
+        setAppointmentToAction(null)
+        // Trigger calendar refresh
+        window.dispatchEvent(new Event('calendarUpdate'))
+        alert('Appuntamento eliminato con successo')
+      } else {
+        alert('Errore durante l\'eliminazione dell\'appuntamento')
+      }
+    } catch (error) {
+      console.error('Errore eliminazione appuntamento:', error)
+      alert('Errore durante l\'eliminazione dell\'appuntamento')
+    }
+  }, [appointmentToAction])
+
+  // RIMUOVO IL MOCKUP - Database degli appuntamenti per data
+  const appointmentsByDate_OLD = {
     2: [
       {
         id: 'doc-2-1',
@@ -133,39 +234,77 @@ function Dashboard({ onLogout, user: initialUser }) {
     ]
   }
 
-  // Ottieni gli appuntamenti per la data selezionata o tutti se si sta cercando
-  const allAppointments = searchValue
-    ? Object.values(appointmentsByDate).flat() // Tutti gli appuntamenti dell'anno
-    : (appointmentsByDate[selectedDate] || []) // Solo del giorno selezionato
-  
-  // Filtra appuntamenti in base alla ricerca e limita a 4 risultati
-  const currentAppointments = searchValue
-    ? allAppointments.filter(appointment => {
-        const searchLower = searchValue.toLowerCase()
-        return (
-          appointment.title?.toLowerCase().includes(searchLower) ||
-          appointment.location?.toLowerCase().includes(searchLower) ||
-          appointment.description?.toLowerCase().includes(searchLower) ||
-          appointment.time?.toLowerCase().includes(searchLower)
-        )
-      }).slice(0, 4) // Limita a 4 risultati
-    : allAppointments
-
   // Handler per cambio data
   const handleDateSelect = (date) => {
     setSelectedDate(date)
     setSelectedAppointment(null) // Reset appuntamento selezionato
   }
 
-  // Handler per selezione appuntamento
-  const handleAppointmentSelect = (appointment) => {
+  // Calcola i contatori documenti per l'appuntamento selezionato
+  const calcolaContatori = useCallback(async (appointment) => {
+    try {
+      // Ottieni il codice del tipo di atto (cerca in più posti come fallback)
+      const codiceAtto = appointment.tipologia_atto_codice || 
+                        appointment.appointment_type_code ||
+                        appointment.rawData?.tipologia_atto_codice ||
+                        appointment.rawData?.appointment_type_code
+      
+      if (!codiceAtto) {
+        console.warn('⚠️ Codice atto mancante per l\'appuntamento. Resettando contatori.')
+        setDocumentiTotali(0)
+        setDocumentiCaricati(0)
+        setDocumentiApprovati(0)
+        return
+      }
+      
+      // Ottieni la lista dei documenti richiesti per questo tipo di atto
+      const documentiRichiestiConfig = await import('../config/documentiRichiestiConfig')
+      const documentiRichiesti = documentiRichiestiConfig.getDocumentiRichiestiPerAtto(codiceAtto)
+      const totale = documentiRichiesti.length
+      
+      // Carica i documenti caricati dal cliente
+      const documentiDalBackend = await appointmentExtendedService.getDocumentiAppuntamento(appointment.id)
+      
+      // ✅ Conta SOLO documenti con file effettivamente caricato
+      const caricati = Array.isArray(documentiDalBackend) 
+        ? documentiDalBackend.filter(doc => doc.file || doc.file_path).length 
+        : 0
+      
+      // Conta documenti approvati
+      const approvati = Array.isArray(documentiDalBackend) 
+        ? documentiDalBackend.filter(doc => 
+            doc.stato === 'VERIFICATO' || 
+            doc.stato === 'ACCETTATO' || 
+            doc.stato === 'APPROVATO'
+          ).length
+        : 0
+      
+      setDocumentiTotali(totale)
+      setDocumentiCaricati(caricati)
+      setDocumentiApprovati(approvati)
+    } catch (error) {
+      console.error('❌ Errore calcolo contatori documenti (Cliente):', error)
+      setDocumentiTotali(0)
+      setDocumentiCaricati(0)
+      setDocumentiApprovati(0)
+    }
+  }, [])
+
+  // Handler per selezione appuntamento - aggiorna solo la card di dettaglio
+  const handleAppointmentSelect = useCallback(async (appointment) => {
     if (appointment.type !== 'empty') {
       setSelectedAppointment(appointment)
-      // Se è un appuntamento (non un documento), apri la modale
-      if (appointment.type === 'appointment') {
-        setShowAppointmentModal(true)
-      }
+      // ✅ NON aprire la modale - si apre solo dal pulsante "Entra"
+      
+      // Calcola contatori documenti
+      await calcolaContatori(appointment)
     }
+  }, [calcolaContatori])
+
+  // Handler per apertura modale dal pulsante "Entra"
+  const handleEnterAppointment = (appointment) => {
+    setSelectedAppointment(appointment)
+    setShowAppointmentModal(true)
   }
 
   // Handler per chiusura modale
@@ -224,7 +363,11 @@ function Dashboard({ onLogout, user: initialUser }) {
 
               <div className="dashboard-grid">
             <div className="dashboard-left">
-              <Calendar selectedDate={selectedDate} onSelectDate={handleDateSelect} />
+              <Calendar 
+                selectedDate={selectedDate} 
+                onSelectDate={handleDateSelect}
+                onAppointmentsUpdate={handleAppointmentsUpdate}
+              />
             </div>
 
             <div className="dashboard-center">
@@ -239,6 +382,8 @@ function Dashboard({ onLogout, user: initialUser }) {
                     {...appointment}
                     onClick={() => handleAppointmentSelect(appointment)}
                     isSelected={selectedAppointment?.id === appointment.id}
+                    onEdit={handleEditAppointment}
+                    onDelete={handleDeleteAppointment}
                   />
                 ))
               ) : (
@@ -250,19 +395,27 @@ function Dashboard({ onLogout, user: initialUser }) {
                       {...appointment}
                       onClick={() => handleAppointmentSelect(appointment)}
                       isSelected={selectedAppointment?.id === appointment.id}
+                      onEdit={handleEditAppointment}
+                      onDelete={handleDeleteAppointment}
                     />
                   ))}
                   <AppointmentCard 
                     key="empty" 
                     type="empty" 
-                    emptySlots={4 - currentAppointments.length}
+                    emptySlots={4 - currentAppointments.length} 
                   />
                 </>
               )}
             </div>
 
             <div className="dashboard-right">
-              <DeedDetailCard appointment={selectedAppointment} />
+              <DeedDetailCard 
+                appointment={selectedAppointment} 
+                onEnter={handleEnterAppointment}
+                documentiCaricati={documentiCaricati}
+                documentiTotali={documentiTotali}
+                documentiApprovati={documentiApprovati}
+              />
             </div>
           </div>
 
@@ -308,6 +461,30 @@ function Dashboard({ onLogout, user: initialUser }) {
         <AppointmentDetailModal
           appointment={selectedAppointment}
           onClose={handleCloseAppointmentModal}
+        />
+      )}
+
+      {/* Modale Modifica Appuntamento (Cliente) */}
+      {showEditModal && appointmentToAction && (
+        <EditAppointmentModal
+          appointment={appointmentToAction}
+          onClose={() => {
+            setShowEditModal(false)
+            setAppointmentToAction(null)
+          }}
+          onSuccess={handleEditSuccess}
+        />
+      )}
+
+      {/* Modale Conferma Eliminazione (Cliente) */}
+      {showDeleteModal && appointmentToAction && (
+        <ConfirmDeleteModal
+          appointment={appointmentToAction}
+          onClose={() => {
+            setShowDeleteModal(false)
+            setAppointmentToAction(null)
+          }}
+          onConfirm={handleDeleteConfirm}
         />
       )}
     </div>

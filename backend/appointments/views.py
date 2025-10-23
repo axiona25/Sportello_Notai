@@ -143,25 +143,62 @@ class AppuntamentoViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Filtra appuntamenti in base al ruolo."""
+        from django.db.models import Q
+        from datetime import datetime
         user = self.request.user
         
+        # Base queryset: escludi appuntamenti rifiutati
+        base_qs = Appuntamento.objects.exclude(status=AppointmentStatus.RIFIUTATO)
+        
         if user.role == 'admin':
-            return Appuntamento.objects.all()
+            queryset = base_qs
         elif user.role == 'notaio':
-            # Notaio vede i suoi appuntamenti
-            return Appuntamento.objects.filter(notaio__user=user)
+            # Notaio vede i suoi appuntamenti (campo unificato Notary o deprecato Notaio)
+            queryset = base_qs.filter(
+                Q(notary__user=user) | Q(notaio__user=user)
+            )
         elif user.role == 'cliente':
             # Cliente vede appuntamenti dove partecipa
-            return Appuntamento.objects.filter(
+            queryset = base_qs.filter(
                 partecipanti__cliente__user=user
             ).distinct()
         elif user.role == 'partner':
             # Partner vede appuntamenti dove è invitato
-            return Appuntamento.objects.filter(
+            queryset = base_qs.filter(
                 partecipanti__partner__user=user
             ).distinct()
+        else:
+            queryset = Appuntamento.objects.none()
         
-        return Appuntamento.objects.none()
+        # Filtro per data (se fornito come parametro)
+        data_param = self.request.query_params.get('data')
+        if data_param:
+            try:
+                # Supporta sia formato YYYY-MM-DD che DD/MM/YYYY
+                if '-' in data_param:
+                    data_obj = datetime.strptime(data_param, '%Y-%m-%d').date()
+                else:
+                    data_obj = datetime.strptime(data_param, '%d/%m/%Y').date()
+                queryset = queryset.filter(start_time__date=data_obj)
+            except ValueError:
+                # Se il formato data è invalido, ignora il filtro
+                pass
+        
+        # Filtro per anno e mese (opzionale, per compatibilità con getAppuntamentiMese)
+        anno_param = self.request.query_params.get('anno')
+        mese_param = self.request.query_params.get('mese')
+        if anno_param and mese_param:
+            try:
+                anno = int(anno_param)
+                mese = int(mese_param)
+                queryset = queryset.filter(
+                    start_time__year=anno,
+                    start_time__month=mese
+                )
+            except ValueError:
+                pass
+        
+        return queryset
     
     def perform_create(self, serializer):
         """Crea richiesta di appuntamento."""

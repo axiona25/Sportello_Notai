@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import Calendar from './Calendar'
@@ -9,6 +9,7 @@ import NotariesManagement from './NotariesManagement'
 import PartnersManagement from './PartnersManagement'
 import SettingsAdmin from './SettingsAdmin'
 import adminService from '../services/adminService'
+import { useAutoRefresh } from '../hooks/useAutoRefresh'
 import './DashboardAdmin.css'
 
 function DashboardAdmin({ onLogout, user }) {
@@ -19,20 +20,41 @@ function DashboardAdmin({ onLogout, user }) {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (currentView === 'dashboard') {
-      loadStats()
+  const loadStats = useCallback(async (showLoader = true) => {
+    // Mostra loader solo al primo caricamento, non durante i refresh automatici
+    if (showLoader) {
+      setLoading(true)
     }
-  }, [currentView])
-
-  const loadStats = async () => {
-    setLoading(true)
     const result = await adminService.getStats()
     if (result.success) {
-      setStats(result.data)
+      // Aggiorna solo se ci sono cambiamenti (evita re-render inutili)
+      setStats(prev => {
+        const hasChanged = JSON.stringify(prev) !== JSON.stringify(result.data)
+        return hasChanged ? result.data : prev
+      })
     }
-    setLoading(false)
-  }
+    if (showLoader) {
+      setLoading(false)
+    }
+  }, [])
+
+  // Caricamento iniziale (con loader)
+  useEffect(() => {
+    if (currentView === 'dashboard') {
+      loadStats(true)
+    }
+  }, [currentView, loadStats])
+
+  // Funzione di refresh silenziosa per il polling (senza loader)
+  const silentRefresh = useCallback(() => {
+    if (currentView === 'dashboard') {
+      loadStats(false)
+    }
+  }, [currentView, loadStats])
+
+  // Auto-refresh intelligente ogni 30 secondi (silenzioso, senza loader)
+  // Si ferma automaticamente quando il tab non è visibile o non siamo nella dashboard
+  useAutoRefresh(silentRefresh, 30000, currentView === 'dashboard')
 
   // Database delle statistiche per "data" (simula calendario appuntamenti)
   const statsByDate = {

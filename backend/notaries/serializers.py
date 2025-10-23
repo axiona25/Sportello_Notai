@@ -187,31 +187,46 @@ class NotaryAvailabilitySerializer(serializers.ModelSerializer):
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
-    """Appointment serializer."""
+    """Appointment serializer per modello Appuntamento unificato."""
     
     notary_name = serializers.CharField(source='notary.studio_name', read_only=True)
-    client_email = serializers.EmailField(source='client.email', read_only=True)
-    client_name = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    type_display = serializers.CharField(source='get_appointment_type_display', read_only=True)
+    tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     tipologia_atto_nome = serializers.CharField(source='tipologia_atto.name', read_only=True)
+    
+    # Campi calcolati per compatibilità
+    client_name = serializers.SerializerMethodField()
+    duration_minutes = serializers.SerializerMethodField()
     
     class Meta:
         model = Appointment
         fields = [
-            'id', 'notary', 'notary_name', 'client', 'client_email', 'client_name',
-            'appointment_type', 'type_display', 'date', 'start_time', 'end_time',
-            'duration_minutes', 'status', 'status_display', 'notes', 'notary_notes',
-            'rejection_reason', 'tipologia_atto', 'tipologia_atto_nome',
+            'id', 'notary', 'notary_name', 'start_time', 'end_time',
+            'status', 'status_display', 'tipo', 'tipo_display',
+            'titolo', 'descrizione', 'note_notaio', 'note_pubbliche',
+            'motivo_rifiuto', 'tipologia_atto', 'tipologia_atto_nome',
+            'location', 'is_online', 'meeting_url',
+            'client_name', 'duration_minutes',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
     
     def get_client_name(self, obj):
-        """Get client full name or email."""
-        if hasattr(obj.client, 'first_name') and obj.client.first_name:
-            return f"{obj.client.first_name} {obj.client.last_name or ''}".strip()
-        return obj.client.email
+        """Ottieni il nome del cliente dai partecipanti."""
+        partecipante = obj.partecipanti.filter(ruolo='richiedente').first()
+        if partecipante and partecipante.cliente:
+            user = partecipante.cliente.user
+            if hasattr(user, 'first_name') and user.first_name:
+                return f"{user.first_name} {user.last_name or ''}".strip()
+            return user.email
+        return "N/A"
+    
+    def get_duration_minutes(self, obj):
+        """Calcola la durata in minuti."""
+        if obj.start_time and obj.end_time:
+            delta = obj.end_time - obj.start_time
+            return int(delta.total_seconds() / 60)
+        return 0
     
     def validate(self, data):
         """Validate appointment data."""

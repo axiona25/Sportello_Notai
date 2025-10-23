@@ -91,6 +91,8 @@
   padding: 12px;
   flex: 1;
   overflow: hidden;
+  min-height: 0; /* Fix per flexbox */
+  align-items: stretch; /* Allinea verticalmente gli elementi */
 }
 
 /* Calendar Grid */
@@ -101,6 +103,7 @@
   gap: 3px;
   flex: 1;
   height: 100%;
+  min-height: 0; /* Fix per flexbox */
 }
 
 .calendar-day-name {
@@ -145,6 +148,25 @@
   cursor: not-allowed;
 }
 
+.calendar-day.holiday {
+  background: #FFF0F0;
+  color: #8B1538; /* Bordeaux elegante */
+  cursor: not-allowed;
+  opacity: 0.85;
+  position: relative;
+  border-color: #D4A5B5;
+}
+
+.calendar-day.holiday .day-number {
+  font-weight: 600; /* Grassetto invece di barrato */
+}
+
+.calendar-day.holiday:hover {
+  background: #FFE5E5;
+  transform: none;
+  opacity: 1;
+}
+
 .calendar-day.available {
   background: white;
   color: #1E293B;
@@ -170,6 +192,21 @@
   border-color: #4FADFF;
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(79, 173, 255, 0.4);
+}
+
+.calendar-day.selected:hover {
+  background: white;
+  color: #1668B0;
+  border-color: #4FADFF;
+  transform: scale(1.05);
+}
+
+.calendar-day.selected:hover .day-number {
+  color: #1668B0;
+}
+
+.calendar-day.selected:hover .availability-dot {
+  background: #1668B0;
 }
 
 .calendar-day .day-number {
@@ -200,7 +237,10 @@
   background: #F8FAFC;
   border-radius: 10px;
   padding: 10px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Nasconde overflow del pannello */
+  align-self: stretch; /* Si allunga per matchare l'altezza del calendario */
 }
 
 .time-slots-header {
@@ -214,6 +254,7 @@
   font-size: 11px;
   font-weight: 600;
   color: #1E293B;
+  flex-shrink: 0; /* Non comprimere l'header quando si scrolla */
 }
 
 .time-slots-header svg {
@@ -233,6 +274,30 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
+  overflow-y: auto; /* Scrolla solo il contenuto degli slot */
+  overflow-x: hidden; /* Nascondi scroll orizzontale */
+  flex: 1; /* Prendi tutto lo spazio disponibile */
+  min-height: 0; /* Fix per flexbox - CRUCIALE per far funzionare lo scroll */
+  padding-right: 4px; /* Spazio per scrollbar */
+}
+
+/* Scrollbar per la griglia degli slot */
+.time-slots-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.time-slots-grid::-webkit-scrollbar-track {
+  background: #E2E8F0;
+  border-radius: 10px;
+}
+
+.time-slots-grid::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 10px;
+}
+
+.time-slots-grid::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
 }
 
 .time-slot {
@@ -280,24 +345,7 @@
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* Custom Scrollbar for Time Slots */
-.time-slots-panel::-webkit-scrollbar {
-  width: 4px;
-}
-
-.time-slots-panel::-webkit-scrollbar-track {
-  background: #E2E8F0;
-  border-radius: 10px;
-}
-
-.time-slots-panel::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 10px;
-}
-
-.time-slots-panel::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
-}
+/* Rimuovi scrollbar dal pannello principale (ora scrolla solo la grid) */
 
 /* Calendar Legend */
 .calendar-legend {

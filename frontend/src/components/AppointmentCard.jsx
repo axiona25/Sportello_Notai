@@ -1,8 +1,31 @@
-import React from 'react'
-import { Clock, User, FileText, Phone, Video, Calendar as CalendarIcon } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
+import { Clock, User, FileText, Phone, Video, Calendar as CalendarIcon, MapPin, MoreVertical, Edit2, XCircle, Trash2, Archive, FolderOpen, PenTool, Check } from 'lucide-react'
 import './AppointmentCard.css'
 
-function AppointmentCard({ type, title, description, location, time, deadline, isActive, onClick, isSelected, emptySlots = 1 }) {
+function AppointmentCard({ 
+  type, 
+  title, 
+  description, 
+  location, 
+  time, 
+  deadline, 
+  isActive, 
+  onClick, 
+  isSelected, 
+  emptySlots = 1, 
+  clientName,  // Per vista notaio: nome del cliente
+  notaryName,  // Per vista cliente: nome del notaio
+  appointmentType, 
+  services = [],
+  showActions = false,
+  userRole = 'client',  // 'client' o 'notary'
+  onApprove,  // ✅ Handler per approvare l'appuntamento (solo notaio)
+  onEdit,
+  onCancel,
+  onDelete,
+  appointmentData,
+  status = 'provvisorio'  // ✅ Stato dell'appuntamento per il badge
+}) {
   if (type === 'empty') {
     return (
       <div className="appointment-card empty" style={{ flexGrow: emptySlots }}>
@@ -12,44 +35,170 @@ function AppointmentCard({ type, title, description, location, time, deadline, i
     )
   }
 
+  const [showMenu, setShowMenu] = useState(false)
+  const menuRef = useRef(null)
+
+  // Chiudi menu quando si clicca fuori
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false)
+      }
+    }
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showMenu])
+
+  const handleClick = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (onClick) {
+      onClick()
+    }
+  }
+
+  const handleMenuToggle = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setShowMenu(!showMenu)
+  }
+
+  const handleApprove = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setShowMenu(false)
+    if (onApprove) {
+      onApprove(appointmentData)
+    }
+  }
+
+  const handleEdit = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setShowMenu(false)
+    if (onEdit) {
+      onEdit(appointmentData)
+    }
+  }
+
+  const handleCancel = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setShowMenu(false)
+    if (onCancel) {
+      onCancel(appointmentData)
+    }
+  }
+
+  const handleDelete = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setShowMenu(false)
+    if (onDelete) {
+      onDelete(appointmentData)
+    }
+  }
+
   return (
     <div 
-      className={`appointment-card ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
-      onClick={onClick}
+      className={`appointment-card ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''} ${showMenu ? 'menu-open' : ''}`}
+      onClick={handleClick}
       style={{ cursor: 'pointer' }}
     >
-      <h3 className="appointment-title">{title}</h3>
-      
-      {description && (
-        <p className="appointment-description">{description}</p>
-      )}
-      
-      {location && (
-        <p className="appointment-location">{location}</p>
-      )}
-
-      <div className="appointment-footer">
-        <div className="appointment-icons">
-          <User size={16} className="icon-gray" />
-          <FileText size={16} className="icon-gray" />
-          {type === 'appointment' && (
-            <>
-              <Phone size={16} className="icon-gray" />
-              <Video size={16} className="icon-gray" />
-            </>
+      {/* Menu Actions */}
+      {showActions && (
+        <div className="appointment-actions-menu" ref={menuRef}>
+          <button 
+            className="appointment-actions-btn"
+            onClick={handleMenuToggle}
+            title="Azioni"
+          >
+            <MoreVertical size={18} />
+          </button>
+          
+          {showMenu && (
+            <div className="appointment-actions-dropdown">
+              {/* Approva solo per notai */}
+              {userRole === 'notary' && onApprove && (
+                <button className="action-item action-approve" onClick={handleApprove}>
+                  <Check size={16} />
+                  <span>Approva</span>
+                </button>
+              )}
+              <button className="action-item action-edit" onClick={handleEdit}>
+                <Edit2 size={16} />
+                <span>Modifica</span>
+              </button>
+              {/* Annulla solo per notai */}
+              {userRole === 'notary' && onCancel && (
+                <button className="action-item action-cancel" onClick={handleCancel}>
+                  <XCircle size={16} />
+                  <span>Annulla</span>
+                </button>
+              )}
+              <button className="action-item action-delete" onClick={handleDelete}>
+                <Trash2 size={16} />
+                <span>Elimina</span>
+              </button>
+            </div>
           )}
         </div>
+      )}
 
+      {/* Tipo Appuntamento / Tipologia Atto */}
+      <h3 className="appointment-title">{appointmentType || title}</h3>
+      
+      {/* Cliente (per vista notaio) o Notaio (per vista cliente) */}
+      {userRole === 'notary' && clientName && (
+        <p className="appointment-client">
+          <User size={14} />
+          {clientName}
+        </p>
+      )}
+      {userRole === 'client' && notaryName && (
+        <p className="appointment-client">
+          <User size={14} />
+          {notaryName}
+        </p>
+      )}
+
+      {/* Footer: Ora a sinistra, Servizi a destra */}
+      <div className="appointment-footer">
         {time && (
           <div className="appointment-time">
             <Clock size={16} />
             <span>{time}</span>
+            {/* ✅ Badge pallino stato */}
+            <div 
+              className={`status-badge-dot status-${status.toLowerCase()}`}
+              data-tooltip={
+                status.toUpperCase() === 'PROVVISORIO' ? 'Da Confermare' :
+                status.toUpperCase() === 'CONFERMATO' ? 'Confermato dal Notaio' :
+                status.toUpperCase() === 'ANNULLATO' ? 'Annullato' :
+                status.toUpperCase() === 'DOCUMENTI_IN_CARICAMENTO' ? 'In Lavorazione' :
+                status.toUpperCase() === 'DOCUMENTI_VERIFICATI' ? 'Verificato' :
+                status.toUpperCase() === 'RIFIUTATO' ? 'Rifiutato' :
+                status
+              }
+            ></div>
           </div>
         )}
-        {deadline && (
-          <div className="appointment-deadline">
-            <Clock size={16} />
-            <span>Scadenza {deadline}</span>
+
+        {/* ✅ Servizi selezionati - TUTTI E 6 (allineati con card dettaglio) */}
+        {services && services.length > 0 && (
+          <div className="appointment-services">
+            {services.includes('presence') && <MapPin size={14} className="icon-service" title="In Presenza" />}
+            {services.includes('video') && <Video size={14} className="icon-service" title="Video Chiamata" />}
+            {services.includes('phone') && <Phone size={14} className="icon-service" title="Telefonata" />}
+            {services.includes('conservation') && <Archive size={14} className="icon-service" title="Conservazione" />}
+            {services.includes('shared_folder') && <FolderOpen size={14} className="icon-service" title="Cartella Condivisa" />}
+            {services.includes('digital_signature') && <PenTool size={14} className="icon-service" title="Firma Digitale" />}
           </div>
         )}
       </div>

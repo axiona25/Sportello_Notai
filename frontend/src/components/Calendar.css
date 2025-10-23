@@ -109,15 +109,31 @@
   background-color: #3D9EEE;
 }
 
+/* Indicatori Appuntamenti */
 .appointment-indicator {
   width: 20px;
   height: 3px;
-  background-color: #4FADFF;
   border-radius: 2px;
   display: block;
 }
 
+/* Confermato - Celeste */
+.appointment-indicator.confirmed {
+  background: linear-gradient(90deg, #4FADFF 0%, #1668B0 100%);
+}
+
+/* Provvisorio - Giallo */
+.appointment-indicator.provisional {
+  background: linear-gradient(90deg, #FCD34D 0%, #F59E0B 100%);
+}
+
+/* Misto - Gradient Giallo + Celeste */
+.appointment-indicator.mixed {
+  background: linear-gradient(90deg, #FCD34D 0%, #F59E0B 50%, #4FADFF 50%, #1668B0 100%);
+}
+
+/* Indicatore bianco quando il giorno è selezionato */
 .calendar-day.selected .appointment-indicator {
-  background-color: var(--color-white);
+  background: var(--color-white) !important;
 }
 

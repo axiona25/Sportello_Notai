@@ -165,12 +165,12 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
-    ],
+    ] if not DEBUG else [],  # Disabilita throttling in sviluppo
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',
-        'user': '1000/hour',
+        'anon': '100/hour' if not DEBUG else '10000/hour',  # Rate più alti in sviluppo
+        'user': '1000/hour' if not DEBUG else '10000/hour',
         'login': '10/minute',
-        'upload': '20/hour',
+        'upload': '20/hour' if not DEBUG else '1000/hour',
     },
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Calendar, Clock, User, CheckCircle, XCircle, AlertCircle, FileText, Trash2 } from 'lucide-react'
 import appointmentService from '../services/appointmentService'
+import { formatDateItalian } from '../utils/dateUtils'
 import './NotaryAppointments.css'
 
 function NotaryAppointments() {
@@ -69,8 +70,8 @@ function NotaryAppointments() {
   }
 
   const formatDate = (dateStr) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('it-IT', { 
+    // Usa la funzione utility che gestisce correttamente il timezone
+    return formatDateItalian(dateStr, {
       weekday: 'short',
       day: 'numeric', 
       month: 'short',

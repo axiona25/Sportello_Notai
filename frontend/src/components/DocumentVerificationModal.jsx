@@ -2,31 +2,50 @@ import React, { useState, useEffect } from 'react'
 import { X, FileText, Check, XCircle, Clock, AlertCircle, Download, Eye } from 'lucide-react'
 import appointmentExtendedService from '../services/appointmentExtendedService'
 import { useToast } from '../contexts/ToastContext'
+import { getDocumentiRichiestiPerAtto } from '../config/documentiRichiestiConfig'
+import DocumentItem from './DocumentItem'
 import './AppointmentDetailModal.css'
 import './DocumentVerificationModal.css'
 
 function DocumentVerificationModal({ appointment, onClose, onDocumentVerified }) {
-  const [activeTab, setActiveTab] = useState('documenti')
-  const [documenti, setDocumenti] = useState([])
+  console.log('🔍 DocumentVerificationModal - Appointment:', appointment)
+  
+  const [documentiRichiesti, setDocumentiRichiesti] = useState([])
+  const [documentiCaricati, setDocumentiCaricati] = useState([])
   const [loadingDocumenti, setLoadingDocumenti] = useState(false)
   const [verifyingDoc, setVerifyingDoc] = useState(null)
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [rejectNote, setRejectNote] = useState('')
-  const [internalNote, setInternalNote] = useState('')
   const { showToast } = useToast()
 
   useEffect(() => {
     if (appointment) {
-      loadDocumenti()
+      console.log('📦 DocumentVerificationModal - Appointment ricevuto:', appointment)
+      
+      // Carica documenti richiesti in base al tipo di atto
+      const appointmentData = appointment.rawData || appointment
+      const codiceAtto = appointment.tipologia_atto_codice || 
+                        appointmentData.tipologia_atto_codice ||
+                        appointment.appointment_type_code ||
+                        appointmentData.appointment_type_code
+      
+      console.log('🔍 Codice atto trovato (Notaio):', codiceAtto)
+      
+      const docRichiesti = getDocumentiRichiestiPerAtto(codiceAtto)
+      console.log('📄 Documenti richiesti caricati (Notaio):', docRichiesti.length, 'documenti')
+      setDocumentiRichiesti(docRichiesti)
+
+      // Carica documenti già caricati dal cliente
+      loadDocumentiCaricati()
     }
   }, [appointment])
 
-  const loadDocumenti = async () => {
+  const loadDocumentiCaricati = async () => {
     try {
       setLoadingDocumenti(true)
       const docs = await appointmentExtendedService.getDocumentiAppuntamento(appointment.id)
-      setDocumenti(Array.isArray(docs) ? docs : [])
+      setDocumentiCaricati(Array.isArray(docs) ? docs : [])
     } catch (error) {
       console.error('Errore caricamento documenti:', error)
       showToast('Errore caricamento documenti', 'error', 'Errore')
@@ -35,25 +54,27 @@ function DocumentVerificationModal({ appointment, onClose, onDocumentVerified })
     }
   }
 
-  const handleAcceptDocument = async (documentoId) => {
+  const handleVerify = async (documentoId) => {
     try {
       setVerifyingDoc(documentoId)
-      await appointmentExtendedService.verificaDocumento(documentoId, 'accetta', '', internalNote)
+      await appointmentExtendedService.verificaDocumento(documentoId, 'accetta', '', '')
       showToast('Documento accettato', 'success', 'Accettato!')
-      await loadDocumenti()
+      await loadDocumentiCaricati()
       if (onDocumentVerified) onDocumentVerified()
     } catch (error) {
       console.error('Errore accettazione documento:', error)
       showToast('Errore nell\'accettazione', 'error', 'Errore')
     } finally {
       setVerifyingDoc(null)
-      setInternalNote('')
     }
   }
 
-  const handleRejectClick = (documento) => {
-    setSelectedDoc(documento)
-    setShowRejectModal(true)
+  const handleReject = (documentoId) => {
+    const doc = documentiCaricati.find(d => d.id === documentoId)
+    if (doc) {
+      setSelectedDoc(doc)
+      setShowRejectModal(true)
+    }
   }
 
   const handleRejectConfirm = async () => {
@@ -68,14 +89,13 @@ function DocumentVerificationModal({ appointment, onClose, onDocumentVerified })
         selectedDoc.id,
         'rifiuta',
         rejectNote,
-        internalNote
+        ''
       )
       showToast('Documento rifiutato', 'success', 'Rifiutato')
       setShowRejectModal(false)
       setRejectNote('')
-      setInternalNote('')
       setSelectedDoc(null)
-      await loadDocumenti()
+      await loadDocumentiCaricati()
       if (onDocumentVerified) onDocumentVerified()
     } catch (error) {
       console.error('Errore rifiuto documento:', error)
@@ -88,31 +108,23 @@ function DocumentVerificationModal({ appointment, onClose, onDocumentVerified })
   const handleRejectCancel = () => {
     setShowRejectModal(false)
     setRejectNote('')
-    setInternalNote('')
     setSelectedDoc(null)
   }
 
-  const getStatoBadge = (stato) => {
-    switch (stato) {
-      case 'DA_CARICARE':
-        return { label: 'Da Caricare', icon: AlertCircle, class: 'badge-pending' }
-      case 'CARICATO':
-      case 'IN_VERIFICA':
-        return { label: 'Da Verificare', icon: Clock, class: 'badge-verifying' }
-      case 'ACCETTATO':
-        return { label: 'Accettato', icon: Check, class: 'badge-accepted' }
-      case 'RIFIUTATO':
-        return { label: 'Rifiutato', icon: XCircle, class: 'badge-rejected' }
-      default:
-        return { label: 'Sconosciuto', icon: AlertCircle, class: 'badge-unknown' }
-    }
+  // Helper per trovare documento caricato corrispondente
+  const trovaDocumentoCaricato = (nomeDocumento) => {
+    return documentiCaricati.find(doc => 
+      doc.document_type_name === nomeDocumento || 
+      doc.nome_documento === nomeDocumento
+    )
   }
 
+
   const getDocumentsStats = () => {
-    const total = documenti.length
-    const accepted = documenti.filter(d => d.stato === 'ACCETTATO').length
-    const rejected = documenti.filter(d => d.stato === 'RIFIUTATO').length
-    const pending = documenti.filter(d => ['CARICATO', 'IN_VERIFICA'].includes(d.stato)).length
+    const total = documentiCaricati.length
+    const accepted = documentiCaricati.filter(d => d.stato === 'ACCETTATO' || d.stato === 'VERIFICATO').length
+    const rejected = documentiCaricati.filter(d => d.stato === 'RIFIUTATO').length
+    const pending = documentiCaricati.filter(d => ['CARICATO', 'IN_VERIFICA', 'BOZZA', 'IN_ATTESA'].includes(d.stato)).length
     return { total, accepted, rejected, pending }
   }
 
@@ -127,11 +139,16 @@ function DocumentVerificationModal({ appointment, onClose, onDocumentVerified })
           {/* Header */}
           <div className="appointment-modal-header">
             <div className="appointment-modal-header-content">
-              <h2>Verifica Documenti - {appointment.cliente_nome}</h2>
+              <div className="appointment-modal-title-with-icon">
+                <FileText size={20} className="modal-title-icon" />
+                <h2>Documenti Richiesti</h2>
+              </div>
               <p className="appointment-modal-subtitle">
-                {appointment.tipologia_atto_nome || appointment.appointment_type}
+                {appointment.appointmentType || appointment.tipologia_atto_nome || appointment.appointment_type || 'Appuntamento'}
                 {' | '}
-                {appointment.date} - {appointment.start_time?.substring(0, 5)}
+                {appointment.clientName || appointment.cliente_nome || 'Cliente'}
+                {' - '}
+                {appointment.date || 'Data non disponibile'}
               </p>
             </div>
             <button className="appointment-modal-close" onClick={onClose}>
@@ -159,164 +176,40 @@ function DocumentVerificationModal({ appointment, onClose, onDocumentVerified })
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="appointment-modal-tabs">
-            <button
-              className={`appointment-modal-tab ${activeTab === 'documenti' ? 'active' : ''}`}
-              onClick={() => setActiveTab('documenti')}
-            >
-              <FileText size={18} />
-              Verifica Documenti
-            </button>
-            <button
-              className={`appointment-modal-tab ${activeTab === 'dettagli' ? 'active' : ''}`}
-              onClick={() => setActiveTab('dettagli')}
-            >
-              <Eye size={18} />
-              Dettagli Appuntamento
-            </button>
-          </div>
-
           {/* Content */}
           <div className="appointment-modal-body">
-            {activeTab === 'dettagli' && (
-              <div className="appointment-details">
-                <div className="detail-row">
-                  <span className="detail-label">Cliente:</span>
-                  <span className="detail-value">{appointment.cliente_nome}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Tipo Atto:</span>
-                  <span className="detail-value">{appointment.tipologia_atto_nome}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Data:</span>
-                  <span className="detail-value">{appointment.date}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Orario:</span>
-                  <span className="detail-value">
-                    {appointment.start_time?.substring(0, 5)} - {appointment.end_time?.substring(0, 5)}
-                  </span>
-                </div>
-                {appointment.notes && (
-                  <div className="detail-row">
-                    <span className="detail-label">Note Cliente:</span>
-                    <span className="detail-value">{appointment.notes}</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'documenti' && (
-              <div className="appointment-documents">
+            {/* Documenti */}
+            <div className="appointment-documents">
                 {loadingDocumenti ? (
-                  <div className="loading-state">Caricamento documenti...</div>
-                ) : documenti.length === 0 ? (
+                  <div className="loading-state">
+                    <div className="loading-spinner"></div>
+                    <p>Caricamento documenti...</p>
+                  </div>
+                ) : documentiRichiesti.length === 0 ? (
                   <div className="empty-state">
                     <FileText size={48} />
-                    <p>Nessun documento per questo appuntamento</p>
+                    <p>Nessun documento configurato per questo tipo di atto</p>
+                    <small>Verifica la configurazione dell'atto</small>
                   </div>
                 ) : (
                   <div className="documents-list">
-                    {documenti.map((doc) => {
-                      const statoBadge = getStatoBadge(doc.stato)
-                      const StatoIcon = statoBadge.icon
-                      const needsVerification = ['CARICATO', 'IN_VERIFICA'].includes(doc.stato)
+                    {documentiRichiesti.map((docRichiesto, index) => {
+                      const docCaricato = trovaDocumentoCaricato(docRichiesto.nome)
                       
                       return (
-                        <div key={doc.id} className={`document-item ${needsVerification ? 'needs-verification' : ''}`}>
-                          <div className="document-item-header">
-                            <div className="document-item-info">
-                              <FileText size={20} />
-                              <div>
-                                <h4 className="document-item-name">
-                                  {doc.document_type_name}
-                                  {doc.is_obbligatorio && <span className="required-badge">Obbligatorio</span>}
-                                </h4>
-                                {doc.document_type_description && (
-                                  <p className="document-item-description">{doc.document_type_description}</p>
-                                )}
-                              </div>
-                            </div>
-                            <div className={`stato-badge ${statoBadge.class}`}>
-                              <StatoIcon size={14} />
-                              <span>{statoBadge.label}</span>
-                            </div>
-                          </div>
-
-                          {/* File Info */}
-                          {doc.file && (
-                            <div className="document-file-info">
-                              <FileText size={16} />
-                              <span className="document-file-name">
-                                {doc.file_name || 'Documento caricato'}
-                              </span>
-                              {doc.file_url && (
-                                <a
-                                  href={doc.file_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="document-download-btn"
-                                >
-                                  <Download size={16} />
-                                  Scarica
-                                </a>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Verification Actions */}
-                          {needsVerification && (
-                            <div className="verification-actions">
-                              <textarea
-                                className="internal-note-input"
-                                placeholder="Note interne (opzionali, visibili solo allo studio)..."
-                                value={verifyingDoc === doc.id ? internalNote : ''}
-                                onChange={(e) => setInternalNote(e.target.value)}
-                                rows={2}
-                              />
-                              <div className="verification-buttons">
-                                <button
-                                  className="verify-btn verify-btn-accept"
-                                  onClick={() => handleAcceptDocument(doc.id)}
-                                  disabled={verifyingDoc === doc.id}
-                                >
-                                  <Check size={16} />
-                                  Accetta
-                                </button>
-                                <button
-                                  className="verify-btn verify-btn-reject"
-                                  onClick={() => handleRejectClick(doc)}
-                                  disabled={verifyingDoc === doc.id}
-                                >
-                                  <XCircle size={16} />
-                                  Rifiuta
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Previous Notes */}
-                          {doc.note_interne && (
-                            <div className="document-internal-note">
-                              <AlertCircle size={16} />
-                              <span>Note interne: {doc.note_interne}</span>
-                            </div>
-                          )}
-                          {doc.note_rifiuto && (
-                            <div className="document-rejection-note">
-                              <AlertCircle size={16} />
-                              <span>Motivo rifiuto (inviato al cliente): {doc.note_rifiuto}</span>
-                            </div>
-                          )}
-                        </div>
+                        <DocumentItem
+                          key={index}
+                          documento={docRichiesto}
+                          documentoCaricato={docCaricato}
+                          userRole="notary"
+                          onVerify={handleVerify}
+                          onReject={handleReject}
+                        />
                       )
                     })}
                   </div>
                 )}
               </div>
-            )}
           </div>
         </div>
       </div>

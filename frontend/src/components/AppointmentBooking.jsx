@@ -15,12 +15,14 @@ import {
   Users,
   FileSignature,
   Archive,
-  FolderOpen
+  FolderOpen,
+  Home
 } from 'lucide-react'
 import AppointmentCalendar from './AppointmentCalendar'
 import appointmentService from '../services/appointmentService'
 import appointmentExtendedService from '../services/appointmentExtendedService'
 import { useToast } from '../contexts/ToastContext'
+import { formatDateItalian } from '../utils/dateUtils'
 import './AppointmentBooking.css'
 
 function AppointmentBooking({ notary, onClose, onSuccess }) {
@@ -57,10 +59,8 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
         categoriesArray = response.data
       }
       
-      console.log('📊 Tipologie atto caricate dal backend:', categoriesArray.length)
       
       if (categoriesArray.length === 0) {
-        console.log('⚠️  Nessuna categoria ricevuta dal backend, uso fallback')
         setActCategories([])
         return
       }
@@ -76,12 +76,9 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
       }))
       
       setActCategories(servicesFromBackend)
-      console.log('✅ Card configurate:', servicesFromBackend.length)
     } catch (error) {
       console.error('❌ Errore caricamento tipologie atto:', error)
-      // In caso di errore, usa i servizi hardcoded come fallback
       setActCategories([])
-      console.log('⚠️  Fallback a servizi hardcoded')
     } finally {
       setLoadingCategories(false)
     }
@@ -180,7 +177,7 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
     { 
       id: 'presence', 
       label: 'In Presenza', 
-      icon: Users,
+      icon: MapPin,
       description: 'Presso lo studio notarile'
     },
     { 
@@ -232,12 +229,38 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
 
   // Gestione paginazione
   const handlePrevPage = () => {
-    setCurrentPage(prev => Math.max(0, prev - 1))
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1)
+      // Reset selezione se non è visibile nella nuova pagina
+      if (selectedActType) {
+        const allServices = actCategories.length > 0 ? actCategories : services
+        const newPageStart = (currentPage - 1) * CARDS_PER_PAGE
+        const newPageEnd = newPageStart + CARDS_PER_PAGE
+        const visibleServices = allServices.slice(newPageStart, newPageEnd)
+        const isSelectedVisible = visibleServices.some(s => s.id === selectedActType.id)
+        if (!isSelectedVisible) {
+          setSelectedActType(null)
+        }
+      }
+    }
   }
 
   const handleNextPage = () => {
     const totalPages = Math.ceil((actCategories.length > 0 ? actCategories : services).length / CARDS_PER_PAGE)
-    setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1)
+      // Reset selezione se non è visibile nella nuova pagina
+      if (selectedActType) {
+        const allServices = actCategories.length > 0 ? actCategories : services
+        const newPageStart = (currentPage + 1) * CARDS_PER_PAGE
+        const newPageEnd = newPageStart + CARDS_PER_PAGE
+        const visibleServices = allServices.slice(newPageStart, newPageEnd)
+        const isSelectedVisible = visibleServices.some(s => s.id === selectedActType.id)
+        if (!isSelectedVisible) {
+          setSelectedActType(null)
+        }
+      }
+    }
   }
 
   // Calcola card da mostrare nella pagina corrente
@@ -247,7 +270,6 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
     const endIndex = startIndex + CARDS_PER_PAGE
     const paginatedServices = allServices.slice(startIndex, endIndex)
     
-    console.log(`📄 Pagina ${currentPage + 1}: Mostro ${paginatedServices.length} card (da ${startIndex + 1} a ${Math.min(endIndex, allServices.length)})`)
     
     return paginatedServices
   }
@@ -288,11 +310,25 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
   const handleSubmit = async () => {
     setLoading(true)
 
+    // Converti esplicitamente la data nel formato corretto
+    let dateStr = selectedSlot.date
+    
+    // Se è un oggetto Date, converti in YYYY-MM-DD senza timezone
+    if (selectedSlot.date instanceof Date) {
+      const year = selectedSlot.date.getFullYear()
+      const month = String(selectedSlot.date.getMonth() + 1).padStart(2, '0')
+      const day = String(selectedSlot.date.getDate()).padStart(2, '0')
+      dateStr = `${year}-${month}-${day}`
+    } else if (typeof selectedSlot.date === 'string' && selectedSlot.date.includes('T')) {
+      // Se è una stringa ISO (con timezone), prendi solo la parte della data
+      dateStr = selectedSlot.date.split('T')[0]
+    }
+
     const appointmentData = {
       notary: notary.id,
       appointment_type: selectedActType.id,
       tipologia_atto: selectedActType.tipologia_atto_id, // Nuovo campo per il backend
-      date: selectedSlot.date,
+      date: dateStr, // Usa la data convertita
       start_time: selectedSlot.start_time,
       end_time: selectedSlot.end_time,
       duration_minutes: selectedActType.duration,
@@ -309,6 +345,7 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
         'Appuntamento Prenotato!'
       )
       
+      // ✅ Ridotto timeout per mostrare subito la mini-card
       setTimeout(() => {
         if (onSuccess) {
           onSuccess({
@@ -319,7 +356,7 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
           })
         }
         onClose()
-      }, 1500)
+      }, 300)
     } else {
       showToast(
         result.error || 'Si è verificato un errore. Riprova.',
@@ -336,14 +373,8 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
   }
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return ''
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('it-IT', { 
-      weekday: 'long', 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
-    })
+    // Usa la funzione utility che gestisce correttamente il timezone
+    return formatDateItalian(dateStr)
   }
 
   const getStepTitle = () => {
@@ -480,14 +511,27 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
           {/* Step 2: Date & Time Selection */}
           {currentStep === 2 && (
             <div className="wizard-content">
-              <div className="calendar-wrapper">
-                <AppointmentCalendar
-                  notaryId={notary.id}
-                  duration={selectedActType?.duration || 30}
-                  onSlotSelect={handleSlotSelect}
-                  selectedSlot={selectedSlot}
-                />
-              </div>
+              {/* Debug: verifica notary object */}
+              {console.log('AppointmentBooking - notary object:', notary)}
+              {console.log('AppointmentBooking - notary.id:', notary?.id)}
+              
+              {!notary?.id ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: '#EF4444' }}>
+                  <p style={{ fontSize: '16px', fontWeight: 600 }}>⚠️ Errore: ID notaio mancante</p>
+                  <p style={{ fontSize: '14px', color: '#6B7280', marginTop: '8px' }}>
+                    Impossibile caricare il calendario. Oggetto notary: {JSON.stringify(notary)}
+                  </p>
+                </div>
+              ) : (
+                <div className="calendar-wrapper">
+                  <AppointmentCalendar
+                    notaryId={notary.id}
+                    duration={selectedActType?.duration || 30}
+                    onSlotSelect={handleSlotSelect}
+                    selectedSlot={selectedSlot}
+                  />
+                </div>
+              )}
               
               {selectedSlot && (
                 <div className="selected-slot-card">

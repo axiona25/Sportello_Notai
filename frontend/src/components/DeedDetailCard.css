@@ -7,7 +7,7 @@
   flex-direction: column;
   gap: 12px;
   height: 420px;
-  overflow: hidden;
+  overflow: visible; /* ✅ Permette ai tooltip di uscire dalla card */
   position: relative;
 }
 
@@ -69,12 +69,25 @@
   margin: 8px 0 0 0;
 }
 
+/* ✅ Sezione titolo con icona */
+.deed-title-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.deed-title-icon {
+  color: #1668B0;
+  flex-shrink: 0;
+}
+
 .deed-title {
   font-size: 16px;
   font-weight: 600;
   color: var(--color-text-primary);
   line-height: 1.2;
-  margin-bottom: 4px;
+  margin: 0;
 }
 
 .deed-section {
@@ -93,6 +106,168 @@
   border-bottom: none;
   padding-bottom: 8px;
   margin-bottom: 0;
+}
+
+/* ✅ Nuova sezione per Nome Notaio/Cliente con icona */
+.deed-section-person {
+  border-bottom: none;
+  padding-bottom: 8px;
+  margin-bottom: 0;
+}
+
+.deed-person-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+}
+
+.deed-person-icon {
+  color: #1668B0;
+  flex-shrink: 0;
+}
+
+.deed-person-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #404143;
+}
+
+/* ✅ Sezione orario */
+.deed-section-time {
+  border-bottom: none;
+  padding-bottom: 8px;
+  margin-bottom: 0;
+}
+
+.deed-time-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+}
+
+.deed-time-icon {
+  color: #1668B0; /* Blu come le altre icone */
+  flex-shrink: 0;
+}
+
+.deed-time-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: #404143;
+}
+
+/* ✅ Badge pallino stato con tooltip - posizionato in alto a destra */
+.status-badge-dot-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-badge-dot-container.status-badge-top-right {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+}
+
+.status-badge-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  cursor: help;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.status-badge-dot:hover {
+  transform: scale(1.3);
+}
+
+/* Colori badge in base allo stato */
+.status-badge-dot.status-provvisorio {
+  background: #F59E0B; /* Giallo - come nel calendario */
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.status-badge-dot.status-provvisorio:hover {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+}
+
+.status-badge-dot.status-confermato,
+.status-badge-dot.status-documenti_in_caricamento,
+.status-badge-dot.status-documenti_verificati {
+  background: #1668B0; /* Blu */
+  box-shadow: 0 0 0 2px rgba(22, 104, 176, 0.2);
+}
+
+.status-badge-dot.status-confermato:hover,
+.status-badge-dot.status-documenti_in_caricamento:hover,
+.status-badge-dot.status-documenti_verificati:hover {
+  box-shadow: 0 0 0 3px rgba(22, 104, 176, 0.3);
+}
+
+.status-badge-dot.status-annullato,
+.status-badge-dot.status-rifiutato {
+  background: #EF4444; /* Rosso */
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.status-badge-dot.status-annullato:hover,
+.status-badge-dot.status-rifiutato:hover {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+}
+
+/* ✅ Tooltip moderno - verso il basso per card di dettaglio */
+.deed-card .status-badge-dot::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  transform: translateY(-4px) scale(0.95);
+  background: white;
+  color: #1F2937;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.15s ease;
+  z-index: 10000;
+  font-family: 'Poppins', sans-serif;
+  box-shadow: 0 4px 16px rgba(22, 104, 176, 0.15), 0 0 0 1px rgba(22, 104, 176, 0.1);
+  max-width: 200px;
+  text-align: center;
+}
+
+.deed-card .status-badge-dot::after {
+  content: '';
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 8px;
+  border: 5px solid transparent;
+  border-bottom-color: white;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.15s ease;
+  z-index: 10000;
+  filter: drop-shadow(0 -1px 2px rgba(22, 104, 176, 0.1));
+}
+
+.deed-card .status-badge-dot:hover::before {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.deed-card .status-badge-dot:hover::after {
+  opacity: 1;
 }
 
 .deed-notary {
@@ -115,6 +290,11 @@
 
 .deed-notary-address {
   font-size: 13px;
+  font-weight: 400;
+  color: #939497;
+}
+
+.deed-location-text {
   font-weight: 400;
   color: #939497;
 }
@@ -171,9 +351,14 @@
 }
 
 .deed-section-services {
-  padding-top: 0;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--color-border);
+  padding-top: 12px;
+  padding-bottom: 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* ✅ Più spazio tra titolo e icone */
+  overflow: visible; /* ✅ Permette ai tooltip di uscire */
 }
 
 .deed-services-title {
@@ -185,11 +370,240 @@
   font-weight: 600;
   color: #404143;
   line-height: 1.4;
+  margin: 0;
 }
 
 .deed-services-icon {
   color: #1668B0;
   flex-shrink: 0;
+}
+
+/* ✅ Icone servizi con tooltip */
+.deed-services-icons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  overflow: visible; /* ✅ Permette ai tooltip di uscire */
+  position: relative;
+  padding-bottom: 20px; /* ✅ Aumentato: più spazio tra icone e riga grigia */
+  border-bottom: 1px solid var(--color-border);
+}
+
+.service-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #F8FAFC;
+  border: 1.5px solid #1668B0;
+  border-radius: 8px;
+  cursor: help;
+  transition: all 0.2s ease;
+  z-index: 1; /* Base z-index */
+}
+
+.service-icon-wrapper:hover {
+  transform: translateY(-2px);
+  background: #EFF6FF;
+  border-color: #4FADFF;
+  box-shadow: 0 4px 12px rgba(22, 104, 176, 0.15);
+  z-index: 10001; /* ✅ In hover va sopra tutto (tooltip incluso) */
+}
+
+.service-icon {
+  color: #1668B0;
+  flex-shrink: 0;
+}
+
+/* ✅ Tooltip servizi - SOTTO le icone, verso DESTRA (dentro la card) */
+.service-icon-wrapper::before {
+  content: attr(data-service-tooltip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  transform: translateY(-4px) scale(0.95);
+  background: white;
+  color: #1F2937;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.15s ease;
+  z-index: 99999; /* ✅ Z-index altissimo per sovraimpressione */
+  font-family: 'Poppins', sans-serif;
+  box-shadow: 0 4px 16px rgba(22, 104, 176, 0.15), 0 0 0 1px rgba(22, 104, 176, 0.1);
+}
+
+.service-icon-wrapper::after {
+  content: '';
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 8px;
+  transform: translateY(0);
+  border: 5px solid transparent;
+  border-bottom-color: white;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.15s ease;
+  z-index: 99998; /* ✅ Appena sotto il tooltip */
+  filter: drop-shadow(0 -1px 2px rgba(22, 104, 176, 0.1));
+}
+
+.service-icon-wrapper:hover::before {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.service-icon-wrapper:hover::after {
+  opacity: 1;
+}
+
+/* ✅ Sezione Documenti Richiesti */
+.deed-section-documents {
+  padding-top: 8px; /* ✅ Ridotto: meno spazio tra riga grigia e titolo */
+  padding-bottom: 0;
+  border-top: none; /* La linea è già sotto le icone servizi */
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* ✅ Ridotto per box upload più vicino */
+  overflow: visible;
+}
+
+.deed-documents-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #404143;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.deed-documents-icon {
+  color: #1668B0;
+  flex-shrink: 0;
+}
+
+/* ✅ Upload documenti */
+.deed-documents-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #F8FAFC;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 8px 10px;
+  max-width: fit-content;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.deed-documents-upload:hover {
+  background: #EFF6FF;
+  border-color: #1668B0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22, 104, 176, 0.15);
+}
+
+.deed-documents-upload:hover .deed-upload-icon {
+  color: #4FADFF;
+}
+
+.deed-documents-upload:hover .deed-upload-text {
+  color: #1668B0;
+}
+
+/* ✅ Stato disabilitato (appuntamento non confermato) */
+.deed-documents-upload.disabled {
+  background: #F3F4F6;
+  border-color: #D1D5DB;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.deed-documents-upload.disabled:hover {
+  background: #F3F4F6;
+  border-color: #D1D5DB;
+  transform: none;
+  box-shadow: none;
+}
+
+.deed-documents-upload.disabled .deed-upload-icon {
+  color: #9CA3AF;
+}
+
+.deed-documents-upload.disabled .deed-upload-text {
+  color: #9CA3AF;
+}
+
+.deed-documents-upload.disabled:hover .deed-upload-icon,
+.deed-documents-upload.disabled:hover .deed-upload-text {
+  color: #9CA3AF;
+}
+
+.deed-upload-icon {
+  color: #1668B0;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.deed-upload-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.deed-upload-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6B7280;
+  line-height: 1.4;
+  margin: 0;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+/* Container per box documenti e badge */
+.deed-documents-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.deed-documents-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Inter', 'Poppins', sans-serif;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.deed-documents-badge.incomplete {
+  background: rgba(79, 173, 255, 0.08);
+  color: #1668B0;
+  border: 1px solid rgba(79, 173, 255, 0.2);
+}
+
+.deed-documents-badge.complete {
+  background: rgba(16, 185, 129, 0.08);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .deed-status {

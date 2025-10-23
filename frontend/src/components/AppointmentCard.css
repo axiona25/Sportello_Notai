@@ -1,26 +1,38 @@
 .appointment-card {
   background-color: var(--color-white);
   border-radius: var(--radius-lg);
-  padding: 14px 16px;
+  padding: 15px 16px 12px 16px;
   box-shadow: var(--shadow-md);
   transition: all 0.2s ease;
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 4px;
   flex: 0 0 auto;
-  height: 95px;
-  min-height: 95px;
+  height: 105px;
+  min-height: 105px;
+  overflow: visible; /* Cambiato da hidden a visible per permettere al menu di uscire */
+  z-index: 1; /* Z-index base */
+}
+
+/* Quando la card ha il menu aperto, aumenta lo z-index */
+.appointment-card:has(.appointment-actions-dropdown),
+.appointment-card.menu-open {
+  z-index: 9999 !important;
+  position: relative;
 }
 
 .appointment-card:hover {
   box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
+  z-index: 10; /* Aumenta lo z-index al hover per stare sopra le altre card */
 }
 
 .appointment-card.active {
   position: relative;
-  overflow: hidden;
+  overflow: visible; /* Cambiato anche qui */
+  z-index: 2; /* Leggermente più alto delle card normali */
 }
 
 .appointment-card.active::before {
@@ -32,11 +44,13 @@
   width: 4px;
   background: linear-gradient(to bottom, #83E0F7, #1668B0);
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  z-index: -1; /* Mantieni la barra sotto il contenuto */
 }
 
 .appointment-card.selected {
   position: relative;
-  overflow: hidden;
+  overflow: visible; /* Cambiato anche qui */
+  z-index: 2; /* Leggermente più alto delle card normali */
 }
 
 .appointment-card.selected::before {
@@ -48,6 +62,7 @@
   width: 4px;
   background: linear-gradient(to bottom, #83E0F7, #1668B0);
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  z-index: -1; /* Mantieni la barra sotto il contenuto */
 }
 
 .appointment-card.empty {
@@ -76,14 +91,42 @@
 .appointment-title {
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 2px;
-  line-height: 1.3;
+  font-family: 'Poppins', sans-serif;
+  color: #1F2937;
+  margin: 0;
+  padding: 0 32px 2px 0; /* Aggiungo padding-right per non sovrapporsi al menu */
+  line-height: 1.35;
+  max-height: 40px;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+
+.appointment-client {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Poppins', sans-serif;
+  color: #4B5563;
+  margin: 0;
+  padding: 0;
+  line-height: 1.3;
+  height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.appointment-client svg {
+  flex-shrink: 0;
+  color: #6B7280;
+  width: 14px;
+  height: 14px;
 }
 
 .appointment-description {
@@ -128,23 +171,220 @@
   justify-content: space-between;
   gap: 8px;
   margin-top: auto;
-  padding-top: 2px;
+  padding-top: 0;
+  height: 20px;
+  overflow: visible; /* Permette al tooltip di uscire */
+  position: relative;
 }
 
 .appointment-time,
 .appointment-deadline {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 500;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
   color: #1668B0;
   white-space: nowrap;
+  line-height: 1.3;
+  position: relative;
+  overflow: visible; /* Permette al tooltip di uscire */
 }
 
 .appointment-time svg,
 .appointment-deadline svg {
   color: #1668B0;
   flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+/* ✅ Badge pallino nella mini card - versione più piccola */
+.appointment-time .status-badge-dot {
+  width: 7px;
+  height: 7px;
+  margin-left: 6px;
+}
+
+.appointment-time .status-badge-dot:hover {
+  transform: scale(1.4);
+}
+
+/* ✅ Tooltip badge nella mini card - a destra sulla stessa riga */
+.appointment-time .status-badge-dot::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 10px);
+  transform: translateY(-50%) translateX(-4px) scale(0.95);
+  font-size: 10px;
+  padding: 5px 10px;
+  background: white;
+  color: #1F2937;
+  box-shadow: 0 3px 12px rgba(22, 104, 176, 0.15), 0 0 0 1px rgba(22, 104, 176, 0.1);
+  border-radius: 7px;
+  font-weight: 600;
+  white-space: nowrap;
+  z-index: 99999; /* Z-index altissimo per essere sempre visibile */
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.15s ease;
+  font-family: 'Poppins', sans-serif;
+}
+
+.appointment-time .status-badge-dot:hover::before {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0) scale(1);
+}
+
+.appointment-time .status-badge-dot::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 5px);
+  transform: translateY(-50%);
+  border: 4px solid transparent;
+  border-right-color: white;
+  opacity: 0;
+  z-index: 99999;
+  pointer-events: none;
+  transition: all 0.15s ease;
+  filter: drop-shadow(-1px 0 2px rgba(22, 104, 176, 0.1));
+}
+
+.appointment-time .status-badge-dot:hover::after {
+  opacity: 1;
+}
+
+/* Servizi selezionati */
+.appointment-services {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon-service {
+  color: #6B7280;
+  flex-shrink: 0;
+  stroke-width: 2;
+  width: 14px;
+  height: 14px;
+}
+
+/* ========================================
+   MENU AZIONI APPUNTAMENTO (More Actions)
+   ======================================== */
+.appointment-actions-menu {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10000; /* Z-index molto alto per stare sopra tutto */
+}
+
+.appointment-actions-btn {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  color: #6B7280;
+}
+
+.appointment-actions-btn:hover {
+  background-color: #F3F4F6;
+  color: #1F2937;
+}
+
+.appointment-actions-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  min-width: 150px;
+  overflow: hidden;
+  animation: slideDown 0.2s ease;
+  z-index: 10001; /* Z-index ancora più alto del menu stesso */
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: white;
+  color: #1F2937;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.action-item:hover {
+  background-color: #F9FAFB;
+}
+
+.action-item svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+/* ✅ Approva - BLU */
+.action-item.action-approve {
+  color: #1668B0;
+  font-weight: 600;
+}
+
+.action-item.action-approve:hover {
+  background-color: #EFF6FF;
+}
+
+/* ✅ Modifica - GRIGIO */
+.action-item.action-edit {
+  color: #6B7280;
+}
+
+.action-item.action-edit:hover {
+  background-color: #F3F4F6;
+}
+
+.action-item.action-cancel {
+  color: #F59E0B;
+}
+
+.action-item.action-cancel:hover {
+  background-color: #FFFBEB;
+}
+
+.action-item.action-delete {
+  color: #EF4444;
+}
+
+.action-item.action-delete:hover {
+  background-color: #FEF2F2;
 }
 

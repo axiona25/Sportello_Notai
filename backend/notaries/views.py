@@ -13,17 +13,15 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from datetime import datetime, timedelta, time
 from collections import defaultdict
 
-from .models import Notary, Client, Collaborator, NotaryAvailability, Appointment
+from .models import Notary, Client, Collaborator, NotaryAvailability
 from .serializers import (
     NotarySerializer, NotaryListSerializer, NotaryShowcaseSerializer,
     ClientSerializer, CollaboratorSerializer, NotaryAvailabilitySerializer,
     AppointmentSerializer, AvailableSlotSerializer
 )
 from accounts.models import UserRole
-from appointments.models import DisponibilitaNotaio, Appuntamento, GiornoSettimana
-
-# Alias per compatibilità con codice esistente
-Appointment = Appuntamento
+from appointments.models import DisponibilitaNotaio, Appuntamento as Appointment, GiornoSettimana, AppointmentStatus
+from core.services.holidays import is_holiday, is_working_day
 
 
 class NotaryListView(generics.ListAPIView):
@@ -283,6 +281,7 @@ class AvailableSlotsView(APIView):
             OpenApiParameter('start_date', str, OpenApiParameter.QUERY, description='Start date (YYYY-MM-DD)'),
             OpenApiParameter('end_date', str, OpenApiParameter.QUERY, description='End date (YYYY-MM-DD)'),
             OpenApiParameter('duration', int, OpenApiParameter.QUERY, description='Duration in minutes (default: 30)'),
+            OpenApiParameter('exclude_appointment_id', str, OpenApiParameter.QUERY, description='ID dell\'appuntamento da escludere dal calcolo (per modifica)'),
         ],
         responses={200: AvailableSlotSerializer(many=True)}
     )
@@ -293,6 +292,7 @@ class AvailableSlotsView(APIView):
         start_date_str = request.query_params.get('start_date')
         end_date_str = request.query_params.get('end_date')
         duration = int(request.query_params.get('duration', 30))
+        exclude_appointment_id = request.query_params.get('exclude_appointment_id')
         
         if not start_date_str or not end_date_str:
             return Response(
@@ -362,12 +362,22 @@ class AvailableSlotsView(APIView):
                 })
         
         # Get existing appointments in date range (unified: using notary)
-        existing_appointments = Appuntamento.objects.filter(
+        # ⚠️ IMPORTANTE: TUTTI gli appuntamenti (provvisori + confermati) bloccano gli slot
+        # Gli slot orari sono COMUNI a tutte le tipologie di atto
+        existing_appointments = Appointment.objects.filter(
             notary=notary,  # ✅ Unified: usa il campo notary
             start_time__date__gte=start_date,
-            start_time__date__lte=end_date,
-            status__in=['richiesto', 'approvato', 'confermato']
-        ).values('start_time', 'end_time')
+            start_time__date__lte=end_date
+        ).exclude(
+            status=AppointmentStatus.RIFIUTATO  # Solo gli appuntamenti rifiutati non bloccano
+        )
+        
+        # Se stiamo modificando un appuntamento, escludiamolo dal calcolo
+        # Questo permette di ri-selezionare lo stesso slot o di trovare nuovi slot
+        if exclude_appointment_id:
+            existing_appointments = existing_appointments.exclude(id=exclude_appointment_id)
+        
+        existing_appointments = existing_appointments.values('start_time', 'end_time')
         
         # Organize appointments by date
         appointments_by_date = defaultdict(list)
@@ -386,6 +396,11 @@ class AvailableSlotsView(APIView):
         current_date = start_date
         
         while current_date <= end_date:
+            # Salta giorni festivi e weekend
+            if not is_working_day(current_date):
+                current_date += timedelta(days=1)
+                continue
+            
             day_of_week = current_date.weekday()  # 0 = Monday, 6 = Sunday
             
             # Check if notary works this day
@@ -462,8 +477,8 @@ class AppointmentCreateView(generics.CreateAPIView):
         
         notary_id = request.data.get('notary')
         appointment_date = request.data.get('date')
-        start_time = request.data.get('start_time')
-        end_time = request.data.get('end_time')
+        start_time_str = request.data.get('start_time')
+        end_time_str = request.data.get('end_time')
         
         # ⚠️ VERIFICA LICENZA NOTAIO
         try:
@@ -483,26 +498,157 @@ class AppointmentCreateView(generics.CreateAPIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         
+        # Combina date + time in datetime per il modello Appuntamento
+        from datetime import datetime as dt, time
+        from django.utils import timezone
+        import pytz
+        
+        appointment_date_obj = dt.strptime(appointment_date, '%Y-%m-%d').date()
+        
+        # Parse time strings (supporta sia HH:MM che HH:MM:SS)
+        if start_time_str.count(':') == 2:  # HH:MM:SS
+            start_time_obj = dt.strptime(start_time_str, '%H:%M:%S').time()
+        else:  # HH:MM
+            start_time_obj = dt.strptime(start_time_str, '%H:%M').time()
+        
+        if end_time_str.count(':') == 2:  # HH:MM:SS
+            end_time_obj = dt.strptime(end_time_str, '%H:%M:%S').time()
+        else:  # HH:MM
+            end_time_obj = dt.strptime(end_time_str, '%H:%M').time()
+        
+        # IMPORTANTE: Usa esplicitamente il timezone Europe/Rome per interpretare la data/ora
+        # Questo assicura che la data selezionata dall'utente sia salvata correttamente
+        # senza problemi di conversione timezone
+        rome_tz = pytz.timezone('Europe/Rome')
+        start_datetime_naive = dt.combine(appointment_date_obj, start_time_obj)
+        end_datetime_naive = dt.combine(appointment_date_obj, end_time_obj)
+        
+        # Localizza al timezone di Roma (gestisce automaticamente DST)
+        start_datetime = rome_tz.localize(start_datetime_naive)
+        end_datetime = rome_tz.localize(end_datetime_naive)
+        
+        # Verifica che end_time sia dopo start_time
+        if end_datetime <= start_datetime:
+            return Response(
+                {'error': f'End time ({end_time_str}) must be after start time ({start_time_str})'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         # Check if slot is still available (with SELECT FOR UPDATE for concurrency)
+        # ⚠️ IMPORTANTE: TUTTI gli appuntamenti (provvisori + confermati) bloccano la prenotazione
+        # Gli slot orari sono COMUNI a tutte le tipologie di atto - NO sovrapposizioni!
         existing = Appointment.objects.select_for_update().filter(
-            notary_id=notary_id,
-            date=appointment_date,
-            status__in=['pending', 'accepted']
+            notary_id=notary_id
+        ).exclude(
+            status=AppointmentStatus.RIFIUTATO  # Solo i rifiutati non bloccano
         ).filter(
-            Q(start_time__lt=end_time) & Q(end_time__gt=start_time)
+            Q(start_time__lt=end_datetime) & Q(end_time__gt=start_datetime)
         ).exists()
         
         if existing:
             return Response(
-                {'error': 'This time slot is no longer available'},
+                {'error': 'This time slot is no longer available. Another appointment already exists in this time range.'},
                 status=status.HTTP_409_CONFLICT
             )
         
-        # Set client automatically
-        request.data['client'] = request.user.id
-        request.data['status'] = 'pending'
+        # Crea l'appuntamento manualmente perché il serializer ha campi non compatibili
+        tipologia_atto_id = request.data.get('tipologia_atto')
         
-        return super().post(request, *args, **kwargs)
+        # ✅ Gestione servizi selezionati (modes from Step 3 wizard)
+        modes = request.data.get('modes', [])
+        is_in_person = 'presence' in modes
+        is_online = 'video' in modes
+        is_phone = 'phone' in modes
+        has_conservation = 'conservation' in modes
+        has_shared_folder = 'shared_folder' in modes
+        has_digital_signature = 'digital_signature' in modes
+        
+        try:
+            appuntamento = Appointment.objects.create(
+                notary=notary,
+                start_time=start_datetime,
+                end_time=end_datetime,
+                status='provvisorio',
+                tipologia_atto_id=tipologia_atto_id,
+                titolo=f"Appuntamento - {notary.studio_name}",
+                descrizione=request.data.get('notes', ''),
+                note_pubbliche=request.data.get('notes', ''),
+                tipo=request.data.get('appointment_type', 'consulenza'),
+                richiede_conferma=True,
+                created_by_email=request.user.email,
+                # ✅ Servizi selezionati dal cliente
+                is_in_person=is_in_person,
+                is_online=is_online,
+                is_phone=is_phone,
+                has_conservation=has_conservation,
+                has_shared_folder=has_shared_folder,
+                has_digital_signature=has_digital_signature
+            )
+            
+            # Aggiungi il cliente come partecipante
+            from appointments.models import PartecipanteAppuntamento, ParticipantRole, ParticipantStatus, Cliente
+            
+            # Ottieni o crea il profilo cliente
+            try:
+                cliente = Cliente.objects.get(user=request.user)
+            except Cliente.DoesNotExist:
+                # Se il cliente non esiste ancora, crealo
+                cliente = Cliente.objects.create(
+                    user=request.user,
+                    phone='',
+                    address=''
+                )
+            
+            PartecipanteAppuntamento.objects.create(
+                appuntamento=appuntamento,
+                cliente=cliente,
+                ruolo=ParticipantRole.RICHIEDENTE,
+                status=ParticipantStatus.ACCETTATO
+            )
+            
+            # Crea notifica per il notaio
+            from appointments.models import Notifica, NotificaTipo
+            
+            # Prepara messaggio strutturato
+            cliente_nome = f"{cliente.nome} {cliente.cognome}" if hasattr(cliente, 'nome') and cliente.nome else request.user.email
+            tipologia = appuntamento.tipologia_atto.name if appuntamento.tipologia_atto else "Servizio notarile"
+            descrizione = appuntamento.tipologia_atto.description if appuntamento.tipologia_atto and hasattr(appuntamento.tipologia_atto, 'description') else ""
+            
+            # Formatta data e ora
+            data_ora = appuntamento.start_time.strftime('%d/%m/%Y alle %H:%M')
+            luogo = appuntamento.location if appuntamento.location else "Da definire"
+            
+            # Servizi scelti (modalità)
+            servizi = []
+            if appuntamento.is_online:
+                servizi.append("Video")
+            # Altri servizi potrebbero essere nel campo modes o note
+            servizi_str = ", ".join(servizi) if servizi else "Da definire"
+            
+            messaggio = f"""Cliente: {cliente_nome}
+Oggetto: {tipologia}
+{descrizione if descrizione else ''}
+Luogo: {luogo} - {data_ora}
+Servizi: {servizi_str}"""
+            
+            Notifica.crea_notifica(
+                user=notary.user,
+                tipo=NotificaTipo.APPUNTAMENTO_RICHIESTO,
+                titolo='Nuova Richiesta di Appuntamento',
+                messaggio=messaggio,
+                link_url=f'/dashboard/agenda',
+                appuntamento=appuntamento,
+                invia_email=True
+            )
+            
+            serializer = AppointmentSerializer(appuntamento)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Errore creazione appuntamento: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class AppointmentListView(generics.ListAPIView):

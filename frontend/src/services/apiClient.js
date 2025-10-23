@@ -5,7 +5,7 @@
 
 import authService from './authService'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
 
 /**
  * Wrapper per fetch con gestione automatica JWT
@@ -37,10 +37,16 @@ class ApiClient {
     const token = authService.getAccessToken()
 
     // Prepara headers
-    const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers,
+    // ✅ NON impostare Content-Type se il body è FormData (il browser lo farà automaticamente con il boundary corretto)
+    const headers = {}
+    
+    // Imposta Content-Type: application/json SOLO se non è FormData
+    if (!(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json'
     }
+    
+    // Aggiungi eventuali headers custom
+    Object.assign(headers, options.headers)
 
     // Aggiungi token se disponibile
     if (token) {
@@ -114,9 +120,17 @@ class ApiClient {
           errorMessage = error.detail || error.error
         }
         
-        throw new Error(errorMessage || `HTTP ${response.status}`)
+        // Crea errore con dettagli della risposta
+        const err = new Error(errorMessage || `HTTP ${response.status}`)
+        err.response = { status: response.status, data: error }
+        throw err
       }
 
+      // ✅ Gestisci risposta vuota (204 No Content) per operazioni DELETE
+      if (response.status === 204) {
+        return { success: true, message: 'Operation completed successfully' }
+      }
+      
       // Ritorna risposta JSON
       return await response.json()
     } catch (error) {
@@ -177,10 +191,13 @@ class ApiClient {
    * POST request
    */
   async post(endpoint, data, options = {}) {
+    // ✅ Se è FormData, non fare JSON.stringify e lascia che il browser imposti il Content-Type
+    const isFormData = data instanceof FormData
+    
     return this.request(endpoint, {
       ...options,
       method: 'POST',
-      body: JSON.stringify(data),
+      body: isFormData ? data : JSON.stringify(data),
     })
   }
 

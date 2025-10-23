@@ -72,6 +72,34 @@ class AppuntamentoGestioneViewSet(viewsets.ModelViewSet):
             # Conferma l'appuntamento
             appuntamento.approva(confermato_da=request.user.email)
             
+            # ⚠️ IMPORTANTE: Rifiuta automaticamente altri appuntamenti provvisori sullo stesso slot
+            appuntamenti_concorrenti = Appuntamento.objects.filter(
+                notary=appuntamento.notary,
+                status=AppointmentStatus.PROVVISORIO,
+                start_time__lt=appuntamento.end_time,
+                end_time__gt=appuntamento.start_time
+            ).exclude(id=appuntamento.id)
+            
+            # Rifiuta e notifica ciascuno
+            for app_concorrente in appuntamenti_concorrenti:
+                app_concorrente.rifiuta(
+                    rifiutato_da=request.user.email,
+                    motivo="Lo slot è stato confermato per un altro cliente"
+                )
+                
+                # Notifica al cliente rifiutato
+                cliente_rifiutato = app_concorrente.partecipanti.filter(cliente__isnull=False).first()
+                if cliente_rifiutato and cliente_rifiutato.cliente:
+                    Notifica.crea_notifica(
+                        user=cliente_rifiutato.cliente.user,
+                        tipo=NotificaTipo.APPUNTAMENTO_RIFIUTATO,
+                        titolo='Appuntamento Non Disponibile',
+                        messaggio=f'Ci dispiace, lo slot per "{app_concorrente.titolo}" non è più disponibile. È stato confermato per un altro cliente.',
+                        link_url=f'/dashboard',
+                        appuntamento=app_concorrente,
+                        invia_email=True
+                    )
+            
             # Crea notifica per il cliente
             cliente = appuntamento.partecipanti.filter(cliente__isnull=False).first()
             if cliente and cliente.cliente:
@@ -227,6 +255,132 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(documenti, many=True)
         return Response(serializer.data)
     
+    @action(detail=False, methods=['post'], url_path='appuntamento/(?P<appuntamento_id>[^/.]+)/upload-per-nome')
+    def upload_per_nome(self, request, appuntamento_id=None):
+        """
+        Upload di un documento per nome (crea il documento se non esiste).
+        POST /api/documenti-appuntamento/appuntamento/{appuntamento_id}/upload-per-nome/
+        Body: FormData with 'file' and 'nome_documento'
+        """
+        print(f"🔍 Upload documento - User role: {request.user.role}")
+        print(f"🔍 Appuntamento ID: {appuntamento_id}")
+        
+        # Verifica permessi: solo il cliente può caricare (accetta anche 'client')
+        if request.user.role not in ['cliente', 'client']:
+            return Response(
+                {'error': f'Solo i clienti possono caricare documenti (ruolo attuale: {request.user.role})'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Verifica che l'appuntamento esista
+        try:
+            appuntamento = Appuntamento.objects.get(id=appuntamento_id)
+            print(f"✅ Appuntamento trovato: {appuntamento.id}, status: {appuntamento.status}")
+            
+            # Verifica che il cliente sia un partecipante dell'appuntamento
+            from accounts.models import Cliente
+            cliente = Cliente.objects.filter(user=request.user).first()
+            if cliente:
+                partecipante_exists = appuntamento.partecipanti.filter(cliente=cliente).exists()
+                if not partecipante_exists:
+                    print(f"❌ Cliente {cliente.user.email} non è partecipante dell'appuntamento")
+                    return Response(
+                        {'error': 'Non hai i permessi per caricare documenti per questo appuntamento'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            else:
+                print(f"❌ Cliente non trovato per user {request.user.email}")
+                return Response(
+                    {'error': 'Profilo cliente non trovato'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+                
+        except Appuntamento.DoesNotExist:
+            print(f"❌ Appuntamento non trovato per ID: {appuntamento_id}")
+            return Response(
+                {'error': 'Appuntamento non trovato'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Verifica che l'appuntamento sia confermato (case-insensitive)
+        status_upper = appuntamento.status.upper() if appuntamento.status else ''
+        if status_upper not in ['CONFERMATO', 'DOCUMENTI_IN_CARICAMENTO']:
+            print(f"❌ Status non valido: {appuntamento.status} (upper: {status_upper})")
+            return Response(
+                {'error': f'L\'appuntamento deve essere confermato prima di caricare documenti (stato attuale: {appuntamento.status})'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Ottieni il nome del documento
+        nome_documento = request.data.get('nome_documento')
+        print(f"📄 Nome documento: {nome_documento}")
+        if not nome_documento:
+            print(f"❌ Nome documento mancante. Data ricevuti: {request.data.keys()}")
+            return Response(
+                {'error': 'Il campo nome_documento è obbligatorio'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Ottieni il file
+        file = request.FILES.get('file')
+        print(f"📎 File ricevuto: {file.name if file else 'None'}")
+        if not file:
+            print(f"❌ File mancante. Files ricevuti: {request.FILES.keys()}")
+            return Response(
+                {'error': 'Nessun file fornito'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Trova o crea il DocumentType
+        from acts.models import DocumentType
+        document_type, _ = DocumentType.objects.get_or_create(
+            name=nome_documento,
+            defaults={
+                'required': True,
+                'category': 'generale',
+                'description': f'Documento richiesto: {nome_documento}'
+            }
+        )
+        print(f"📋 DocumentType trovato/creato: {document_type.name}")
+        
+        # Crea o aggiorna il documento
+        documento, created = DocumentoAppuntamento.objects.get_or_create(
+            appuntamento=appuntamento,
+            document_type=document_type,
+            defaults={
+                'stato': DocumentoStato.CARICATO,
+                'caricato_da': request.user
+            }
+        )
+        
+        # Se esiste già, aggiorna lo stato
+        if not created:
+            documento.stato = DocumentoStato.CARICATO
+            documento.caricato_da = request.user
+        
+        # Salva il file
+        documento.file = file
+        documento.caricato_at = timezone.now()
+        documento.save()
+        
+        print(f"✅ Documento salvato: {document_type.name} - {file.name}")
+        
+        # Notifica il notaio
+        if appuntamento.notary:
+            Notifica.crea_notifica(
+                user=appuntamento.notary.user,
+                tipo=NotificaTipo.DOCUMENTO_CARICATO,
+                titolo='Nuovo Documento Caricato',
+                messaggio=f'Un nuovo documento "{nome_documento}" è stato caricato per l\'appuntamento',
+                link_url=f'/dashboard/appuntamenti/{appuntamento.id}/documenti',
+                appuntamento=appuntamento
+            )
+        
+        return Response({
+            'message': 'Documento caricato con successo',
+            'documento': DocumentoAppuntamentoSerializer(documento).data
+        }, status=status.HTTP_201_CREATED)
+    
     @action(detail=True, methods=['post'], url_path='upload')
     def upload_documento(self, request, pk=None):
         """
@@ -355,6 +509,85 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
             })
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['post'], url_path='appuntamento/(?P<appuntamento_id>[^/.]+)/invia-per-verifica')
+    def invia_per_verifica(self, request, appuntamento_id=None):
+        """
+        Invia tutti i documenti caricati per la verifica del notaio.
+        Cambia lo stato da CARICATO a IN_VERIFICA.
+        POST /api/documenti-appuntamento/appuntamento/{appuntamento_id}/invia-per-verifica/
+        """
+        print(f"📨 Invio documenti per verifica - Appuntamento: {appuntamento_id}")
+        
+        # Verifica permessi: solo il cliente può inviare
+        if request.user.role not in ['cliente', 'client']:
+            return Response(
+                {'error': 'Solo i clienti possono inviare documenti'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Verifica che l'appuntamento esista
+        try:
+            appuntamento = Appuntamento.objects.get(id=appuntamento_id)
+            
+            # Verifica che il cliente sia un partecipante dell'appuntamento
+            from accounts.models import Cliente
+            cliente = Cliente.objects.filter(user=request.user).first()
+            if cliente:
+                partecipante_exists = appuntamento.partecipanti.filter(cliente=cliente).exists()
+                if not partecipante_exists:
+                    return Response(
+                        {'error': 'Non hai i permessi per questo appuntamento'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            else:
+                return Response(
+                    {'error': 'Profilo cliente non trovato'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+                
+        except Appuntamento.DoesNotExist:
+            return Response(
+                {'error': 'Appuntamento non trovato'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Trova tutti i documenti con stato CARICATO
+        documenti_da_inviare = DocumentoAppuntamento.objects.filter(
+            appuntamento=appuntamento,
+            stato=DocumentoStato.CARICATO
+        )
+        
+        if not documenti_da_inviare.exists():
+            return Response(
+                {'error': 'Nessun documento da inviare'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Cambia stato a IN_VERIFICA
+        count = 0
+        for documento in documenti_da_inviare:
+            documento.stato = DocumentoStato.IN_VERIFICA
+            documento.save()
+            count += 1
+        
+        print(f"✅ {count} documenti inviati per verifica")
+        
+        # Notifica il notaio
+        if appuntamento.notary:
+            Notifica.crea_notifica(
+                user=appuntamento.notary.user,
+                tipo=NotificaTipo.DOCUMENTO_CARICATO,
+                titolo='Documenti Pronti per Verifica',
+                messaggio=f'{count} documento(i) sono stati inviati per la verifica per l\'appuntamento "{appuntamento.titolo}"',
+                link_url=f'/dashboard/appuntamenti/{appuntamento.id}/documenti',
+                appuntamento=appuntamento
+            )
+        
+        return Response({
+            'message': f'{count} documento(i) inviato(i) per verifica',
+            'documenti_inviati': count
+        }, status=status.HTTP_200_OK)
 
 
 # ============================================
