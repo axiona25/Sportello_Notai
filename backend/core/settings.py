@@ -32,6 +32,8 @@ INSTALLED_APPS = [
     'django.contrib.gis',  # Per supporto geospaziale (coordinates) con PostGIS
     
     # Third party
+    'daphne',  # ASGI server for WebSocket support (must be before django.contrib.staticfiles)
+    'channels',  # WebSocket support
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',  # JWT blacklist
@@ -526,4 +528,30 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
 # Session Security
 SESSION_SAVE_EVERY_REQUEST = True  # Rinnova sessione ad ogni richiesta
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# ============================================
+# DJANGO CHANNELS (WebSocket Support)
+# ============================================
+
+# ASGI Application
+ASGI_APPLICATION = 'core.asgi.application'
+
+# Channel Layers - Redis Backend per produzione
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [(os.getenv('REDIS_HOST', 'localhost'), int(os.getenv('REDIS_PORT', '6379')))],
+            "capacity": 1500,  # Max messaggi in coda per canale
+            "expiry": 10,  # Secondi prima che un messaggio scada
+        },
+    },
+}
+
+# Per sviluppo locale senza Redis (usare solo in development!)
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels.layers.InMemoryChannelLayer"
+#     }
+# }
 

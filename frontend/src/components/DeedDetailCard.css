@@ -190,26 +190,44 @@
 }
 
 /* Colori badge in base allo stato */
-.status-badge-dot.status-provvisorio {
-  background: #F59E0B; /* Giallo - come nel calendario */
+/* 🟡 Giallo: Stati in lavorazione/corso */
+.status-badge-dot.status-provvisorio,
+.status-badge-dot.status-in_corso,
+.status-badge-dot.status-documenti_in_caricamento,
+.status-badge-dot.status-documenti_in_verifica {
+  background: #F59E0B; /* Giallo */
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
 }
 
-.status-badge-dot.status-provvisorio:hover {
+.status-badge-dot.status-provvisorio:hover,
+.status-badge-dot.status-in_corso:hover,
+.status-badge-dot.status-documenti_in_caricamento:hover,
+.status-badge-dot.status-documenti_in_verifica:hover {
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
 }
 
+/* 🔵 Blu: Stati confermati/pronti */
 .status-badge-dot.status-confermato,
-.status-badge-dot.status-documenti_in_caricamento,
-.status-badge-dot.status-documenti_verificati {
+.status-badge-dot.status-documenti_verificati,
+.status-badge-dot.status-pronto_atto_virtuale {
   background: #1668B0; /* Blu */
   box-shadow: 0 0 0 2px rgba(22, 104, 176, 0.2);
 }
 
 .status-badge-dot.status-confermato:hover,
-.status-badge-dot.status-documenti_in_caricamento:hover,
-.status-badge-dot.status-documenti_verificati:hover {
+.status-badge-dot.status-documenti_verificati:hover,
+.status-badge-dot.status-pronto_atto_virtuale:hover {
   box-shadow: 0 0 0 3px rgba(22, 104, 176, 0.3);
+}
+
+/* 🟢 Verde: Completato */
+.status-badge-dot.status-completato {
+  background: #10B981; /* Verde */
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.status-badge-dot.status-completato:hover {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
 }
 
 .status-badge-dot.status-documenti_parziali {

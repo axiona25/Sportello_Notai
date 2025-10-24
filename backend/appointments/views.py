@@ -21,7 +21,8 @@ from .serializers import (
     SlotDisponibileSerializer, AgendaSerializer
 )
 from .services import DisponibilitaService, AppuntamentoService
-from accounts.models import Notaio, Cliente, Partner, UserRole
+from accounts.models import Notaio, Partner, UserRole
+from notaries.models import Client as Cliente
 from audit.models import AuditLog, AuditAction
 
 
@@ -485,6 +486,169 @@ class AppuntamentoViewSet(viewsets.ModelViewSet):
             'data_fine': data_fine.isoformat(),
             'appuntamenti': AppuntamentoSerializer(appuntamenti, many=True).data,
             'totale': len(appuntamenti)
+        })
+    
+    @action(detail=True, methods=['post'], url_path='accept-client')
+    def accept_client(self, request, pk=None):
+        """
+        Endpoint per il notaio che accetta il cliente dalla sala d'attesa.
+        POST /api/appointments/appuntamenti/{id}/accept-client/
+        """
+        appuntamento = self.get_object()
+        
+        # Verifica che sia il notaio dell'appuntamento
+        if request.user.role not in ['notaio', 'admin']:
+            return Response(
+                {'error': 'Solo il notaio può accettare clienti'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            # Prova a ottenere il profilo Notaio (vecchio modello)
+            notaio = Notaio.objects.get(user=request.user)
+            
+            # Controlla entrambi i campi: notary (nuovo) e notaio (deprecato)
+            is_notary_of_appointment = False
+            
+            if hasattr(appuntamento, 'notary') and appuntamento.notary:
+                # Controlla il campo nuovo 'notary'
+                if appuntamento.notary.user == request.user:
+                    is_notary_of_appointment = True
+            
+            if hasattr(appuntamento, 'notaio') and appuntamento.notaio:
+                # Controlla il campo deprecato 'notaio'
+                if appuntamento.notaio == notaio:
+                    is_notary_of_appointment = True
+            
+            if not is_notary_of_appointment:
+                return Response(
+                    {'error': 'Non sei il notaio di questo appuntamento'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+        except Notaio.DoesNotExist:
+            return Response(
+                {'error': 'Profilo notaio non trovato'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Segna che il cliente è stato accettato
+        # Usiamo un campo metadata o creiamo un flag temporaneo
+        if not hasattr(appuntamento, 'metadata') or appuntamento.metadata is None:
+            appuntamento.metadata = {}
+        
+        appuntamento.metadata['client_accepted'] = True
+        appuntamento.metadata['client_accepted_at'] = timezone.now().isoformat()
+        appuntamento.save()
+        
+        AuditLog.log(
+            action=AuditAction.UPDATE,
+            user=request.user,
+            resource_type='appuntamento',
+            resource_id=appuntamento.id,
+            description=f"Cliente accettato in video chiamata",
+            request=request
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Cliente accettato nella video chiamata',
+            'appointment_id': str(appuntamento.id),
+            'accepted_at': appuntamento.metadata['client_accepted_at']
+        })
+    
+    @action(detail=True, methods=['get'], url_path='check-acceptance')
+    def check_acceptance(self, request, pk=None):
+        """
+        Endpoint per il cliente che controlla se è stato accettato.
+        GET /api/appointments/appuntamenti/{id}/check-acceptance/
+        """
+        appuntamento = self.get_object()
+        
+        # Controllo accesso: chiunque sia autenticato può controllare lo stato
+        # In produzione, si potrebbe limitare solo ai partecipanti dell'appuntamento
+        # Per ora permettiamo a tutti (notaio e cliente) di verificare lo stato
+        
+        # Controlla se il cliente è stato accettato
+        is_accepted = False
+        accepted_at = None
+        
+        if hasattr(appuntamento, 'metadata') and appuntamento.metadata:
+            is_accepted = appuntamento.metadata.get('client_accepted', False)
+            accepted_at = appuntamento.metadata.get('client_accepted_at')
+        
+        return Response({
+            'appointment_id': str(appuntamento.id),
+            'is_accepted': is_accepted,
+            'accepted_at': accepted_at
+        })
+    
+    @action(detail=True, methods=['post'], url_path='block-client')
+    def block_client(self, request, pk=None):
+        """
+        Endpoint per il notaio che riblocca il cliente (richiede nuova accettazione).
+        POST /api/appointments/appuntamenti/{id}/block-client/
+        """
+        appuntamento = self.get_object()
+        
+        # Verifica che sia il notaio dell'appuntamento
+        if request.user.role not in ['notaio', 'admin']:
+            return Response(
+                {'error': 'Solo il notaio può bloccare clienti'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            # Prova a ottenere il profilo Notaio (vecchio modello)
+            notaio = Notaio.objects.get(user=request.user)
+            
+            # Controlla entrambi i campi: notary (nuovo) e notaio (deprecato)
+            is_notary_of_appointment = False
+            
+            if hasattr(appuntamento, 'notary') and appuntamento.notary:
+                # Controlla il campo nuovo 'notary'
+                if appuntamento.notary.user == request.user:
+                    is_notary_of_appointment = True
+            
+            if hasattr(appuntamento, 'notaio') and appuntamento.notaio:
+                # Controlla il campo deprecato 'notaio'
+                if appuntamento.notaio == notaio:
+                    is_notary_of_appointment = True
+            
+            if not is_notary_of_appointment:
+                return Response(
+                    {'error': 'Non sei il notaio di questo appuntamento'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+        except Notaio.DoesNotExist:
+            return Response(
+                {'error': 'Profilo notaio non trovato'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Rimuove l'accettazione (il cliente dovrà tornare in sala d'attesa)
+        if not hasattr(appuntamento, 'metadata') or appuntamento.metadata is None:
+            appuntamento.metadata = {}
+        
+        appuntamento.metadata['client_accepted'] = False
+        appuntamento.metadata['client_blocked_at'] = timezone.now().isoformat()
+        appuntamento.save()
+        
+        AuditLog.log(
+            action=AuditAction.UPDATE,
+            user=request.user,
+            resource_type='appuntamento',
+            resource_id=appuntamento.id,
+            description=f"Cliente bloccato - richiesta nuova accettazione in video chiamata",
+            request=request
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Cliente bloccato - richiederà nuova accettazione',
+            'appointment_id': str(appuntamento.id),
+            'blocked_at': appuntamento.metadata['client_blocked_at']
         })
 
 

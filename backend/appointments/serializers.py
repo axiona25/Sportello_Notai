@@ -10,8 +10,10 @@ from .models import (
     PartecipanteAppuntamento, AppointmentStatus, ParticipantStatus,
     DocumentoAppuntamento, DocumentoStato, Notifica, NotificaTipo
 )
-from accounts.models import Notaio, Cliente, Partner, User
-from accounts.serializers import ClienteSerializer, NotaioSerializer, PartnerSerializer
+from accounts.models import Notaio, Partner, User
+from accounts.serializers import NotaioSerializer, PartnerSerializer
+from notaries.models import Client as Cliente
+from notaries.serializers import ClientSerializer as ClienteSerializer
 from acts.models import DocumentType, NotarialActCategory
 from .services import DisponibilitaService, AppuntamentoService
 
@@ -238,9 +240,10 @@ class AppuntamentoSerializer(serializers.ModelSerializer):
         # Cerca il partecipante con ruolo 'richiedente'
         richiedente = obj.partecipanti.filter(ruolo='richiedente').first()
         if richiedente and richiedente.cliente:
-            nome = richiedente.cliente.nome or ''
-            cognome = richiedente.cliente.cognome or ''
-            return f"{nome} {cognome}".strip() or "Cliente"
+            # ✅ Usa i campi first_name e last_name dal nuovo modello Client
+            first_name = richiedente.cliente.first_name or ''
+            last_name = richiedente.cliente.last_name or ''
+            return f"{first_name} {last_name}".strip() or "Cliente"
         return "N/A"
     
     def get_created_by_email(self, obj):
@@ -560,9 +563,9 @@ class NotificaListSerializer(serializers.ModelSerializer):
             partecipante = obj.appuntamento.partecipanti.filter(ruolo='richiedente').first()
             if partecipante and partecipante.cliente:
                 cliente = partecipante.cliente
-                # ✅ Usa i campi nome e cognome dal modello Cliente
-                if cliente.nome and cliente.cognome:
-                    return f"{cliente.nome} {cliente.cognome}".strip()
+                # ✅ Usa i campi first_name e last_name dal nuovo modello Client
+                if cliente.first_name and cliente.last_name:
+                    return f"{cliente.first_name} {cliente.last_name}".strip()
                 # Fallback: usa first_name/last_name dall'utente
                 user = cliente.user
                 if hasattr(user, 'first_name') and user.first_name:

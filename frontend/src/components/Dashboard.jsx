@@ -116,7 +116,18 @@ function Dashboard({ onLogout, user: initialUser }) {
   // Ottieni nome e cognome dell'utente
   const getUserName = () => {
     if (user?.cliente_profile) {
-      return `${user.cliente_profile.nome} ${user.cliente_profile.cognome}`
+      // ✅ Usa full_name se disponibile, altrimenti costruisci da first_name e last_name
+      if (user.cliente_profile.full_name) {
+        return user.cliente_profile.full_name
+      }
+      
+      const firstName = user.cliente_profile.first_name || ''
+      const lastName = user.cliente_profile.last_name || ''
+      const fullName = `${firstName} ${lastName}`.trim()
+      
+      if (fullName) {
+        return fullName
+      }
     }
     return user?.email?.split('@')[0] || 'Utente'
   }

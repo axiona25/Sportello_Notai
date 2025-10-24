@@ -652,8 +652,13 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
   
   // Ottieni nome del notaio
   const getNotaryName = () => {
-    if (user?.notary_profile?.studio_name) {
-      return user.notary_profile.studio_name
+    if (user?.notary_profile) {
+      const studioName = user.notary_profile.studio_name || ''
+      
+      // Se ha studio_name, usalo; altrimenti fallback a email
+      if (studioName.trim()) {
+        return studioName
+      }
     }
     return user?.email?.split('@')[0] || 'Notaio'
   }

@@ -1,0 +1,167 @@
+/* Overlay modale */
+.confirm-exit-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001; /* Sopra AppointmentRoom */
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modale compatta */
+.confirm-exit-modal {
+  background-color: var(--color-white);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Icona di avviso */
+.confirm-exit-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFE5E5, #FFB3B3);
+}
+
+.confirm-exit-icon svg {
+  color: #FF4444;
+}
+
+/* Titolo */
+.confirm-exit-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 12px 0;
+}
+
+/* Messaggio */
+.confirm-exit-message {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0 0 28px 0;
+}
+
+/* Pulsanti di azione */
+.confirm-exit-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.confirm-exit-btn {
+  flex: 1;
+  padding: 12px 24px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Pulsante Annulla */
+.confirm-exit-cancel {
+  background-color: #F8F9FA;
+  color: var(--color-text-primary);
+  border: 2px solid var(--color-border);
+}
+
+.confirm-exit-cancel:hover {
+  background-color: #E8E9EA;
+  border-color: #B0BAD3;
+}
+
+/* Pulsante Esci */
+.confirm-exit-confirm {
+  background: linear-gradient(135deg, #FF6B6B, #FF4444);
+  color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
+}
+
+.confirm-exit-confirm:hover {
+  background: linear-gradient(135deg, #FF5555, #FF3333);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(255, 68, 68, 0.4);
+}
+
+.confirm-exit-confirm:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .confirm-exit-modal {
+    padding: 24px;
+  }
+
+  .confirm-exit-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+  }
+
+  .confirm-exit-icon svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .confirm-exit-title {
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+
+  .confirm-exit-message {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  .confirm-exit-actions {
+    flex-direction: column;
+  }
+
+  .confirm-exit-btn {
+    width: 100%;
+  }
+}
+

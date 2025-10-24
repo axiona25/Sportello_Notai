@@ -1,6 +1,7 @@
 import React from 'react'
 import { Search } from 'lucide-react'
 import NotificationBell from './NotificationBell'
+import AppointmentIndicator from './AppointmentIndicator'
 import './Header.css'
 
 function Header({ searchValue = '', onSearchChange, searchPlaceholder = 'Cerca appuntamenti...', user = null }) {
@@ -18,12 +19,19 @@ function Header({ searchValue = '', onSearchChange, searchPlaceholder = 'Cerca a
   // Ottieni nome e cognome dell'utente
   const getUserName = () => {
     if (user?.cliente_profile) {
-      return `${user.cliente_profile.nome || ''} ${user.cliente_profile.cognome || ''}`.trim()
+      // ✅ Usa full_name dal backend
+      return user.cliente_profile.full_name || 
+             `${user.cliente_profile.first_name || ''} ${user.cliente_profile.last_name || ''}`.trim() ||
+             user.email?.split('@')[0] || 
+             'Cliente'
     } else if (user?.notary_profile) {
       // Il notaio ha studio_name, non nome/cognome
       return user.notary_profile.studio_name || user.email?.split('@')[0] || 'Notaio'
     } else if (user?.admin_profile) {
-      return `${user.admin_profile.nome || ''} ${user.admin_profile.cognome || ''}`.trim()
+      return user.admin_profile.full_name ||
+             `${user.admin_profile.first_name || ''} ${user.admin_profile.last_name || ''}`.trim() ||
+             user.email?.split('@')[0] ||
+             'Admin'
     }
     return user?.email?.split('@')[0] || 'Utente'
   }
@@ -88,6 +96,7 @@ function Header({ searchValue = '', onSearchChange, searchPlaceholder = 'Cerca a
       </div>
 
       <div className="header-right">
+        <AppointmentIndicator />
         <NotificationBell />
         <div className="user-profile">
           {userAvatar ? (

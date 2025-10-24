@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { AuthProvider, useAuth } from './hooks/useAuth.jsx'
 import { ToastProvider } from './contexts/ToastContext'
+import { AppointmentRoomProvider } from './contexts/AppointmentRoomContext'
 import Login from './components/Login'
 import ForgotPassword from './components/ForgotPassword'
 import Dashboard from './components/Dashboard'
@@ -8,6 +9,7 @@ import DashboardNotaio from './components/DashboardNotaio'
 import DashboardAdmin from './components/DashboardAdmin'
 import ProtectedRoute from './components/ProtectedRoute'
 import ToastContainer from './components/ToastContainer'
+import AppointmentRoom from './components/AppointmentRoom'
 import './App.css'
 
 function AppContent() {
@@ -93,6 +95,7 @@ function AppContent() {
             <Dashboard onLogout={handleLogout} user={user} />
           )}
         </ProtectedRoute>
+        <AppointmentRoom />
       </div>
     )
   }
@@ -116,13 +119,15 @@ function AppContent() {
   )
 }
 
-// App principale con AuthProvider e ToastProvider
+// App principale con AuthProvider, ToastProvider e AppointmentRoomProvider
 function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <AppContent />
-        <ToastContainer />
+        <AppointmentRoomProvider>
+          <AppContent />
+          <ToastContainer />
+        </AppointmentRoomProvider>
       </ToastProvider>
     </AuthProvider>
   )

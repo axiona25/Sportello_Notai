@@ -250,8 +250,19 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
         """
         Lista documenti per un appuntamento specifico.
         GET /api/documenti-appuntamento/appuntamento/{appuntamento_id}/
+        
+        ⚠️ IMPORTANTE: Restituisce SOLO i documenti effettivamente caricati (con file),
+        non tutti i documenti richiesti dalla tipologia atto.
         """
-        documenti = self.get_queryset().filter(appuntamento_id=appuntamento_id)
+        # ✅ FILTRA SOLO DOCUMENTI CARICATI (con file)
+        documenti = self.get_queryset().filter(
+            appuntamento_id=appuntamento_id
+        ).exclude(
+            file=''  # Escludi documenti senza file
+        ).exclude(
+            file__isnull=True  # Escludi documenti con file null
+        )
+        
         serializer = self.get_serializer(documenti, many=True)
         return Response(serializer.data)
     
@@ -278,7 +289,7 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
             print(f"✅ Appuntamento trovato: {appuntamento.id}, status: {appuntamento.status}")
             
             # Verifica che il cliente sia un partecipante dell'appuntamento
-            from accounts.models import Cliente
+            from notaries.models import Client as Cliente
             cliente = Cliente.objects.filter(user=request.user).first()
             if cliente:
                 partecipante_exists = appuntamento.partecipanti.filter(cliente=cliente).exists()
@@ -515,7 +526,7 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
             appuntamento = Appuntamento.objects.get(id=appuntamento_id)
             
             # Verifica che il cliente sia un partecipante dell'appuntamento
-            from accounts.models import Cliente
+            from notaries.models import Client as Cliente
             cliente = Cliente.objects.filter(user=request.user).first()
             if cliente:
                 partecipante_exists = appuntamento.partecipanti.filter(cliente=cliente).exists()
@@ -561,8 +572,8 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
         if appuntamento.notary:
             # ✅ Ottieni nome cliente e atto per notifica dettagliata
             cliente_nome = "Cliente"
-            if cliente and hasattr(cliente, 'nome') and hasattr(cliente, 'cognome'):
-                cliente_nome = f"{cliente.nome} {cliente.cognome}"
+            if cliente and hasattr(cliente, 'first_name') and hasattr(cliente, 'last_name'):
+                cliente_nome = f"{cliente.first_name} {cliente.last_name}"
             elif request.user.first_name and request.user.last_name:
                 cliente_nome = f"{request.user.first_name} {request.user.last_name}"
             

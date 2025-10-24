@@ -6,15 +6,16 @@ import uuid
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from accounts.models import Cliente, Notaio, Partner
+from accounts.models import Notaio, Partner
 from acts.models import Act
 
-# Import Notary per unificazione
-# NOTA: stiamo migrando da Notaio (accounts) a Notary (notaries)
+# Import Client e Notary (nuovi modelli unificati in notaries)
 try:
-    from notaries.models import Notary
+    from notaries.models import Notary, Client as Cliente
 except ImportError:
-    Notary = None  # Compatibilità durante le migrations
+    # Compatibilità durante le migrations
+    Notary = None
+    from accounts.models import Cliente  # Fallback temporaneo
 
 
 class AppointmentStatus(models.TextChoices):
@@ -319,6 +320,11 @@ class Appuntamento(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by_email = models.EmailField(blank=True)
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Dati aggiuntivi per la video chiamata e altre funzionalità"
+    )
     
     class Meta:
         db_table = 'appuntamenti'
@@ -543,7 +549,7 @@ class PartecipanteAppuntamento(models.Model):
     def get_nome_partecipante(self):
         """Ottiene il nome del partecipante."""
         if self.cliente:
-            return self.cliente.nome_completo
+            return self.cliente.get_full_name()
         elif self.partner:
             return self.partner.ragione_sociale
         return "Sconosciuto"

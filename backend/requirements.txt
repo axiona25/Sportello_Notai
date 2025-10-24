@@ -58,3 +58,8 @@ locust==2.20.0
 django-prometheus==2.3.1
 gunicorn==21.2.0
 gevent==23.9.1
+autobahn==25.10.2
+channels==4.3.1
+channels_redis==4.3.0
+daphne==4.2.1
+msgpack==1.1.2

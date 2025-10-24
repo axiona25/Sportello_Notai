@@ -630,7 +630,7 @@ class AppointmentCreateView(generics.CreateAPIView):
             from appointments.models import Notifica, NotificaTipo
             
             # Prepara messaggio strutturato
-            cliente_nome = f"{cliente.nome} {cliente.cognome}" if hasattr(cliente, 'nome') and cliente.nome else request.user.email
+            cliente_nome = f"{cliente.first_name} {cliente.last_name}" if hasattr(cliente, 'first_name') and cliente.first_name else request.user.email
             tipologia = appuntamento.tipologia_atto.name if appuntamento.tipologia_atto else "Servizio notarile"
             descrizione = appuntamento.tipologia_atto.description if appuntamento.tipologia_atto and hasattr(appuntamento.tipologia_atto, 'description') else ""
             

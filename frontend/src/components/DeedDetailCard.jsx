@@ -1,5 +1,7 @@
 import React from 'react'
 import { FileText, User, Phone, Video, Home, Building2, Gift, Briefcase, FileSignature, Scale, Settings, Clock, Calendar as CalendarIcon, MapPin, Archive, FolderOpen, PenTool, Upload, Eye } from 'lucide-react'
+import { useAppointmentRoom } from '../contexts/AppointmentRoomContext'
+import authService from '../services/authService'
 import './DeedDetailCard.css'
 
 // Funzione per determinare l'icona in base al tipo di atto
@@ -24,6 +26,11 @@ const getActIcon = (description) => {
 }
 
 function DeedDetailCard({ appointment, onEnter, documentiCaricati = 0, documentiTotali = 0, documentiApprovati = 0 }) {
+  const { enterAppointment } = useAppointmentRoom()
+  
+  // 🔑 Leggi il ruolo dalla SESSIONE CORRENTE (JWT token)
+  const userRole = authService.getUserRole()
+  
   // Se non c'è appuntamento selezionato, mostra placeholder
   if (!appointment) {
     return (
@@ -35,23 +42,6 @@ function DeedDetailCard({ appointment, onEnter, documentiCaricati = 0, documenti
       </div>
     )
   }
-  
-  // Handler per il click sul pulsante "Entra"
-  const handleEnterClick = () => {
-    console.log('📤 DeedDetailCard - handleEnterClick chiamato con appointment:', appointment)
-    console.log('🔍 onEnter type:', typeof onEnter, 'value:', onEnter)
-    if (onEnter) {
-      console.log('✅ onEnter esiste, chiamando onEnter(appointment)')
-      try {
-        const result = onEnter(appointment)
-        console.log('✅ onEnter(appointment) eseguito con successo, result:', result)
-      } catch (error) {
-        console.error('❌ ERRORE durante onEnter:', error)
-      }
-    } else {
-      console.log('❌ onEnter NON esiste!')
-    }
-  }
 
   // Mantieni sempre lo stesso layout, popola dinamicamente i dati disponibili
   const actType = appointment.appointmentType || appointment.title || 'Appuntamento'
@@ -59,9 +49,6 @@ function DeedDetailCard({ appointment, onEnter, documentiCaricati = 0, documenti
   
   // Usa i dati dall'oggetto rawData se disponibile, altrimenti dall'appointment stesso
   const appointmentData = appointment.rawData || appointment
-  
-  // ✅ Determina ruolo utente SUBITO (serve per logica documenti)
-  const userRole = appointment.userRole || 'client'  // Determina se è vista cliente o notaio
   
   // ✅ Stato appuntamento
   const status = appointment.status || appointmentData.status || appointmentData.stato || 'provvisorio'
@@ -78,23 +65,13 @@ function DeedDetailCard({ appointment, onEnter, documentiCaricati = 0, documenti
   // ✅ Logica documenti
   const tuttiDocumentiCaricati = documentiTotali > 0 && documentiCaricati === documentiTotali
   const tuttiDocumentiApprovati = documentiTotali > 0 && documentiApprovati === documentiTotali
-  const canOpenDocuments = userRole === 'client' ? isConfirmed : tuttiDocumentiCaricati
+  // Permetti apertura modale documenti se confermato (per tutti i ruoli)
+  const canOpenDocuments = isConfirmed
   const canEnter = tuttiDocumentiApprovati
   
-  console.log('🔍 DeedDetailCard - Logica pulsante Entra:', {
-    status,
-    statusUpper,
-    isConfirmed,
-    documentiTotali,
-    documentiCaricati,
-    documentiApprovati,
-    tuttiDocumentiApprovati,
-    canEnter,
-    mostraPulsante: isConfirmed && canEnter
-  })
-  
-  const clientName = appointment.clientName || 'Cliente'
-  const notaryName = appointment.notaryName || appointmentData.notaio_nome || 'Notaio'  // ✅ Nome del notaio
+  // ✅ Nomi da API (stesso formato delle mini-card)
+  const clientName = appointmentData.client_name || appointment.clientName || 'Cliente'
+  const notaryName = appointmentData.notaio_nome || appointment.notaryName || 'Notaio'
   
   // ✅ Determina il luogo in base ai servizi selezionati
   const services = appointment.services || []
@@ -102,26 +79,42 @@ function DeedDetailCard({ appointment, onEnter, documentiCaricati = 0, documenti
   const notaryAddress = appointmentData.location || appointment.location || 'Piazza Cavour n.19 - Dogana (S. Marino)'
   const location = isInPresence ? notaryAddress : 'Da Remoto su piattaforma Digital Notary'
   
+  // Handler per aprire la modale documenti (box "Consulta Documenti")
+  const handleDocumentsClick = () => {
+    if (onEnter) {
+      onEnter(appointment)
+    }
+  }
+
+  // Handler per entrare nella stanza video (pulsante "Entra")
+  const handleEnterAppointmentClick = () => {
+    // Entra nell'appuntamento video (tutti i documenti approvati)
+    if (canEnter) {
+      // AppointmentRoom legge il ruolo direttamente dalla sessione corrente (JWT token)
+      enterAppointment(appointment)
+    }
+  }
+  
   return (
     <div className="deed-card deed-card-active">
       {/* ✅ Badge pallino stato in alto a destra */}
       <div className="status-badge-dot-container status-badge-top-right">
         <div 
           className={`status-badge-dot status-${status.toLowerCase()}`}
-          data-tooltip={
-            statusUpper === 'PROVVISORIO' ? 'Da Confermare' :
-            statusUpper === 'CONFERMATO' ? 'Confermato dal Notaio' :
-            statusUpper === 'ANNULLATO' ? 'Annullato' :
-            statusUpper === 'DOCUMENTI_IN_CARICAMENTO' ? 'In Lavorazione' :
-            statusUpper === 'DOCUMENTI_IN_VERIFICA' ? 'Documenti in Verifica' :
-            statusUpper === 'DOCUMENTI_PARZIALI' ? 'Alcuni Documenti Rifiutati' :
-            statusUpper === 'DOCUMENTI_VERIFICATI' ? 'Verificato' :
-            statusUpper === 'PRONTO_ATTO_VIRTUALE' ? 'Pronto per Atto Virtuale' :
-            statusUpper === 'IN_CORSO' ? 'In Corso' :
-            statusUpper === 'COMPLETATO' ? 'Completato' :
-            statusUpper === 'RIFIUTATO' ? 'Rifiutato' :
-            status
-          }
+                  data-tooltip={
+                    statusUpper === 'PROVVISORIO' ? 'Da Confermare' :
+                    statusUpper === 'CONFERMATO' ? 'Confermato dal Notaio' :
+                    statusUpper === 'ANNULLATO' ? 'Annullato' :
+                    statusUpper === 'DOCUMENTI_IN_CARICAMENTO' ? 'In Lavorazione' :
+                    statusUpper === 'DOCUMENTI_IN_VERIFICA' ? 'Documenti in Verifica' :
+                    statusUpper === 'DOCUMENTI_PARZIALI' ? 'Alcuni Documenti Rifiutati' :
+                    statusUpper === 'DOCUMENTI_VERIFICATI' ? 'Verificato' :
+                    statusUpper === 'PRONTO_ATTO_VIRTUALE' ? 'Pronto per Atto' :
+                    statusUpper === 'IN_CORSO' ? 'In Corso' :
+                    statusUpper === 'COMPLETATO' ? 'Completato' :
+                    statusUpper === 'RIFIUTATO' ? 'Rifiutato' :
+                    status
+                  }
         ></div>
       </div>
 
@@ -134,10 +127,17 @@ function DeedDetailCard({ appointment, onEnter, documentiCaricati = 0, documenti
       {/* ✅ Mostra Nome Notaio per cliente, Nome Cliente per notaio */}
       <div className="deed-section deed-section-person">
         <p className="deed-person-line">
-          <User size={16} className="deed-person-icon" />
-          <span className="deed-person-name">
-            {userRole === 'client' ? notaryName : clientName}
-          </span>
+          {(userRole === 'client' || userRole === 'cliente') ? (
+            <>
+              <Scale size={16} className="deed-person-icon" />
+              <span className="deed-person-name">{notaryName}</span>
+            </>
+          ) : (
+            <>
+              <User size={16} className="deed-person-icon" />
+              <span className="deed-person-name">{clientName}</span>
+            </>
+          )}
         </p>
       </div>
 
@@ -220,10 +220,10 @@ function DeedDetailCard({ appointment, onEnter, documentiCaricati = 0, documenti
         <div className="deed-documents-container">
           <div 
             className={`deed-documents-upload ${!canOpenDocuments ? 'disabled' : ''}`}
-            onClick={canOpenDocuments ? handleEnterClick : undefined}
+            onClick={canOpenDocuments ? handleDocumentsClick : undefined}
           >
             {/* ✅ Icona dinamica: Eye se tutti caricati (solo cliente), Upload altrimenti */}
-            {userRole === 'notary' ? (
+            {(userRole === 'notary' || userRole === 'notaio' || userRole === 'admin') ? (
               <FolderOpen size={18} className="deed-upload-icon" />
             ) : tuttiDocumentiCaricati ? (
               <Eye size={18} className="deed-upload-icon" />
@@ -233,7 +233,7 @@ function DeedDetailCard({ appointment, onEnter, documentiCaricati = 0, documenti
             
             <div className="deed-upload-content">
               <p className="deed-upload-text">
-                {userRole === 'notary' 
+                {(userRole === 'notary' || userRole === 'notaio' || userRole === 'admin') 
                   ? 'Documenti Caricati' 
                   : tuttiDocumentiCaricati 
                     ? 'Consulta Documenti'
@@ -259,7 +259,7 @@ function DeedDetailCard({ appointment, onEnter, documentiCaricati = 0, documenti
 
       {/* ✅ Mostra pulsante Entra solo se tutti i documenti sono approvati */}
       {isConfirmed && canEnter && (
-        <button className="deed-btn" onClick={handleEnterClick}>
+        <button className="deed-btn" onClick={handleEnterAppointmentClick}>
           Entra
         </button>
       )}

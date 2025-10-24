@@ -35,6 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
     def get_cliente_profile(self, obj):
         """Get client profile data if user is a client."""
         if obj.role == UserRole.CLIENTE and hasattr(obj, 'client_profile'):
+            # Usa il modello Client nuovo (notaries.models.Client)
             from notaries.serializers import ClientSerializer
             return ClientSerializer(obj.client_profile).data
         return None

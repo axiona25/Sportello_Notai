@@ -24,8 +24,11 @@ function AppointmentCard({
   onCancel,
   onDelete,
   appointmentData,
-  status = 'provvisorio'  // ✅ Stato dell'appuntamento per il badge
+  status = 'provvisorio',  // ✅ Stato dell'appuntamento per il badge
+  stato  // ✅ Campo alternativo dal backend (italiano)
 }) {
+  // ✅ Normalizza lo status: usa 'status' o 'stato' (dal backend) e converti in uppercase
+  const normalizedStatus = (status || stato || 'provvisorio').toUpperCase()
   // ✅ Calcola la durata dell'appuntamento
   const calculateDuration = () => {
     // Prima prova a usare duration_minutes se disponibile
@@ -200,30 +203,36 @@ function AppointmentCard({
 
       {/* Footer: Ora a sinistra, Servizi a destra */}
       <div className="appointment-footer">
-        {time && (
-          <div className="appointment-time">
-            <Clock size={16} />
-            <span>{time}</span>
-            {/* ✅ Durata tra parentesi */}
-            {duration && (
-              <span className="appointment-duration">({duration} min)</span>
-            )}
-            {/* ✅ Badge pallino stato */}
-            <div 
-              className={`status-badge-dot status-${status.toLowerCase()}`}
-              data-tooltip={
-                status.toUpperCase() === 'PROVVISORIO' ? 'Da Confermare' :
-                status.toUpperCase() === 'CONFERMATO' ? 'Confermato dal Notaio' :
-                status.toUpperCase() === 'ANNULLATO' ? 'Annullato' :
-                status.toUpperCase() === 'DOCUMENTI_IN_CARICAMENTO' ? 'In Lavorazione' :
-                status.toUpperCase() === 'DOCUMENTI_PARZIALI' ? 'Alcuni Documenti Rifiutati' :
-                status.toUpperCase() === 'DOCUMENTI_VERIFICATI' ? 'Verificato' :
-                status.toUpperCase() === 'RIFIUTATO' ? 'Rifiutato' :
-                status
-              }
-            ></div>
-          </div>
-        )}
+        <div className="appointment-time-status">
+          {time && (
+            <div className="appointment-time">
+              <Clock size={16} />
+              <span>{time}</span>
+              {/* ✅ Durata tra parentesi */}
+              {duration && (
+                <span className="appointment-duration">({duration} min)</span>
+              )}
+            </div>
+          )}
+          {/* ✅ Badge pallino stato - SEMPRE VISIBILE */}
+          <div 
+            className={`status-badge-dot status-${normalizedStatus.toLowerCase()}`}
+            data-tooltip={
+              normalizedStatus === 'PROVVISORIO' ? 'Da Confermare' :
+              normalizedStatus === 'CONFERMATO' ? 'Confermato dal Notaio' :
+              normalizedStatus === 'ANNULLATO' ? 'Annullato' :
+              normalizedStatus === 'DOCUMENTI_IN_CARICAMENTO' ? 'In Lavorazione' :
+              normalizedStatus === 'DOCUMENTI_IN_VERIFICA' ? 'Documenti in Verifica' :
+              normalizedStatus === 'DOCUMENTI_PARZIALI' ? 'Alcuni Documenti Rifiutati' :
+              normalizedStatus === 'DOCUMENTI_VERIFICATI' ? 'Verificato' :
+              normalizedStatus === 'PRONTO_ATTO_VIRTUALE' ? 'Pronto per Atto' :
+              normalizedStatus === 'IN_CORSO' ? 'In Corso' :
+              normalizedStatus === 'COMPLETATO' ? 'Completato' :
+              normalizedStatus === 'RIFIUTATO' ? 'Rifiutato' :
+              normalizedStatus
+            }
+          ></div>
+        </div>
 
         {/* ✅ Servizi selezionati - TUTTI E 6 (allineati con card dettaglio) */}
         {services && services.length > 0 && (

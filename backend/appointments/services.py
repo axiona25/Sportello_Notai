@@ -10,7 +10,8 @@ from .models import (
     Appuntamento, DisponibilitaNotaio, EccezioneDisponibilita,
     AppointmentStatus, PartecipanteAppuntamento, ParticipantStatus
 )
-from accounts.models import Notaio, Cliente, Partner
+from accounts.models import Notaio, Partner
+from notaries.models import Client as Cliente
 
 
 class SlotDisponibile:
