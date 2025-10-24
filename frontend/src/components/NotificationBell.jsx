@@ -22,8 +22,9 @@ function NotificationBell() {
 
   const loadNotifiche = useCallback(async () => {
     try {
-      const data = await appointmentExtendedService.getNotifiche()
-      // Gestisci vari formati di risposta
+      const result = await appointmentExtendedService.getNotifiche()
+      // Gestisci formato { success, data }
+      const data = result?.data || result
       const notificheArray = Array.isArray(data) 
         ? data 
         : (data?.results || data?.data || [])
@@ -37,11 +38,14 @@ function NotificationBell() {
         // Il backend restituisce il tipo in lowercase: "appuntamento_richiesto"
         const tipoLower = (n.tipo || '').toLowerCase()
         if (tipoLower === 'appuntamento_richiesto') {
-          // Non mostrare se l'appuntamento è già confermato o rifiutato
-          // (ovvero se il notaio ha già preso un'azione)
-          if (n.appuntamento_status === 'confermato' || n.appuntamento_status === 'rifiutato') {
-            return false
-          }
+        // Non mostrare se l'appuntamento è già confermato o rifiutato
+        // (ovvero se il notaio ha già preso un'azione)
+        const statusUpper = (n.appuntamento_status || '').toUpperCase()
+        const statiGestiti = ['CONFERMATO', 'DOCUMENTI_IN_CARICAMENTO', 'RIFIUTATO', 'ANNULLATO', 'CANCELLATO']
+        if (statiGestiti.includes(statusUpper)) {
+          console.log('🗑️ Nascondendo notifica per appuntamento già gestito:', n.id, 'status:', n.appuntamento_status)
+          return false
+        }
         }
         
         return true
@@ -64,10 +68,55 @@ function NotificationBell() {
     }
   }, [])
 
-  // Caricamento iniziale
+  // Caricamento iniziale + pulizia notifiche obsolete
   useEffect(() => {
-    loadNotifiche()
-  }, [loadNotifiche])
+    const initNotifications = async () => {
+      await loadNotifiche()
+      
+      // ✅ Pulizia automatica notifiche obsolete (solo per notai)
+      if (userRole === 'notaio') {
+        try {
+          console.log('🧹 Pulizia automatica notifiche obsolete in corso...')
+          const result = await appointmentExtendedService.getNotifiche()
+          const data = result?.data || result
+          const notificheArray = Array.isArray(data) ? data : (data?.results || data?.data || [])
+          
+          let cleanedCount = 0
+          for (const notifica of notificheArray) {
+            const tipoLower = (notifica.tipo || '').toLowerCase()
+            
+            // Se è una notifica di richiesta appuntamento con stato già gestito
+            if (tipoLower === 'appuntamento_richiesto' && notifica.appuntamento_status) {
+              const statusUpper = (notifica.appuntamento_status || '').toUpperCase()
+              const statiGestiti = ['CONFERMATO', 'DOCUMENTI_IN_CARICAMENTO', 'RIFIUTATO', 'ANNULLATO', 'CANCELLATO']
+              
+              if (statiGestiti.includes(statusUpper)) {
+                console.log('🗑️ Eliminando notifica obsoleta:', notifica.id, 'status:', notifica.appuntamento_status)
+                try {
+                  await appointmentExtendedService.eliminaNotifica(notifica.id)
+                  cleanedCount++
+                } catch (error) {
+                  console.error('⚠️ Errore eliminazione notifica obsoleta:', notifica.id, error)
+                }
+              }
+            }
+          }
+          
+          if (cleanedCount > 0) {
+            console.log(`✅ Pulizia completata: ${cleanedCount} notifiche obsolete eliminate`)
+            // Ricarica le notifiche per aggiornare la UI
+            await loadNotifiche()
+          } else {
+            console.log('ℹ️ Nessuna notifica obsoleta da eliminare')
+          }
+        } catch (error) {
+          console.error('⚠️ Errore durante la pulizia automatica:', error)
+        }
+      }
+    }
+    
+    initNotifications()
+  }, [loadNotifiche, userRole])
 
   // Auto-refresh intelligente ogni 30 secondi
   // Si ferma automaticamente quando il tab non è visibile
@@ -84,6 +133,76 @@ function NotificationBell() {
       window.removeEventListener('notifications-updated', handleNotificationsUpdate)
     }
   }, [loadNotifiche])
+
+  // ✅ Auto-rimozione notifiche quando le condizioni sono soddisfatte
+  useEffect(() => {
+    const checkAndRemoveCompletedNotifications = async () => {
+      for (const notifica of notifiche) {
+        // Solo per notifiche già lette
+        if (!notifica.letta) continue
+
+        try {
+          let shouldRemove = false
+
+          // 1. Notifica di appuntamento confermato
+          if (notifica.tipo === 'APPUNTAMENTO_CONFERMATO' && notifica.appuntamento) {
+            const appuntamento = await appointmentExtendedService.getAppuntamentoDettaglio(notifica.appuntamento)
+            if (appuntamento.status?.toUpperCase() === 'CONFERMATO') {
+              shouldRemove = true
+            }
+          }
+
+          // 2. Notifica di documento caricato (quando tutti i documenti sono caricati)
+          if (notifica.tipo === 'DOCUMENTO_CARICATO' && notifica.appuntamento) {
+            const docsResult = await appointmentExtendedService.getDocumentiAppuntamento(notifica.appuntamento)
+            const documenti = docsResult?.data || docsResult
+            const codiceAtto = notifica.metadata?.codice_atto
+            
+            if (codiceAtto) {
+              const { getDocumentiRichiestiPerAtto } = await import('../config/documentiRichiestiConfig')
+              const documentiRichiesti = getDocumentiRichiestiPerAtto(codiceAtto)
+              const documentiCaricati = Array.isArray(documenti) ? documenti.filter(doc => doc.file || doc.file_path).length : 0
+              
+              if (documentiCaricati >= documentiRichiesti.length) {
+                shouldRemove = true
+              }
+            }
+          }
+
+          // 3. Notifica di documento approvato
+          if (notifica.tipo === 'DOCUMENTO_APPROVATO') {
+            shouldRemove = true
+          }
+
+          // 4. Notifica di documento rifiutato
+          if (notifica.tipo === 'DOCUMENTO_RIFIUTATO') {
+            shouldRemove = true
+          }
+
+          // Se la condizione è soddisfatta, rimuovi dopo 10 secondi
+          if (shouldRemove) {
+            console.log('⏱️ Notifica completata, rimozione tra 10 secondi:', notifica.id)
+            setTimeout(async () => {
+              try {
+                await appointmentExtendedService.eliminaNotifica(notifica.id)
+                console.log('🗑️ Notifica rimossa automaticamente:', notifica.id)
+                setNotifiche(prev => prev.filter(n => n.id !== notifica.id))
+              } catch (error) {
+                console.error('Errore rimozione automatica notifica:', error)
+              }
+            }, 10000) // 10 secondi
+          }
+        } catch (error) {
+          console.error('Errore controllo notifica:', notifica.id, error)
+        }
+      }
+    }
+
+    // Controlla ogni 30 secondi se ci sono notifiche da rimuovere
+    if (notifiche.length > 0) {
+      checkAndRemoveCompletedNotifications()
+    }
+  }, [notifiche])
 
   // Chiudi dropdown se clicco fuori
   useEffect(() => {
@@ -104,51 +223,86 @@ function NotificationBell() {
   }
 
   const handleNotificaClick = async (notifica) => {
-    const isAppuntamentoRichiesto = notifica.tipo === 'APPUNTAMENTO_RICHIESTO' || notifica.tipo === 'appuntamento_richiesto'
-    const isNotaio = userRole === 'notaio'
+    console.log('🔔 Click notifica:', notifica)
     
-    // ✅ Se è una richiesta appuntamento per il notaio, naviga alla dashboard
-    if (isAppuntamentoRichiesto && isNotaio && notifica.appuntamento) {
-      setIsOpen(false) // Chiudi il dropdown
-      
-      // Segna come letta
-      if (!notifica.letta) {
-        try {
-          await appointmentExtendedService.segnaNotificaLetta(notifica.id)
-          
-          // Aggiorna localmente lo stato
-          setNotifiche(prev => prev.map(n => 
-            n.id === notifica.id ? { ...n, letta: true } : n
-          ))
-          setNonLette(prev => Math.max(0, prev - 1))
-        } catch (error) {
-          console.error('Errore segna notifica letta:', error)
-        }
-      }
-      
-      // ✅ Dispatch evento per selezionare l'appuntamento nel dashboard
-      window.dispatchEvent(new CustomEvent('select-appointment', {
-        detail: { appointmentId: notifica.appuntamento }
-      }))
-      return
-    }
+    // Chiudi il dropdown
+    setIsOpen(false)
     
-    // Comportamento standard per altre notifiche
+    // Segna come letta
     if (!notifica.letta) {
       try {
         await appointmentExtendedService.segnaNotificaLetta(notifica.id)
         
-        // Aggiorna localmente lo stato (la notifica resta visibile come "letta")
+        // Aggiorna localmente lo stato
         setNotifiche(prev => prev.map(n => 
           n.id === notifica.id ? { ...n, letta: true } : n
         ))
         setNonLette(prev => Math.max(0, prev - 1))
+        
+        // ✅ Dopo 10 secondi, rimuovi la notifica dal listato
+        // MA solo per certi tipi di notifiche
+        const tipoUpper = (notifica.tipo || '').toUpperCase()
+        const tipiDaNonEliminare = [
+          'DOCUMENTI_DA_CARICARE',  // Cliente: rimane fino a documenti completi
+          'APPUNTAMENTO_RICHIESTO'   // Notaio: rimane fino a gestione (approva/rifiuta)
+        ]
+        
+        if (!tipiDaNonEliminare.includes(tipoUpper)) {
+          setTimeout(async () => {
+            try {
+              await appointmentExtendedService.eliminaNotifica(notifica.id)
+              console.log('🗑️ Notifica rimossa dopo 10 secondi:', notifica.id)
+              
+              // Rimuovi localmente
+              setNotifiche(prev => prev.filter(n => n.id !== notifica.id))
+            } catch (error) {
+              console.error('Errore eliminazione notifica:', error)
+            }
+          }, 10000) // 10 secondi
+        } else {
+          console.log('ℹ️ Notifica tipo', notifica.tipo, '- NON eliminata automaticamente dopo lettura')
+        }
       } catch (error) {
         console.error('Errore segna notifica letta:', error)
       }
     }
-
-    // Se ha un link, naviga
+    
+    // ✅ Se la notifica ha un appuntamento associato, naviga alla mini-card con dettaglio
+    if (notifica.appuntamento) {
+      console.log('🔔 NotificationBell - Navigazione a appuntamento:', {
+        appointmentId: notifica.appuntamento,
+        tipo: notifica.tipo,
+        appuntamento_status: notifica.appuntamento_status,
+        cliente_nome: notifica.cliente_nome,
+        servizio_nome: notifica.servizio_nome,
+        userRole: userRole
+      })
+      
+      // ✅ Determina se aprire la modale in base al tipo di notifica
+      const tipoUpper = (notifica.tipo || '').toUpperCase()
+      const shouldOpenModal = [
+        'DOCUMENTO_CARICATO', 
+        'DOCUMENTO_APPROVATO', 
+        'DOCUMENTO_RIFIUTATO',
+        'DOCUMENTI_PRONTI'
+      ].includes(tipoUpper)
+      
+      console.log('🔔 Tipo notifica:', tipoUpper, '- Apri modale:', shouldOpenModal)
+      
+      // Dispatch evento per selezionare l'appuntamento nel dashboard
+      const event = new CustomEvent('select-appointment', {
+        detail: { 
+          appointmentId: notifica.appuntamento,
+          openDetail: shouldOpenModal, // ✅ Apri modale solo se è una notifica documenti
+          notificationType: notifica.tipo
+        }
+      })
+      console.log('🔔 Dispatching evento select-appointment:', event.detail)
+      window.dispatchEvent(event)
+      return
+    }
+    
+    // Se ha un link ma non ha appuntamento, naviga al link
     if (notifica.link_url) {
       window.location.href = notifica.link_url
     }
@@ -347,30 +501,32 @@ function NotificationBell() {
                   >
                     {/* ✅ Notifica semplificata per appuntamenti */}
                     {isAppuntamentoRichiesto && isNotaio ? (
-                      <div className="notification-content-simplified">
-                        {/* Titolo con pallino giallo (stato provvisorio) */}
-                        <div className="notification-title-row">
-                          <span className="notification-status-dot status-provvisorio"></span>
-                          <h4 className="notification-title-simple">Nuova richiesta di appuntamento</h4>
+                      <>
+                        {/* Icona Agenda */}
+                        <div className="notification-icon">
+                          <Calendar size={20} />
                         </div>
                         
-                        {/* Cliente */}
-                        {notifica.cliente_nome && (
-                          <p className="notification-detail">
-                            <span className="notification-label">Cliente:</span> {notifica.cliente_nome}
+                        <div className="notification-content-simplified">
+                          {/* Titolo */}
+                          <h4 className="notification-title-simple">Nuova richiesta di appuntamento</h4>
+                          
+                          {/* Cliente e Oggetto */}
+                          <p className="notification-detail-compact">
+                            {notifica.cliente_nome && <span>{notifica.cliente_nome}</span>}
+                            {notifica.cliente_nome && notifica.servizio_nome && <span> • </span>}
+                            {notifica.servizio_nome && <span>{notifica.servizio_nome}</span>}
                           </p>
-                        )}
+                          
+                          {/* Tempo - usa data creazione appuntamento */}
+                          <span className="notification-time">{formatDate(notifica.appuntamento_created_at || notifica.created_at)}</span>
+                        </div>
                         
-                        {/* Oggetto */}
-                        {notifica.servizio_nome && (
-                          <p className="notification-detail">
-                            <span className="notification-label">Oggetto:</span> {notifica.servizio_nome}
-                          </p>
-                        )}
-                        
-                        {/* Tempo - usa data creazione appuntamento */}
-                        <span className="notification-time">{formatDate(notifica.appuntamento_created_at || notifica.created_at)}</span>
-                      </div>
+                        {/* Pallino giallo a destra (sempre giallo finché non confermato) */}
+                        <div className="notification-status-badge">
+                          <span className="notification-status-dot status-provvisorio"></span>
+                        </div>
+                      </>
                     ) : (
                       /* Notifica standard per altri tipi */
                       <>
@@ -384,7 +540,6 @@ function NotificationBell() {
                         </div>
                       </>
                     )}
-                    {!notifica.letta && <div className="notification-unread-dot"></div>}
                   </div>
                 )
               })

@@ -10,7 +10,18 @@ function Calendar({ selectedDate, onSelectDate, onAppointmentsUpdate }) {
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
   const [appointmentsByDay, setAppointmentsByDay] = useState({})
   const [loading, setLoading] = useState(false)
-  const [currentSelectedDay, setCurrentSelectedDay] = useState(selectedDate)
+  
+  // ✅ Converti selectedDate se è un Date object, altrimenti usa il valore così com'è
+  const selectedDay = selectedDate instanceof Date ? selectedDate.getDate() : selectedDate
+  const [currentSelectedDay, setCurrentSelectedDay] = useState(selectedDay)
+  
+  // ✅ Sincronizza currentSelectedDay quando cambia selectedDay
+  useEffect(() => {
+    if (selectedDay !== currentSelectedDay) {
+      console.log('📅 Calendar - Aggiornamento selectedDay:', selectedDay)
+      setCurrentSelectedDay(selectedDay)
+    }
+  }, [selectedDay, currentSelectedDay])
 
   const monthNames = [
     'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
@@ -25,7 +36,9 @@ function Calendar({ selectedDate, onSelectDate, onAppointmentsUpdate }) {
       setLoading(true)
     }
     try {
+      console.log('📅 Calendar - Caricamento appuntamenti per mese:', currentYear, currentMonth + 1)
       const appuntamenti = await appointmentExtendedService.getAppuntamentiMese(currentYear, currentMonth + 1)
+      console.log('📅 Calendar - Appuntamenti ricevuti dal backend:', appuntamenti.length, appuntamenti)
       
       // Organizza appuntamenti per giorno
       const byDay = {}
@@ -45,13 +58,34 @@ function Calendar({ selectedDate, onSelectDate, onAppointmentsUpdate }) {
             byDay[day] = { provvisorio: 0, confermato: 0, appointments: [] }
           }
           byDay[day].appointments.push(app)
-          if (app.status === 'provvisorio') {
+          
+          // ✅ Normalizza lo status a lowercase per confronto case-insensitive
+          const statusLower = (app.status || app.stato || '').toLowerCase()
+          
+          console.log(`📅 Giorno ${day}: Appuntamento con status="${app.status}" stato="${app.stato}" → statusLower="${statusLower}"`)
+          
+          if (statusLower === 'provvisorio') {
             byDay[day].provvisorio++
-          } else if (app.status === 'confermato' || app.status === 'documenti_in_caricamento' || app.status === 'documenti_verificati') {
+            console.log(`  ✅ Incrementato provvisorio per giorno ${day} → ${byDay[day].provvisorio}`)
+          } else if (
+            statusLower === 'confermato' || 
+            statusLower === 'documenti_in_caricamento' || 
+            statusLower === 'documenti_in_verifica' ||
+            statusLower === 'documenti_parziali' ||  // ✅ Documenti rifiutati
+            statusLower === 'documenti_verificati' ||
+            statusLower === 'pronto_atto_virtuale' ||
+            statusLower === 'in_corso' ||
+            statusLower === 'completato'
+          ) {
             byDay[day].confermato++
+            console.log(`  ✅ Incrementato confermato per giorno ${day} → ${byDay[day].confermato}`)
+          } else {
+            console.log(`  ⚠️ Status "${statusLower}" non riconosciuto per giorno ${day}`)
           }
         }
       })
+      
+      console.log('📅 Appuntamenti organizzati per giorno:', byDay)
       
       setAppointmentsByDay(byDay)
       
@@ -100,6 +134,43 @@ function Calendar({ selectedDate, onSelectDate, onAppointmentsUpdate }) {
     window.addEventListener('appointment-updated', handleAppointmentUpdate)
     return () => window.removeEventListener('appointment-updated', handleAppointmentUpdate)
   }, [loadAppointmentsForMonth])
+
+  // ✅ Ascolta eventi di selezione appuntamento da notifica (Cliente)
+  useEffect(() => {
+    const handleSelectAppointmentFromCalendar = (event) => {
+      const { appointmentId, openDetail } = event.detail
+      console.log('📅 Calendar - Ricevuto evento select-appointment-from-calendar:', { appointmentId, openDetail })
+      
+      // Cerca l'appuntamento in tutti i giorni del mese
+      for (const [day, dayData] of Object.entries(appointmentsByDay)) {
+        const appointment = dayData.appointments.find(app => app.id === appointmentId)
+        if (appointment) {
+          console.log('✅ Appuntamento trovato nel giorno:', day, appointment)
+          
+          // Seleziona il giorno (replica logica di handleDayClick)
+          const dayNum = parseInt(day)
+          setCurrentSelectedDay(dayNum)
+          
+          // ✅ Crea un oggetto Date completo per il giorno selezionato
+          const selectedDateObj = new Date(currentYear, currentMonth, dayNum)
+          console.log('📅 Calendar - Selezione da notifica:', dayNum, '→ Date object:', selectedDateObj)
+          onSelectDate(selectedDateObj)
+          
+          // Notifica il componente padre degli appuntamenti del giorno selezionato
+          if (onAppointmentsUpdate) {
+            onAppointmentsUpdate(dayData.appointments)
+          }
+          
+          return
+        }
+      }
+      
+      console.warn('⚠️ Appuntamento non trovato nel calendario:', appointmentId)
+    }
+    
+    window.addEventListener('select-appointment-from-calendar', handleSelectAppointmentFromCalendar)
+    return () => window.removeEventListener('select-appointment-from-calendar', handleSelectAppointmentFromCalendar)
+  }, [appointmentsByDay, onSelectDate, onAppointmentsUpdate, currentYear, currentMonth])
 
   const getIndicatorType = (day) => {
     const dayData = appointmentsByDay[day]
@@ -177,9 +248,13 @@ function Calendar({ selectedDate, onSelectDate, onAppointmentsUpdate }) {
     }
   }
 
-  const handleDayClick = (day) => {
+  const handleDayClick = useCallback((day) => {
     setCurrentSelectedDay(day)
-    onSelectDate(day)
+    
+    // ✅ Crea un oggetto Date completo per il giorno selezionato
+    const selectedDateObj = new Date(currentYear, currentMonth, day)
+    console.log('📅 Calendar - Giorno cliccato:', day, '→ Date object:', selectedDateObj)
+    onSelectDate(selectedDateObj)
     
     // Notifica il componente padre degli appuntamenti del giorno selezionato
     if (onAppointmentsUpdate && appointmentsByDay[day]) {
@@ -187,7 +262,7 @@ function Calendar({ selectedDate, onSelectDate, onAppointmentsUpdate }) {
     } else if (onAppointmentsUpdate) {
       onAppointmentsUpdate([])
     }
-  }
+  }, [appointmentsByDay, onSelectDate, onAppointmentsUpdate, currentYear, currentMonth])
 
   const calendarDays = generateCalendarDays()
 
@@ -222,7 +297,7 @@ function Calendar({ selectedDate, onSelectDate, onAppointmentsUpdate }) {
                 key={index}
                 className={`calendar-day ${
                   dayObj.isCurrentMonth ? 'current-month' : 'other-month'
-                } ${dayObj.day === selectedDate && dayObj.isCurrentMonth ? 'selected' : ''} ${
+                } ${dayObj.day === selectedDay && dayObj.isCurrentMonth ? 'selected' : ''} ${
                   indicatorType ? 'has-appointment' : ''
                 }`}
                 onClick={() => dayObj.isCurrentMonth && handleDayClick(dayObj.day)}

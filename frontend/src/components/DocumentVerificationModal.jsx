@@ -17,7 +17,17 @@ function DocumentVerificationModal({ appointment, onClose, onDocumentVerified })
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [rejectNote, setRejectNote] = useState('')
+  const [internalNote, setInternalNote] = useState('') // ✅ Aggiunta variabile mancante
+  const [refreshKey, setRefreshKey] = useState(0) // ✅ Chiave per forzare refresh contatori
   const { showToast } = useToast()
+  
+  // ✅ Monitora cambiamenti documenti per log
+  useEffect(() => {
+    console.log('🔄 DocumentVerificationModal - Documenti caricati aggiornati:', {
+      count: documentiCaricati.length,
+      stati: documentiCaricati.map(d => ({ nome: d.document_type_name, stato: d.stato }))
+    })
+  }, [documentiCaricati])
 
   useEffect(() => {
     if (appointment) {
@@ -44,8 +54,12 @@ function DocumentVerificationModal({ appointment, onClose, onDocumentVerified })
   const loadDocumentiCaricati = async () => {
     try {
       setLoadingDocumenti(true)
-      const docs = await appointmentExtendedService.getDocumentiAppuntamento(appointment.id)
+      const docsResult = await appointmentExtendedService.getDocumentiAppuntamento(appointment.id)
+      const docs = docsResult?.data || docsResult
       setDocumentiCaricati(Array.isArray(docs) ? docs : [])
+      // ✅ Forza refresh contatori
+      setRefreshKey(prev => prev + 1)
+      console.log('✅ Documenti ricaricati dal backend, refresh contatori triggerato')
     } catch (error) {
       console.error('Errore caricamento documenti:', error)
       showToast('Errore caricamento documenti', 'error', 'Errore')
@@ -121,12 +135,41 @@ function DocumentVerificationModal({ appointment, onClose, onDocumentVerified })
 
 
   const getDocumentsStats = () => {
-    const total = documentiCaricati.length
-    const accepted = documentiCaricati.filter(d => d.stato === 'ACCETTATO' || d.stato === 'VERIFICATO').length
-    const rejected = documentiCaricati.filter(d => d.stato === 'RIFIUTATO').length
-    const pending = documentiCaricati.filter(d => ['CARICATO', 'IN_VERIFICA', 'BOZZA', 'IN_ATTESA'].includes(d.stato)).length
-    return { total, accepted, rejected, pending }
+    const totalAttesi = documentiRichiesti.length // Totale documenti richiesti/attesi
+    const totalCaricati = documentiCaricati.filter(d => d.file || d.file_path).length // ✅ Conta solo documenti con file effettivamente caricato
+    const accepted = documentiCaricati.filter(d => {
+      const statoUpper = (d.stato || '').toUpperCase()
+      return statoUpper === 'ACCETTATO' || statoUpper === 'VERIFICATO' || statoUpper === 'APPROVATO'
+    }).length
+    const rejected = documentiCaricati.filter(d => {
+      const statoUpper = (d.stato || '').toUpperCase()
+      return statoUpper === 'RIFIUTATO'
+    }).length
+    const pending = documentiCaricati.filter(d => {
+      const statoUpper = (d.stato || '').toUpperCase()
+      return (d.file || d.file_path) && // ✅ Ha un file caricato
+        ['CARICATO', 'IN_VERIFICA', 'BOZZA', 'IN_ATTESA'].includes(statoUpper) // ✅ E stato "da verificare"
+    }).length
+    
+    console.log('📊 Stats Documenti (Notaio) [refreshKey=' + refreshKey + ']:', {
+      totalAttesi,
+      totalCaricati,
+      accepted,
+      rejected,
+      pending,
+      documentiCaricatiDalBackend: documentiCaricati.length,
+      statiDocumenti: documentiCaricati.map(d => ({ 
+        nome: d.nome_documento || d.document_type_name, 
+        stato: d.stato,
+        statoUpper: (d.stato || '').toUpperCase(), 
+        hasFile: !!(d.file || d.file_path) 
+      }))
+    })
+    
+    return { totalAttesi, totalCaricati, accepted, rejected, pending }
   }
+
+  // ✅ Non più necessario filtrare - mostra sempre tutti i documenti richiesti
 
   if (!appointment) return null
 
@@ -156,23 +199,23 @@ function DocumentVerificationModal({ appointment, onClose, onDocumentVerified })
             </button>
           </div>
 
-          {/* Stats Bar */}
-          <div className="verification-stats">
-            <div className="stat-item">
+          {/* ✅ Stats Bar - Badge informativi statici (non cliccabili) - Con chiave dinamica per refresh realtime */}
+          <div className="verification-stats" key={`stats-${refreshKey}`}>
+            <div className="stat-item stat-caricati">
               <FileText size={18} />
-              <span>Totali: {stats.total}</span>
+              <span key={`caricati-${stats.totalCaricati}`}>Caricati: {stats.totalCaricati}/{stats.totalAttesi}</span>
             </div>
             <div className="stat-item stat-accepted">
               <Check size={18} />
-              <span>Accettati: {stats.accepted}</span>
+              <span key={`accepted-${stats.accepted}`} className="stat-counter">Accettati: {stats.accepted}</span>
             </div>
             <div className="stat-item stat-rejected">
               <XCircle size={18} />
-              <span>Rifiutati: {stats.rejected}</span>
+              <span key={`rejected-${stats.rejected}`} className="stat-counter">Rifiutati: {stats.rejected}</span>
             </div>
             <div className="stat-item stat-pending">
               <Clock size={18} />
-              <span>Da Verificare: {stats.pending}</span>
+              <span key={`pending-${stats.pending}`} className="stat-counter">Da Verificare: {stats.pending}</span>
             </div>
           </div>
 
@@ -193,20 +236,28 @@ function DocumentVerificationModal({ appointment, onClose, onDocumentVerified })
                   </div>
                 ) : (
                   <div className="documents-list">
-                    {documentiRichiesti.map((docRichiesto, index) => {
-                      const docCaricato = trovaDocumentoCaricato(docRichiesto.nome)
-                      
-                      return (
-                        <DocumentItem
-                          key={index}
-                          documento={docRichiesto}
-                          documentoCaricato={docCaricato}
-                          userRole="notary"
-                          onVerify={handleVerify}
-                          onReject={handleReject}
-                        />
-                      )
-                    })}
+                    {documentiRichiesti.length === 0 ? (
+                      <div className="empty-state">
+                        <FileText size={48} />
+                        <p>Nessun documento richiesto</p>
+                        <small>Verifica la configurazione dell'atto</small>
+                      </div>
+                    ) : (
+                      documentiRichiesti.map((docRichiesto, index) => {
+                        const docCaricato = trovaDocumentoCaricato(docRichiesto.nome)
+                        
+                        return (
+                          <DocumentItem
+                            key={index}
+                            documento={docRichiesto}
+                            documentoCaricato={docCaricato}
+                            userRole="notary"
+                            onVerify={handleVerify}
+                            onReject={handleReject}
+                          />
+                        )
+                      })
+                    )}
                   </div>
                 )}
               </div>

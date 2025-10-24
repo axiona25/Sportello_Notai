@@ -44,10 +44,16 @@ const appointmentExtendedService = {
       const response = await apiClient.get(
         `/appointments/documenti-appuntamento/appuntamento/${appuntamentoId}/`
       )
-      return response || []
+      return {
+        success: true,
+        data: response || []
+      }
     } catch (error) {
       console.error('Errore caricamento documenti appuntamento:', error)
-      return []
+      return {
+        success: false,
+        data: []
+      }
     }
   },
 
@@ -184,10 +190,17 @@ const appointmentExtendedService = {
     try {
       const response = await apiClient.get('/appointments/notifiche/')
       // Gestisci vari formati di risposta
-      return response.data || response.results || response || []
+      const data = response.data || response.results || response || []
+      return {
+        success: true,
+        data: data
+      }
     } catch (error) {
       console.error('Errore caricamento notifiche:', error)
-      return [] // Ritorna array vuoto invece di throw
+      return {
+        success: false,
+        data: []
+      }
     }
   },
 
@@ -225,9 +238,38 @@ const appointmentExtendedService = {
     }
   },
 
+  async eliminaNotifica(notificaId) {
+    try {
+      const response = await apiClient.delete(
+        `/appointments/notifiche/${notificaId}/`
+      )
+      return response
+    } catch (error) {
+      console.error('Errore eliminazione notifica:', error)
+      throw error
+    }
+  },
+
   // ============================================
   // APPUNTAMENTI AGENDA
   // ============================================
+  
+  // ✅ Ottieni TUTTI gli appuntamenti dell'utente
+  async getAppuntamenti() {
+    try {
+      const response = await apiClient.get('/appointments/appuntamenti/')
+      return {
+        success: true,
+        data: response.data || response.results || response || []
+      }
+    } catch (error) {
+      console.error('Errore caricamento tutti gli appuntamenti:', error)
+      return {
+        success: false,
+        data: []
+      }
+    }
+  },
   
   async getAppuntamentiMese(anno, mese, notaryId = null) {
     try {

@@ -345,6 +345,48 @@
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* ✅ Slot Occupati - Sbarrati e Non Cliccabili */
+.time-slot.occupied {
+  background: #F8F9FA;
+  border-color: #E2E8F0;
+  cursor: not-allowed;
+  opacity: 0.65;
+  position: relative;
+}
+
+.time-slot.occupied:hover {
+  background: #F8F9FA;
+  border-color: #E2E8F0;
+  transform: none;
+}
+
+.time-slot.occupied .time-slot-time {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  color: #94A3B8;
+}
+
+.time-slot.occupied .time-slot-duration {
+  background: #E2E8F0;
+  color: #94A3B8;
+}
+
+.slot-occupied-badge {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  color: white;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.3);
+}
+
 /* Rimuovi scrollbar dal pannello principale (ora scrolla solo la grid) */
 
 /* Calendar Legend */
@@ -383,6 +425,31 @@
 
 .legend-dot.unavailable {
   background: #CBD5E1;
+}
+
+.legend-slot {
+  width: 40px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.legend-slot.occupied {
+  background: #F8F9FA;
+  border: 1px solid #E2E8F0;
+  opacity: 0.65;
+}
+
+.legend-slot.occupied::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: #94A3B8;
+  transform: translateY(-50%);
 }
 
 /* Responsive */

@@ -18,10 +18,19 @@
   font-weight: 600;
   font-family: 'Poppins', sans-serif;
   color: #6B7280;
+  padding: 10px 16px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  position: relative;
 }
 
 .stat-item svg {
   flex-shrink: 0;
+}
+
+/* ✅ Colori per tutti i badge (solo informativi, non cliccabili) */
+.stat-item.stat-caricati {
+  color: #6B7280;
 }
 
 .stat-accepted {
@@ -34,6 +43,25 @@
 
 .stat-pending {
   color: #D97706;
+}
+
+/* ✅ Animazione update contatori realtime */
+@keyframes counterUpdate {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+    font-weight: 700;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.stat-counter {
+  display: inline-block;
+  animation: counterUpdate 0.4s ease-out;
 }
 
 /* Document Item Highlight for Verification */

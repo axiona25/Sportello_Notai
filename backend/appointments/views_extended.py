@@ -8,7 +8,7 @@ Implementa il flusso completo:
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Q
@@ -220,7 +220,7 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
     queryset = DocumentoAppuntamento.objects.all()
     serializer_class = DocumentoAppuntamentoSerializer
     permission_classes = [permissions.IsAuthenticated]
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)  # ✅ Aggiunto JSONParser per endpoint verifica
     
     def get_queryset(self):
         """Filtra i documenti in base all'utente."""
@@ -365,16 +365,9 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
         
         print(f"✅ Documento salvato: {document_type.name} - {file.name}")
         
-        # Notifica il notaio
-        if appuntamento.notary:
-            Notifica.crea_notifica(
-                user=appuntamento.notary.user,
-                tipo=NotificaTipo.DOCUMENTO_CARICATO,
-                titolo='Nuovo Documento Caricato',
-                messaggio=f'Un nuovo documento "{nome_documento}" è stato caricato per l\'appuntamento',
-                link_url=f'/dashboard/appuntamenti/{appuntamento.id}/documenti',
-                appuntamento=appuntamento
-            )
+        # ✅ NON notificare per ogni singolo documento caricato
+        # La notifica viene inviata SOLO quando il cliente clicca "Invia Documenti" (invia_per_verifica)
+        # Questo evita spam di notifiche e raggruppa tutto in un'unica notifica finale
         
         return Response({
             'message': 'Documento caricato con successo',
@@ -413,17 +406,9 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             serializer.save()
             
-            # Notifica il notaio
-            appuntamento = documento.appuntamento
-            if appuntamento.notary:
-                Notifica.crea_notifica(
-                    user=appuntamento.notary.user,
-                    tipo=NotificaTipo.DOCUMENTO_CARICATO,
-                    titolo='Nuovo Documento Caricato',
-                    messaggio=f'Un nuovo documento "{documento.document_type.name}" è stato caricato per l\'appuntamento "{appuntamento.titolo}"',
-                    link_url=f'/dashboard/appuntamenti/{appuntamento.id}/documenti',
-                    appuntamento=appuntamento
-                )
+            # ✅ NON notificare per ogni singolo documento caricato
+            # La notifica viene inviata SOLO quando il cliente clicca "Invia Documenti" (invia_per_verifica)
+            # Questo evita spam di notifiche e raggruppa tutto in un'unica notifica finale
             
             return Response({
                 'message': 'Documento caricato con successo',
@@ -452,8 +437,8 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Verifica stato
-        if documento.stato not in [DocumentoStato.CARICATO, DocumentoStato.IN_VERIFICA]:
+        # ✅ Verifica stato - Permetti ri-verifica anche per documenti rifiutati
+        if documento.stato not in [DocumentoStato.CARICATO, DocumentoStato.IN_VERIFICA, DocumentoStato.RIFIUTATO]:
             return Response(
                 {'error': f'Impossibile verificare documento nello stato {documento.get_stato_display()}'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -465,27 +450,26 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
             note_rifiuto = serializer.validated_data.get('note_rifiuto', '')
             note_interne = serializer.validated_data.get('note_interne', '')
             
-            if azione == 'accetta':
-                documento.accetta(request.user, note_interne)
-                tipo_notifica = NotificaTipo.DOCUMENTO_ACCETTATO
-                messaggio = f'Il documento "{documento.document_type.name}" è stato accettato'
-            else:  # rifiuta
-                documento.rifiuta(request.user, note_rifiuto)
-                tipo_notifica = NotificaTipo.DOCUMENTO_RIFIUTATO
-                messaggio = f'Il documento "{documento.document_type.name}" è stato rifiutato. Motivo: {note_rifiuto}'
-            
-            # Notifica il cliente
             appuntamento = documento.appuntamento
             cliente = appuntamento.partecipanti.filter(cliente__isnull=False).first()
-            if cliente and cliente.cliente:
-                Notifica.crea_notifica(
-                    user=cliente.cliente.user,
-                    tipo=tipo_notifica,
-                    titolo=f'Documento {azione.capitalize()}to',
-                    messaggio=messaggio,
-                    link_url=f'/dashboard/appuntamenti/{appuntamento.id}/documenti',
-                    appuntamento=appuntamento
-                )
+            
+            if azione == 'accetta':
+                documento.accetta(request.user, note_interne)
+                # ✅ NON inviare notifica per singolo documento approvato
+                # La notifica verrà inviata solo quando TUTTI i documenti sono approvati (vedi sotto)
+            else:  # rifiuta
+                documento.rifiuta(request.user, note_rifiuto)
+                # ✅ Invia notifica singola SOLO per documenti rifiutati
+                if cliente and cliente.cliente:
+                    Notifica.crea_notifica(
+                        user=cliente.cliente.user,
+                        tipo=NotificaTipo.DOCUMENTO_RIFIUTATO,
+                        titolo='Documento Rifiutato',
+                        messaggio=f'Il documento "{documento.document_type.name}" è stato rifiutato. Motivo: {note_rifiuto}',
+                        link_url=f'/dashboard/appuntamenti/{appuntamento.id}/documenti',
+                        appuntamento=appuntamento,
+                        invia_email=True
+                    )
             
             # Verifica se tutti i documenti sono stati verificati
             if documento.appuntamento.verifica_completamento_documenti():
@@ -496,9 +480,9 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
                     Notifica.crea_notifica(
                         user=cliente.cliente.user,
                         tipo=NotificaTipo.ATTO_VIRTUALE_DISPONIBILE,
-                        titolo='Atto Virtuale Disponibile',
-                        messaggio=f'Tutti i documenti sono stati verificati. Puoi ora accedere all\'atto virtuale per "{appuntamento.titolo}"',
-                        link_url=f'/dashboard/appuntamenti/{appuntamento.id}/atto-virtuale',
+                        titolo='Appuntamento Abilitato',
+                        messaggio=f'Tutti i documenti sono stati approvati. Puoi ora entrare nell\'appuntamento per "{appuntamento.titolo}"',
+                        link_url=f'/dashboard/appuntamenti/{appuntamento.id}',
                         appuntamento=appuntamento,
                         invia_email=True
                     )
@@ -575,11 +559,20 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
         
         # Notifica il notaio
         if appuntamento.notary:
+            # ✅ Ottieni nome cliente e atto per notifica dettagliata
+            cliente_nome = "Cliente"
+            if cliente and hasattr(cliente, 'nome') and hasattr(cliente, 'cognome'):
+                cliente_nome = f"{cliente.nome} {cliente.cognome}"
+            elif request.user.first_name and request.user.last_name:
+                cliente_nome = f"{request.user.first_name} {request.user.last_name}"
+            
+            atto_nome = appuntamento.tipologia_atto.name if appuntamento.tipologia_atto else "Atto"
+            
             Notifica.crea_notifica(
                 user=appuntamento.notary.user,
                 tipo=NotificaTipo.DOCUMENTO_CARICATO,
                 titolo='Documenti Pronti per Verifica',
-                messaggio=f'{count} documento(i) sono stati inviati per la verifica per l\'appuntamento "{appuntamento.titolo}"',
+                messaggio=f'{cliente_nome} per {atto_nome} ha inviato {count} documento(i) per la verifica',
                 link_url=f'/dashboard/appuntamenti/{appuntamento.id}/documenti',
                 appuntamento=appuntamento
             )

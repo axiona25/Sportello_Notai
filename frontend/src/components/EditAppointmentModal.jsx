@@ -11,8 +11,15 @@ function EditAppointmentModal({ appointment, notaryId, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false)
   const { showToast } = useToast()
 
-  // Determina l'ID del notaio da usare
-  const effectiveNotaryId = appointment?.notary || appointment?.notaio || notaryId
+  // Determina l'ID del notaio da usare (cerca in più posizioni)
+  const effectiveNotaryId = 
+    appointment?.notary || 
+    appointment?.notaio || 
+    appointment?.rawData?.notary || 
+    appointment?.rawData?.notaio ||
+    appointment?.appointmentData?.notary ||
+    appointment?.appointmentData?.notaio ||
+    notaryId
 
   const handleSlotSelect = (slot) => {
     setSelectedSlot(slot)
@@ -33,9 +40,12 @@ function EditAppointmentModal({ appointment, notaryId, onClose, onSuccess }) {
         end_time: `${selectedSlot.date}T${selectedSlot.end_time}`
       }
 
+      // ID appuntamento (cerca in più posizioni)
+      const appointmentId = appointment?.id || appointment?.rawData?.id || appointment?.appointmentData?.id
+
       // Aggiorna l'appuntamento
       await appointmentExtendedService.aggiornaAppuntamento(
-        appointment.id,
+        appointmentId,
         updateData
       )
 
@@ -86,7 +96,11 @@ function EditAppointmentModal({ appointment, notaryId, onClose, onSuccess }) {
         <div className="current-appointment-info">
           <div className="info-badge info-current">
             <AlertCircle size={16} />
-            <span>Data attuale: {formatDateItalian(appointment.start_time?.split('T')[0])} alle {formatTime(appointment.start_time?.split('T')[1])}</span>
+            <span>
+              Data attuale: {formatDateItalian((appointment?.start_time || appointment?.rawData?.start_time || appointment?.appointmentData?.start_time)?.split('T')[0])} 
+              {' alle '}
+              {formatTime((appointment?.start_time || appointment?.rawData?.start_time || appointment?.appointmentData?.start_time)?.split('T')[1])}
+            </span>
           </div>
           <p className="info-subtitle">Seleziona una nuova data e orario per riprogrammare l'appuntamento</p>
         </div>
@@ -101,7 +115,7 @@ function EditAppointmentModal({ appointment, notaryId, onClose, onSuccess }) {
                 duration={appointment.duration_minutes || 30}
                 onSlotSelect={handleSlotSelect}
                 selectedSlot={selectedSlot}
-                excludeAppointmentId={appointment.id} // Escludi l'appuntamento corrente dal calcolo degli slot
+                excludeAppointmentId={appointment?.id || appointment?.rawData?.id || appointment?.appointmentData?.id} // Escludi l'appuntamento corrente dal calcolo degli slot
               />
             ) : (
               <div style={{ padding: '20px', textAlign: 'center', color: '#EF4444' }}>

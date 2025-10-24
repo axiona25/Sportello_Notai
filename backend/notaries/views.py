@@ -372,24 +372,44 @@ class AvailableSlotsView(APIView):
             status=AppointmentStatus.RIFIUTATO  # Solo gli appuntamenti rifiutati non bloccano
         )
         
+        # ✅ DEBUG: Log appuntamenti trovati
+        print(f'\n🔍 [AvailableSlotsView] Calcolo slot per notaio {notary.studio_name}')
+        print(f'   📅 Range date: {start_date} → {end_date}')
+        print(f'   ⏱️  Durata richiesta: {duration} minuti')
+        print(f'   📊 Appuntamenti trovati: {existing_appointments.count()}')
+        for apt in existing_appointments:
+            print(f'      • {apt.start_time.strftime("%Y-%m-%d %H:%M")} - {apt.end_time.strftime("%H:%M")} | Status: {apt.status}')
+        
         # Se stiamo modificando un appuntamento, escludiamolo dal calcolo
         # Questo permette di ri-selezionare lo stesso slot o di trovare nuovi slot
         if exclude_appointment_id:
             existing_appointments = existing_appointments.exclude(id=exclude_appointment_id)
+            print(f'   🔄 Escluso appuntamento: {exclude_appointment_id}')
         
         existing_appointments = existing_appointments.values('start_time', 'end_time')
+        
+        # ✅ Definisci il timezone di Roma per conversioni corrette
+        import pytz
+        rome_tz = pytz.timezone('Europe/Rome')
         
         # Organize appointments by date
         appointments_by_date = defaultdict(list)
         for apt in existing_appointments:
-            apt_date = apt['start_time'].date() if isinstance(apt['start_time'], datetime) else apt['start_time']
-            apt_start_time = apt['start_time'].time() if isinstance(apt['start_time'], datetime) else apt['start_time']
-            apt_end_time = apt['end_time'].time() if isinstance(apt['end_time'], datetime) else apt['end_time']
+            # ✅ IMPORTANTE: Converti in timezone locale PRIMA di estrarre date/time
+            # Gli appuntamenti sono salvati in UTC ma devono essere confrontati in ora locale
+            start_local = apt['start_time'].astimezone(rome_tz) if apt['start_time'].tzinfo else apt['start_time']
+            end_local = apt['end_time'].astimezone(rome_tz) if apt['end_time'].tzinfo else apt['end_time']
+            
+            apt_date = start_local.date()
+            apt_start_time = start_local.time()
+            apt_end_time = end_local.time()
             
             appointments_by_date[apt_date].append({
                 'start': apt_start_time,
                 'end': apt_end_time
             })
+            
+            print(f'      • UTC: {apt["start_time"].strftime("%Y-%m-%d %H:%M")} → Locale: {start_local.strftime("%Y-%m-%d %H:%M")}')
         
         # Calculate available slots
         available_slots = []

@@ -35,6 +35,7 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
   const [selectedModes, setSelectedModes] = useState([])
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
+  const [calendarKey, setCalendarKey] = useState(Date.now()) // ✅ Key per forzare rimontaggio calendario
   const { showToast } = useToast()
   
   const CARDS_PER_PAGE = 12 // Mostra 12 card per pagina
@@ -43,6 +44,14 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
   useEffect(() => {
     loadActCategories()
   }, [])
+
+  // ✅ Ricarica calendario quando si passa allo step 2
+  useEffect(() => {
+    if (currentStep === 2) {
+      console.log('📅 Step 2 attivo - Forzo ricaricamento calendario')
+      setCalendarKey(Date.now())
+    }
+  }, [currentStep])
 
   const loadActCategories = async () => {
     try {
@@ -345,6 +354,9 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
         'Appuntamento Prenotato!'
       )
       
+      // ✅ Notifica globale per aggiornare tutti i calendari
+      window.dispatchEvent(new Event('appointment-updated'))
+      
       // ✅ Ridotto timeout per mostrare subito la mini-card
       setTimeout(() => {
         if (onSuccess) {
@@ -525,6 +537,7 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
               ) : (
                 <div className="calendar-wrapper">
                   <AppointmentCalendar
+                    key={calendarKey}
                     notaryId={notary.id}
                     duration={selectedActType?.duration || 30}
                     onSlotSelect={handleSlotSelect}

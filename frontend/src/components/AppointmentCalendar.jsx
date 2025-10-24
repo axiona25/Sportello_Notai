@@ -20,6 +20,22 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
     }
   }, [currentMonth, notaryId, duration, excludeAppointmentId])
 
+  // ✅ Ascolta eventi di aggiornamento appuntamenti per ricaricare gli slot
+  useEffect(() => {
+    const handleAppointmentUpdate = () => {
+      console.log('📅 AppointmentCalendar - Ricaricamento slot dopo aggiornamento appuntamento')
+      if (notaryId) {
+        loadSlotsForMonth()
+      }
+    }
+
+    window.addEventListener('appointment-updated', handleAppointmentUpdate)
+    
+    return () => {
+      window.removeEventListener('appointment-updated', handleAppointmentUpdate)
+    }
+  }, [notaryId, currentMonth, duration, excludeAppointmentId])
+
   const loadSlotsForMonth = async () => {
     setLoading(true)
     
@@ -30,6 +46,15 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
     const startDate = formatDate(firstDay)
     const endDate = formatDate(lastDay)
     
+    console.log('📅 Caricamento slot:', { 
+      notaryId, 
+      startDate, 
+      endDate, 
+      duration,
+      excludeAppointmentId,
+      timestamp: new Date().toISOString()
+    })
+    
     const result = await appointmentService.getAvailableSlots(
       notaryId, 
       startDate, 
@@ -39,9 +64,37 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
     )
     
     if (result.success) {
+      const stats = {
+        totalSlots: result.data.length,
+        availableSlots: result.data.filter(s => s.is_available).length,
+        occupiedSlots: result.data.filter(s => !s.is_available).length
+      }
+      console.log('✅ Slot caricati:', stats)
+      
+      // ✅ Mostra slot occupati se ce ne sono
+      const occupied = result.data.filter(s => !s.is_available)
+      if (occupied.length > 0) {
+        console.warn('⚠️ SLOT OCCUPATI TROVATI:')
+        occupied.forEach(s => {
+          console.warn(`   🔴 ${s.date} | ${s.start_time}-${s.end_time} | available: ${s.is_available}`)
+        })
+      } else {
+        console.log('✅ Nessuno slot occupato - tutti disponibili')
+      }
+      
+      // ✅ DEBUG: Mostra TUTTI gli slot per il 23 ottobre
+      const oct23Slots = result.data.filter(s => s.date === '2025-10-23')
+      if (oct23Slots.length > 0) {
+        console.log('🔍 TUTTI gli slot ricevuti per 2025-10-23:')
+        oct23Slots.forEach(s => {
+          const icon = s.is_available ? '✅' : '❌'
+          console.log(`   ${icon} ${s.start_time}-${s.end_time}`)
+        })
+      }
+      
       setAvailableSlots(result.data)
     } else {
-      console.error('Errore nel caricamento degli slot:', result.error)
+      console.error('❌ Errore nel caricamento degli slot:', result.error)
     }
     
     setLoading(false)
@@ -83,16 +136,25 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
     if (!date) return []
     const dateStr = formatDate(date)
     
-    // Filtra slot per questa data E che siano disponibili
+    // Restituisci TUTTI gli slot per questa data (disponibili E occupati)
     const allSlotsForDate = availableSlots.filter(slot => slot.date === dateStr)
-    const availableSlotsForDate = allSlotsForDate.filter(slot => slot.is_available === true)
     
-    return availableSlotsForDate
+    // ✅ Log dettagliato per debugging - mostra solo quando si seleziona una data
+    if (allSlotsForDate.length > 0 && date === selectedDate) {
+      console.log(`📍 Slot per ${dateStr}:`)
+      allSlotsForDate.forEach(s => {
+        const icon = s.is_available ? '✅' : '❌'
+        console.log(`   ${icon} ${s.start_time}-${s.end_time} | disponibile: ${s.is_available}`)
+      })
+    }
+    
+    return allSlotsForDate
   }
 
   const hasAvailableSlots = (date) => {
     const slots = getSlotsForDate(date)
-    return slots.length > 0
+    // Verifica se ci sono slot DISPONIBILI (is_available === true)
+    return slots.some(slot => slot.is_available === true)
   }
 
   // Nuova funzione per verificare se un giorno ha appuntamenti (slot occupati)
@@ -148,6 +210,11 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
   }
 
   const handleSlotClick = (slot) => {
+    // ✅ Impedisci la selezione di slot non disponibili
+    if (!slot.is_available) {
+      return
+    }
+    
     setSelectedSlot(slot)
     if (onSlotSelect) {
       onSlotSelect(slot)
@@ -166,7 +233,51 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
   const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab']
 
   const days = getDaysInMonth()
-  const slots = selectedDate ? getSlotsForDate(selectedDate) : []
+  const rawSlots = selectedDate ? getSlotsForDate(selectedDate) : []
+  
+  // ✅ Funzione per raggruppare slot occupati consecutivi
+  const mergeOccupiedSlots = (slots) => {
+    if (slots.length === 0) return []
+    
+    const mergedSlots = []
+    const availableSlots = slots.filter(s => s.is_available)
+    const occupiedSlots = slots.filter(s => !s.is_available).sort((a, b) => 
+      a.start_time.localeCompare(b.start_time)
+    )
+    
+    // Raggruppa slot occupati consecutivi
+    let i = 0
+    while (i < occupiedSlots.length) {
+      const currentSlot = occupiedSlots[i]
+      let endTime = currentSlot.end_time
+      let totalDuration = currentSlot.duration_minutes
+      
+      // Cerca slot consecutivi
+      let j = i + 1
+      while (j < occupiedSlots.length && occupiedSlots[j].start_time === endTime) {
+        endTime = occupiedSlots[j].end_time
+        totalDuration += occupiedSlots[j].duration_minutes
+        j++
+      }
+      
+      // Crea uno slot merged
+      mergedSlots.push({
+        ...currentSlot,
+        end_time: endTime,
+        duration_minutes: totalDuration,
+        is_merged: j > i + 1 // Flag per sapere se è stato merged
+      })
+      
+      i = j
+    }
+    
+    // Combina disponibili e occupati merged, ordina per orario
+    return [...availableSlots, ...mergedSlots].sort((a, b) => 
+      a.start_time.localeCompare(b.start_time)
+    )
+  }
+  
+  const slots = mergeOccupiedSlots(rawSlots)
 
   return (
     <div className="appointment-calendar">
@@ -231,27 +342,33 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
             <div className="time-slots-panel">
               <div className="time-slots-header">
                 <Clock size={18} />
-                <span>Orari disponibili - {selectedDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}</span>
+                <span>Orari - {selectedDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}</span>
               </div>
 
               {slots.length === 0 ? (
                 <div className="no-slots">
-                  <p>Nessuno slot disponibile per questa data</p>
+                  <p>Nessuno slot per questa data</p>
                 </div>
               ) : (
                 <div className="time-slots-grid">
-                  {slots.map((slot, index) => (
-                    <button
-                      key={index}
-                      className={`time-slot ${selectedSlot === slot ? 'selected' : ''}`}
-                      onClick={() => handleSlotClick(slot)}
-                    >
-                      <span className="time-slot-time">
-                        {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
-                      </span>
-                      <span className="time-slot-duration">{slot.duration_minutes} min</span>
-                    </button>
-                  ))}
+                  {slots.map((slot, index) => {
+                    const isOccupied = !slot.is_available
+                    return (
+                      <button
+                        key={index}
+                        className={`time-slot ${selectedSlot === slot ? 'selected' : ''} ${isOccupied ? 'occupied' : ''}`}
+                        onClick={() => handleSlotClick(slot)}
+                        disabled={isOccupied}
+                        title={isOccupied ? 'Slot già occupato' : 'Clicca per selezionare'}
+                      >
+                        <span className="time-slot-time">
+                          {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
+                        </span>
+                        <span className="time-slot-duration">{slot.duration_minutes} min</span>
+                        {isOccupied && <span className="slot-occupied-badge">Occupato</span>}
+                      </button>
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -262,11 +379,15 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
       <div className="calendar-legend">
         <div className="legend-item">
           <div className="legend-dot available"></div>
-          <span>Disponibile</span>
+          <span>Giorni disponibili</span>
         </div>
         <div className="legend-item">
           <div className="legend-dot unavailable"></div>
-          <span>Non disponibile</span>
+          <span>Giorni non disponibili</span>
+        </div>
+        <div className="legend-item">
+          <div className="legend-slot occupied"></div>
+          <span>Slot occupati</span>
         </div>
       </div>
     </div>

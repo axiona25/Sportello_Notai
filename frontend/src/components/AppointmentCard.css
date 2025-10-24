@@ -200,6 +200,14 @@
   height: 14px;
 }
 
+/* ✅ Durata appuntamento tra parentesi */
+.appointment-duration {
+  font-size: 11px;
+  font-weight: 400;
+  color: #64748B;
+  margin-left: 2px;
+}
+
 /* ✅ Badge pallino nella mini card - versione più piccola */
 .appointment-time .status-badge-dot {
   width: 7px;
@@ -255,6 +263,50 @@
 
 .appointment-time .status-badge-dot:hover::after {
   opacity: 1;
+}
+
+/* ✅ Colori status badge in base allo stato */
+.status-badge-dot.status-provvisorio {
+  background: #F59E0B; /* Giallo - come nel calendario */
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.status-badge-dot.status-provvisorio:hover {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+}
+
+.status-badge-dot.status-confermato,
+.status-badge-dot.status-documenti_in_caricamento,
+.status-badge-dot.status-documenti_verificati {
+  background: #1668B0; /* Blu */
+  box-shadow: 0 0 0 2px rgba(22, 104, 176, 0.2);
+}
+
+.status-badge-dot.status-confermato:hover,
+.status-badge-dot.status-documenti_in_caricamento:hover,
+.status-badge-dot.status-documenti_verificati:hover {
+  box-shadow: 0 0 0 3px rgba(22, 104, 176, 0.3);
+}
+
+.status-badge-dot.status-documenti_parziali {
+  background: #F59E0B; /* Arancione - documenti rifiutati */
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+  animation: pulseRing 2s ease-in-out infinite; /* Pulse per attirare attenzione */
+}
+
+.status-badge-dot.status-documenti_parziali:hover {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+}
+
+.status-badge-dot.status-annullato,
+.status-badge-dot.status-rifiutato {
+  background: #EF4444; /* Rosso */
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.status-badge-dot.status-annullato:hover,
+.status-badge-dot.status-rifiutato:hover {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
 }
 
 /* Servizi selezionati */
@@ -326,6 +378,21 @@
   }
 }
 
+/* ✅ Effetto highlight per card selezionata da notifica */
+.appointment-card.highlight-from-notification {
+  animation: highlightPulse 2s ease-in-out;
+  box-shadow: 0 0 0 3px rgba(22, 104, 176, 0.4) !important;
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(22, 104, 176, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(22, 104, 176, 0.2);
+  }
+}
+
 .action-item {
   display: flex;
   align-items: center;
@@ -388,3 +455,16 @@
   background-color: #FEF2F2;
 }
 
+/* ✅ Animazione pulse per status badge documenti parziali */
+@keyframes pulseRing {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.4);
+  }
+}

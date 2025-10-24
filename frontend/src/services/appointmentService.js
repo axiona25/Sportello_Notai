@@ -15,7 +15,9 @@ class AppointmentService {
    */
   async getAvailableSlots(notaryId, startDate, endDate, duration = 30, excludeAppointmentId = null) {
     try {
-      let url = `/notaries/${notaryId}/slots/?start_date=${startDate}&end_date=${endDate}&duration=${duration}`
+      // ✅ Aggiungi timestamp per evitare cache del browser
+      const timestamp = Date.now()
+      let url = `/notaries/${notaryId}/slots/?start_date=${startDate}&end_date=${endDate}&duration=${duration}&_t=${timestamp}`
       
       // Se stiamo modificando un appuntamento, escludi il suo slot dal calcolo
       if (excludeAppointmentId) {

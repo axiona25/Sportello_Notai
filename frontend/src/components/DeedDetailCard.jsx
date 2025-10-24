@@ -1,5 +1,5 @@
 import React from 'react'
-import { FileText, User, Phone, Video, Home, Building2, Gift, Briefcase, FileSignature, Scale, Settings, Clock, Calendar as CalendarIcon, MapPin, Archive, FolderOpen, PenTool, Upload } from 'lucide-react'
+import { FileText, User, Phone, Video, Home, Building2, Gift, Briefcase, FileSignature, Scale, Settings, Clock, Calendar as CalendarIcon, MapPin, Archive, FolderOpen, PenTool, Upload, Eye } from 'lucide-react'
 import './DeedDetailCard.css'
 
 // Funzione per determinare l'icona in base al tipo di atto
@@ -66,13 +66,32 @@ function DeedDetailCard({ appointment, onEnter, documentiCaricati = 0, documenti
   // ✅ Stato appuntamento
   const status = appointment.status || appointmentData.status || appointmentData.stato || 'provvisorio'
   const statusUpper = status.toUpperCase()
-  const isConfirmed = statusUpper === 'CONFERMATO' || statusUpper === 'DOCUMENTI_IN_CARICAMENTO'
+  const isConfirmed = statusUpper === 'CONFERMATO' || 
+                      statusUpper === 'DOCUMENTI_IN_CARICAMENTO' ||
+                      statusUpper === 'DOCUMENTI_IN_VERIFICA' ||
+                      statusUpper === 'DOCUMENTI_PARZIALI' ||  // ✅ Permette accesso se documenti rifiutati
+                      statusUpper === 'DOCUMENTI_VERIFICATI' ||
+                      statusUpper === 'PRONTO_ATTO_VIRTUALE' ||
+                      statusUpper === 'IN_CORSO' ||
+                      statusUpper === 'COMPLETATO'
   
   // ✅ Logica documenti
   const tuttiDocumentiCaricati = documentiTotali > 0 && documentiCaricati === documentiTotali
   const tuttiDocumentiApprovati = documentiTotali > 0 && documentiApprovati === documentiTotali
   const canOpenDocuments = userRole === 'client' ? isConfirmed : tuttiDocumentiCaricati
   const canEnter = tuttiDocumentiApprovati
+  
+  console.log('🔍 DeedDetailCard - Logica pulsante Entra:', {
+    status,
+    statusUpper,
+    isConfirmed,
+    documentiTotali,
+    documentiCaricati,
+    documentiApprovati,
+    tuttiDocumentiApprovati,
+    canEnter,
+    mostraPulsante: isConfirmed && canEnter
+  })
   
   const clientName = appointment.clientName || 'Cliente'
   const notaryName = appointment.notaryName || appointmentData.notaio_nome || 'Notaio'  // ✅ Nome del notaio
@@ -94,7 +113,12 @@ function DeedDetailCard({ appointment, onEnter, documentiCaricati = 0, documenti
             statusUpper === 'CONFERMATO' ? 'Confermato dal Notaio' :
             statusUpper === 'ANNULLATO' ? 'Annullato' :
             statusUpper === 'DOCUMENTI_IN_CARICAMENTO' ? 'In Lavorazione' :
+            statusUpper === 'DOCUMENTI_IN_VERIFICA' ? 'Documenti in Verifica' :
+            statusUpper === 'DOCUMENTI_PARZIALI' ? 'Alcuni Documenti Rifiutati' :
             statusUpper === 'DOCUMENTI_VERIFICATI' ? 'Verificato' :
+            statusUpper === 'PRONTO_ATTO_VIRTUALE' ? 'Pronto per Atto Virtuale' :
+            statusUpper === 'IN_CORSO' ? 'In Corso' :
+            statusUpper === 'COMPLETATO' ? 'Completato' :
             statusUpper === 'RIFIUTATO' ? 'Rifiutato' :
             status
           }
@@ -198,24 +222,46 @@ function DeedDetailCard({ appointment, onEnter, documentiCaricati = 0, documenti
             className={`deed-documents-upload ${!canOpenDocuments ? 'disabled' : ''}`}
             onClick={canOpenDocuments ? handleEnterClick : undefined}
           >
-            <Upload size={18} className="deed-upload-icon" />
+            {/* ✅ Icona dinamica: Eye se tutti caricati (solo cliente), Upload altrimenti */}
+            {userRole === 'notary' ? (
+              <FolderOpen size={18} className="deed-upload-icon" />
+            ) : tuttiDocumentiCaricati ? (
+              <Eye size={18} className="deed-upload-icon" />
+            ) : (
+              <Upload size={18} className="deed-upload-icon" />
+            )}
+            
             <div className="deed-upload-content">
               <p className="deed-upload-text">
-                {userRole === 'notary' ? 'Documenti Caricati' : 'Carica i Documenti'}
+                {userRole === 'notary' 
+                  ? 'Documenti Caricati' 
+                  : tuttiDocumentiCaricati 
+                    ? 'Consulta Documenti'
+                    : 'Carica i Documenti'
+                }
               </p>
             </div>
           </div>
           
           {/* Badge contatore fuori dal box */}
-          <span className={`deed-documents-badge ${tuttiDocumentiCaricati ? 'complete' : 'incomplete'}`}>
-            {documentiCaricati}/{documentiTotali}
-          </span>
+          <div className={`deed-documents-badge ${tuttiDocumentiCaricati ? 'complete' : 'incomplete'}`}>
+            <div className="badge-row">
+              <span className="badge-label">Caricati:</span>
+              <span className="badge-value">{documentiCaricati}/{documentiTotali}</span>
+            </div>
+            <div className="badge-row">
+              <span className="badge-label">Approvati:</span>
+              <span className="badge-value">{documentiApprovati}/{documentiTotali}</span>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* ✅ Mostra pulsante Entra solo se tutti i documenti sono approvati */}
       {isConfirmed && canEnter && (
-        <button className="deed-btn">Entra</button>
+        <button className="deed-btn" onClick={handleEnterClick}>
+          Entra
+        </button>
       )}
     </div>
   )

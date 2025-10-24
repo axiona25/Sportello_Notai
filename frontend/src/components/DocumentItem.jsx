@@ -59,7 +59,7 @@ function DocumentItem({
           label: 'In lavorazione', 
           color: 'yellow', 
           icon: <AlertCircle size={14} />,
-          tooltip: 'In lavorazione'
+          tooltip: 'In valutazione'
         }
       case 'VERIFICATO':
       case 'ACCETTATO':

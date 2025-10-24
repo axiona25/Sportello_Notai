@@ -5,6 +5,7 @@ import { useToast } from '../contexts/ToastContext'
 import { getDocumentiRichiestiPerAtto } from '../config/documentiRichiestiConfig'
 import DocumentItem from './DocumentItem'
 import ConfirmDeleteDocumentModal from './ConfirmDeleteDocumentModal'
+import DocumentUploadProgressModal from './DocumentUploadProgressModal'
 import './AppointmentDetailModal.css'
 
 function AppointmentDetailModal({ appointment, onClose }) {
@@ -14,8 +15,10 @@ function AppointmentDetailModal({ appointment, onClose }) {
   const [uploadingDocName, setUploadingDocName] = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [documentToDelete, setDocumentToDelete] = useState(null)
+  const [showProgressModal, setShowProgressModal] = useState(false)
   const { showToast } = useToast()
 
+  // ✅ Carica documenti richiesti e documenti caricati all'apertura
   useEffect(() => {
     if (appointment) {
       console.log('📦 AppointmentDetailModal - Appointment ricevuto:', appointment)
@@ -41,7 +44,15 @@ function AppointmentDetailModal({ appointment, onClose }) {
       const statoUpper = stato?.toUpperCase()
       console.log('🔍 Stato uppercase:', statoUpper)
       
-      if (statoUpper === 'CONFERMATO' || statoUpper === 'DOCUMENTI_IN_CARICAMENTO') {
+      // ✅ Tutti gli stati che permettono accesso ai documenti
+      if (statoUpper === 'CONFERMATO' || 
+          statoUpper === 'DOCUMENTI_IN_CARICAMENTO' ||
+          statoUpper === 'DOCUMENTI_IN_VERIFICA' ||
+          statoUpper === 'DOCUMENTI_PARZIALI' ||  // ✅ Importante per documenti rifiutati
+          statoUpper === 'DOCUMENTI_VERIFICATI' ||
+          statoUpper === 'PRONTO_ATTO_VIRTUALE' ||
+          statoUpper === 'IN_CORSO' ||
+          statoUpper === 'COMPLETATO') {
         console.log('✅ Stato valido, carico documenti dal backend...')
         loadDocumentiCaricati()
       } else {
@@ -50,10 +61,24 @@ function AppointmentDetailModal({ appointment, onClose }) {
     }
   }, [appointment])
 
+  // ✅ Listener per ricaricamento documenti quando vengono aggiornati da altre parti
+  useEffect(() => {
+    const handleDocumentsUpdate = () => {
+      console.log('🔄 AppointmentDetailModal - Evento documents-updated ricevuto, ricarico documenti')
+      if (appointment) {
+        loadDocumentiCaricati()
+      }
+    }
+
+    window.addEventListener('documents-updated', handleDocumentsUpdate)
+    return () => window.removeEventListener('documents-updated', handleDocumentsUpdate)
+  }, [appointment])
+
   const loadDocumentiCaricati = async () => {
     try {
       setLoadingDocumenti(true)
-      const docs = await appointmentExtendedService.getDocumentiAppuntamento(appointment.id)
+      const docsResult = await appointmentExtendedService.getDocumentiAppuntamento(appointment.id)
+      const docs = docsResult?.data || docsResult
       const docsArray = Array.isArray(docs) ? docs : []
       console.log('📦 Documenti caricati dal backend:', docsArray.length, 'documenti')
       console.log('📋 Dettagli documenti caricati:', docsArray)
@@ -106,6 +131,11 @@ function AppointmentDetailModal({ appointment, onClose }) {
       
       showToast('Documento caricato con successo', 'success', 'Caricato!')
       await loadDocumentiCaricati() // Ricarica lista documenti
+      
+      // ✅ Notifica l'aggiornamento dei documenti
+      window.dispatchEvent(new CustomEvent('documents-updated', { 
+        detail: { appointmentId: appointment.id } 
+      }))
     } catch (error) {
       console.error('❌ Errore upload documento:', error)
       console.error('❌ Dettagli errore:', error.message, error.response)
@@ -144,6 +174,11 @@ function AppointmentDetailModal({ appointment, onClose }) {
       // Ricarica i documenti PRIMA di mostrare il toast e chiudere la modale
       await loadDocumentiCaricati()
       
+      // ✅ Notifica l'aggiornamento dei documenti
+      window.dispatchEvent(new CustomEvent('documents-updated', { 
+        detail: { appointmentId: appointment.id } 
+      }))
+      
       showToast('Documento eliminato', 'success', 'Fatto!')
       
       // Chiudi la modale dopo aver aggiornato i dati
@@ -157,27 +192,38 @@ function AppointmentDetailModal({ appointment, onClose }) {
 
   const handleSubmitDocuments = async () => {
     // Verifica che ci siano documenti da inviare
-    if (documentiCaricati.length === 0) {
+    const documentiConFile = documentiCaricati.filter(doc => doc.file || doc.file_path)
+    
+    if (documentiConFile.length === 0) {
       showToast('Nessun documento da inviare', 'warning', 'Attenzione')
       return
     }
 
+    // ✅ Apri la modale di progress
+    setShowProgressModal(true)
+
     try {
       // Invia notifica al notaio che i documenti sono pronti per la verifica
       await appointmentExtendedService.inviaDocumentiPerVerifica(appointment.id)
-      showToast('Documenti inviati al notaio per la verifica', 'success', 'Inviati!')
       
       // Ricarica documenti per aggiornare gli stati
       await loadDocumentiCaricati()
       
-      // Chiudi modale dopo invio
-      setTimeout(() => {
-        onClose()
-      }, 1500)
+      // ✅ Notifica l'aggiornamento dei documenti per ricaricare i contatori
+      window.dispatchEvent(new CustomEvent('documents-updated', { 
+        detail: { appointmentId: appointment.id } 
+      }))
     } catch (error) {
       console.error('Errore invio documenti:', error)
+      setShowProgressModal(false)
       showToast('Errore durante l\'invio', 'error', 'Errore')
     }
+  }
+
+  const handleProgressComplete = () => {
+    // Chiamato quando la modale progress completa l'animazione
+    setShowProgressModal(false)
+    onClose() // Chiudi la modale principale
   }
 
   // Helper per trovare documento caricato corrispondente
@@ -323,6 +369,13 @@ function AppointmentDetailModal({ appointment, onClose }) {
           onConfirm={handleConfirmDelete}
         />
       )}
+
+      {/* Modale Progress Invio Documenti */}
+      <DocumentUploadProgressModal
+        isOpen={showProgressModal}
+        totalDocuments={documentiCaricati.filter(doc => doc.file || doc.file_path).length}
+        onComplete={handleProgressComplete}
+      />
     </div>
   )
 }

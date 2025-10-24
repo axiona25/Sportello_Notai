@@ -212,6 +212,16 @@
   box-shadow: 0 0 0 3px rgba(22, 104, 176, 0.3);
 }
 
+.status-badge-dot.status-documenti_parziali {
+  background: #F59E0B; /* Arancione - documenti rifiutati */
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+  animation: pulseRing 2s ease-in-out infinite; /* Pulse per attirare attenzione */
+}
+
+.status-badge-dot.status-documenti_parziali:hover {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+}
+
 .status-badge-dot.status-annullato,
 .status-badge-dot.status-rifiutato {
   background: #EF4444; /* Rosso */
@@ -500,10 +510,12 @@
   background: #F8FAFC;
   border: 1px solid #E5E7EB;
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 12px 10px; /* Aumentato padding verticale per allineamento */
   max-width: fit-content;
   cursor: pointer;
   transition: all 0.2s ease;
+  height: 48px; /* Altezza fissa per uniformità */
+  box-sizing: border-box;
 }
 
 .deed-documents-upload:hover {
@@ -581,29 +593,54 @@
 }
 
 .deed-documents-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 36px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 8px;
   font-family: 'Inter', 'Poppins', sans-serif;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  justify-content: center;
+  height: 48px; /* Stessa altezza del box */
+  background: #F8FAFC; /* Stesso background del box */
+  border: 1px solid #E5E7EB; /* Stesso border del box */
+  box-sizing: border-box;
 }
 
 .deed-documents-badge.incomplete {
-  background: rgba(79, 173, 255, 0.08);
-  color: #1668B0;
-  border: 1px solid rgba(79, 173, 255, 0.2);
+  /* Mantieni lo stesso stile del box */
 }
 
 .deed-documents-badge.complete {
+  /* Badge verde quando tutti i documenti sono caricati */
   background: rgba(16, 185, 129, 0.08);
-  color: #059669;
   border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.badge-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.badge-label {
+  font-weight: 500;
+  color: #64748B; /* Grigio neutro come il box */
+}
+
+.badge-value {
+  font-weight: 700;
+  font-size: 11px;
+  color: #1F2937; /* Testo più scuro per i valori */
+}
+
+/* Badge completo - valori in verde */
+.deed-documents-badge.complete .badge-value {
+  color: #059669;
 }
 
 .deed-status {
@@ -664,3 +701,16 @@
   box-shadow: var(--shadow-md);
 }
 
+/* ✅ Animazione pulse per status badge documenti parziali */
+@keyframes pulseRing {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.4);
+  }
+}

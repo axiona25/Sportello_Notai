@@ -559,9 +559,15 @@ class NotificaListSerializer(serializers.ModelSerializer):
             # Cerca il partecipante richiedente
             partecipante = obj.appuntamento.partecipanti.filter(ruolo='richiedente').first()
             if partecipante and partecipante.cliente:
-                user = partecipante.cliente.user
+                cliente = partecipante.cliente
+                # ✅ Usa i campi nome e cognome dal modello Cliente
+                if cliente.nome and cliente.cognome:
+                    return f"{cliente.nome} {cliente.cognome}".strip()
+                # Fallback: usa first_name/last_name dall'utente
+                user = cliente.user
                 if hasattr(user, 'first_name') and user.first_name:
                     return f"{user.first_name} {user.last_name}".strip()
+                # Ultimo fallback: email
                 return user.email
         return None
     

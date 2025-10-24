@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import Calendar from './Calendar'
@@ -28,9 +28,20 @@ import './DashboardNotaio.css'
 
 function DashboardNotaio({ onLogout, user: initialUser }) {
   const today = new Date()
+  const isNavigatingFromNotification = useRef(false)
   const { showToast: toast } = useToast()
-  const [selectedDate, setSelectedDate] = useState(today.getDate())
-  const [selectedAppointment, setSelectedAppointment] = useState(null)
+  const [selectedDate, setSelectedDate] = useState(today) // ✅ Deve essere un Date, non un numero!
+  const [selectedAppointment, setSelectedAppointmentRaw] = useState(null)
+  
+  // ✅ Wrapper per tracciare OGNI modifica di selectedAppointment
+  const setSelectedAppointment = useCallback((value) => {
+    const stack = new Error().stack
+    console.log('🎯 setSelectedAppointment chiamato:', {
+      value: value ? { id: value.id, type: value.appointmentType } : null,
+      stack: stack?.split('\n').slice(1, 4).join('\n') // Prime 3 righe dello stack
+    })
+    setSelectedAppointmentRaw(value)
+  }, [])
   const [showVerificationModal, setShowVerificationModal] = useState(false)
   const [searchValue, setSearchValue] = useState('')
   const [currentView, setCurrentView] = useState('dashboard') // 'dashboard', 'settings', 'documenti', o 'atti'
@@ -39,6 +50,8 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
   const [provisionalAppointments, setProvisionalAppointments] = useState([]) // Appuntamenti provvisori
   const [currentAppointments, setCurrentAppointments] = useState([]) // Appuntamenti del giorno selezionato
   const [loadingAppointments, setLoadingAppointments] = useState(false)
+  const [pendingAppointmentId, setPendingAppointmentId] = useState(null) // ✅ ID appuntamento da selezionare dopo caricamento
+  const [pendingOpenDetail, setPendingOpenDetail] = useState(false) // ✅ Flag per aprire modale dopo selezione
   
   // Stati per le modali di azione
   const [showEditModal, setShowEditModal] = useState(false)
@@ -52,31 +65,89 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
   const [documentiTotali, setDocumentiTotali] = useState(0)
   const [documentiApprovati, setDocumentiApprovati] = useState(0)
 
-  // Carica appuntamenti provvisori dal backend
+  // ✅ Carica TUTTI gli appuntamenti dal backend (non solo provvisori)
+  // Necessario perché le notifiche possono riguardare appuntamenti in qualsiasi stato
   const loadProvisionalAppointments = useCallback(async (showLoader = true) => {
     try {
       // Mostra loader solo al primo caricamento, non durante i refresh automatici
       if (showLoader) {
-        setLoadingAppointments(true)
+      setLoadingAppointments(true)
       }
+      
+      console.log('📥 Caricando appuntamenti provvisori...')
       
       // Carica tutti gli appuntamenti e filtra quelli con stato PROVVISORIO
       const result = await appointmentService.getNotaryAppointments()
-      if (result.success && Array.isArray(result.data)) {
-        const provisional = result.data.filter(app => app.stato === 'PROVVISORIO')
+      console.log('📦 Risposta backend appuntamenti:', result)
+      console.log('📦 Tipo result.data:', typeof result.data, Array.isArray(result.data))
+      console.log('📦 Contenuto result.data:', result.data)
+      
+      if (result.success) {
+        // Gestisci vari formati di risposta
+        let appointments = []
+        
+        if (Array.isArray(result.data)) {
+          appointments = result.data
+          console.log('✅ Formato: array diretto')
+        } else if (result.data && Array.isArray(result.data.results)) {
+          appointments = result.data.results
+          console.log('✅ Formato: oggetto con results')
+        } else if (result.data && Array.isArray(result.data.data)) {
+          appointments = result.data.data
+          console.log('✅ Formato: oggetto con data')
+        } else {
+          console.warn('⚠️ Formato risposta non riconosciuto:', result.data)
+        }
+        
+        console.log('📋 Appuntamenti totali:', appointments.length)
+        console.log('📋 Stati di tutti gli appuntamenti:', appointments.map(a => ({ 
+          id: a.id, 
+          stato: a.stato || a.status || a.appointment_status,
+          tipologia: a.tipologia_atto_nome,
+          client: a.client_name
+        })))
+        
+        // ✅ Verifica duplicati
+        const ids = appointments.map(a => a.id)
+        const uniqueIds = [...new Set(ids)]
+        if (ids.length !== uniqueIds.length) {
+          console.warn('⚠️ ATTENZIONE: ID duplicati trovati negli appuntamenti!')
+          const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index)
+          console.warn('⚠️ IDs duplicati:', duplicates)
+        }
+        
+        // ✅ Carica TUTTI gli appuntamenti (non solo provvisori) perché le notifiche possono riguardare qualsiasi stato
+        // Il notaio deve poter navigare a qualsiasi appuntamento da notifica
+        const provisional = appointments.filter(app => {
+          const stato = app.stato || app.status || app.appointment_status || ''
+          // Escludi solo gli appuntamenti ANNULLATI/RIFIUTATI/CANCELLATI
+          const isExcluded = ['ANNULLATO', 'RIFIUTATO', 'CANCELLATO', 'CANCELLED', 'REJECTED'].includes(stato.toUpperCase())
+          return !isExcluded
+        })
+        
+        console.log('📋 Appuntamenti validi (non annullati) trovati:', provisional.length)
+        console.log('📋 IDs appuntamenti validi:', provisional.map(a => ({ 
+          id: a.id, 
+          stato: a.stato || a.status 
+        })))
         
         // Aggiorna solo se ci sono effettivi cambiamenti (evita re-render inutili)
         setProvisionalAppointments(prev => {
           const hasChanged = JSON.stringify(prev) !== JSON.stringify(provisional)
+          if (hasChanged) {
+            console.log('✅ Appuntamenti aggiornati:', provisional.length)
+          }
           return hasChanged ? provisional : prev
         })
+      } else {
+        console.error('❌ Errore nella risposta:', result.error)
       }
     } catch (error) {
-      console.error('Errore caricamento appuntamenti provvisori:', error)
+      console.error('❌ Errore caricamento appuntamenti provvisori:', error)
     } finally {
       if (showLoader) {
-        setLoadingAppointments(false)
-      }
+      setLoadingAppointments(false)
+    }
     }
   }, [])
 
@@ -85,31 +156,261 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
     loadProvisionalAppointments(true)
   }, [loadProvisionalAppointments])
 
+  // ✅ Reset selezione quando cambia giorno
+  // (previene che la detail card mostri un appuntamento di un altro giorno)
+  // MA solo se l'appuntamento selezionato NON appartiene al giorno attuale
+  // E solo se NON c'è una navigazione da notifica in corso
+  useEffect(() => {
+    // Ignora durante navigazione da notifica
+    if (isNavigatingFromNotification.current) {
+      console.log('📅 [useEffect selectedDate] IGNORATO - navigazione da notifica in corso')
+      return
+    }
+    
+    // ✅ Verifica che selectedDate sia un oggetto Date valido
+    if (!selectedDate || !(selectedDate instanceof Date)) {
+      console.warn('⚠️ selectedDate non è un Date object valido:', selectedDate)
+      return
+    }
+    
+    if (selectedAppointment && selectedAppointment.date) {
+      const appointmentDate = new Date(selectedAppointment.date.split('/').reverse().join('-'))
+      const selectedDateStr = selectedDate.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      
+      if (selectedAppointment.date !== selectedDateStr) {
+        console.log('📅 [useEffect selectedDate] Data cambiata e appointment non appartiene a questo giorno, reset selezione')
+        setSelectedAppointment(null)
+      } else {
+        console.log('📅 [useEffect selectedDate] Data cambiata ma appointment appartiene a questo giorno, mantieni selezione')
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate])
+
   // ✅ Listener per selezionare appuntamento da notifica
   useEffect(() => {
+    console.log('📌 DashboardNotaio - Listener select-appointment ATTIVO')
+    
     const handleSelectAppointment = async (event) => {
-      const { appointmentId } = event.detail
+      const { appointmentId, openDetail, notificationType } = event.detail
+      console.log('📍 DashboardNotaio - Evento select-appointment ricevuto:', { 
+        appointmentId, 
+        openDetail,
+        notificationType,
+        provisionalAppointmentsCount: provisionalAppointments.length,
+        provisionalAppointments: provisionalAppointments.map(a => ({ id: a.id, type: a.appointmentType }))
+      })
+      
+      // Salva il pending appointment ID e il flag per aprire il dettaglio
+      console.log('💾 Salvando pending appointment:', appointmentId, '- Apri modale:', openDetail)
+      setPendingAppointmentId(appointmentId)
+      setPendingOpenDetail(openDetail || false)
       
       // Carica gli appuntamenti se non sono già caricati
       if (provisionalAppointments.length === 0) {
+        console.log('📂 Caricamento appuntamenti...')
         await loadProvisionalAppointments(true)
-      }
-      
-      // Trova l'appuntamento nella lista
-      const appointment = provisionalAppointments.find(app => app.id === appointmentId)
-      
-      if (appointment) {
-        // Seleziona l'appuntamento (apre la card di dettaglio)
-        handleAppointmentSelect(appointment)
+      } else {
+        console.log('✅ Appuntamenti già caricati:', provisionalAppointments.length)
       }
     }
     
     window.addEventListener('select-appointment', handleSelectAppointment)
+    console.log('✅ Listener select-appointment aggiunto')
     
     return () => {
       window.removeEventListener('select-appointment', handleSelectAppointment)
+      console.log('❌ Listener select-appointment rimosso')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provisionalAppointments])
+
+  // ✅ Effetto separato per gestire la selezione automatica da notifica (dopo caricamento)
+  useEffect(() => {
+    console.log('🔍 Checking pending appointment:', {
+      pendingAppointmentId,
+      pendingOpenDetail,
+      provisionalAppointmentsLength: provisionalAppointments.length
+    })
+    
+    if (pendingAppointmentId && provisionalAppointments.length > 0) {
+      // ✅ Attiva il flag per bloccare l'useEffect della data
+      isNavigatingFromNotification.current = true
+      console.log('🚩 isNavigatingFromNotification = true')
+      console.log('🔎 Cercando appointment con ID:', pendingAppointmentId)
+      console.log('📋 IDs disponibili:', provisionalAppointments.map(a => ({ 
+        id: a.id, 
+        stato: a.stato || a.status,
+        tipo: a.tipologia_atto_nome 
+      })))
+      
+      const appointmentToSelect = provisionalAppointments.find(app => {
+        const match = app.id === pendingAppointmentId
+        if (match) {
+          console.log('✅ Match trovato:', {
+            id: app.id,
+            stato: app.stato || app.status,
+            tipo: app.tipologia_atto_nome,
+            client: app.client_name
+          })
+        }
+        return match
+      })
+      
+      if (appointmentToSelect) {
+        console.log('✅ Selezione automatica appointment da notifica (Notaio):', {
+          id: appointmentToSelect.id,
+          stato: appointmentToSelect.stato || appointmentToSelect.status,
+          tipologia: appointmentToSelect.tipologia_atto_nome,
+          client: appointmentToSelect.client_name,
+          rawStatus: appointmentToSelect.status
+        })
+        
+        // ⚠️ Verifica che lo stato corrisponda al tipo di notifica
+        const appointmentStatus = (appointmentToSelect.stato || appointmentToSelect.status || '').toUpperCase()
+        
+        if (pendingOpenDetail === false && appointmentStatus !== 'PROVVISORIO') {
+          console.warn('⚠️ Attenzione: Notifica "Nuova richiesta" ma appuntamento con stato:', appointmentStatus)
+          console.warn('⚠️ Potrebbe essere un errore. ID cercato:', pendingAppointmentId)
+        }
+        
+        // ✅ Formatta l'appointment usando la stessa logica di handleAppointmentsUpdate
+        const startDate = parseDateTimeLocal(appointmentToSelect.start_time)
+        const endDate = parseDateTimeLocal(appointmentToSelect.end_time)
+        
+        // Estrai servizi selezionati
+        const services = []
+        if (appointmentToSelect.is_in_person) services.push('presence')
+        if (appointmentToSelect.is_online) services.push('video')
+        if (appointmentToSelect.is_phone) services.push('phone')
+        if (appointmentToSelect.has_conservation) services.push('conservation')
+        if (appointmentToSelect.has_shared_folder) services.push('shared_folder')
+        if (appointmentToSelect.has_digital_signature) services.push('digital_signature')
+        
+        // Normalizza lo stato
+        const normalizedStatus = (appointmentToSelect.stato || appointmentToSelect.status || 'PROVVISORIO').toUpperCase()
+        
+        const formattedAppointment = {
+          id: appointmentToSelect.id,
+          type: 'appointment',
+          appointmentType: appointmentToSelect.tipologia_atto_nome || 'Appuntamento',
+          tipologia_atto_codice: appointmentToSelect.tipologia_atto_codice,
+          clientName: appointmentToSelect.client_name || 'Cliente',
+          date: startDate.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+          time: `${startDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - ${endDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`,
+          services: services,
+          status: normalizedStatus,
+          userRole: 'notary', // ✅ Vista notaio
+          rawData: appointmentToSelect
+        }
+        
+        console.log('📌 Appointment formattato:', formattedAppointment)
+        
+        // ✅ Seleziona la data dell'appuntamento nel calendario
+        // IMPORTANTE: Senza questo, la mini-card non viene mostrata se il calendario mostra un altro giorno
+        console.log('📅 Selezione data nel calendario:', startDate)
+        setSelectedDate(startDate)
+        
+        // ✅ Popola currentAppointments con gli appuntamenti di quel giorno
+        // Filtra provisionalAppointments per mostrare solo quelli della data selezionata
+        const appointmentsForDay = provisionalAppointments
+          .filter(app => {
+            const appStartDate = parseDateTimeLocal(app.start_time)
+            return appStartDate.toDateString() === startDate.toDateString()
+          })
+          .map(app => {
+            const appStartDate = parseDateTimeLocal(app.start_time)
+            const appEndDate = parseDateTimeLocal(app.end_time)
+            
+            const appServices = []
+            if (app.is_in_person) appServices.push('presence')
+            if (app.is_online) appServices.push('video')
+            if (app.is_phone) appServices.push('phone')
+            if (app.has_conservation) appServices.push('conservation')
+            if (app.has_shared_folder) appServices.push('shared_folder')
+            if (app.has_digital_signature) appServices.push('digital_signature')
+            
+            const appStatus = (app.stato || app.status || 'PROVVISORIO').toUpperCase()
+            
+            return {
+              id: app.id,
+              type: 'appointment',
+              appointmentType: app.tipologia_atto_nome || 'Appuntamento',
+              tipologia_atto_codice: app.tipologia_atto_codice,
+              clientName: app.client_name || 'Cliente',
+              date: appStartDate.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+              time: `${appStartDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - ${appEndDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`,
+              services: appServices,
+              status: appStatus,
+              userRole: 'notary',
+              rawData: app
+            }
+          })
+        
+        console.log('📋 Appuntamenti per il giorno selezionato:', appointmentsForDay.length)
+        setCurrentAppointments(appointmentsForDay)
+        
+        // ✅ NON selezionare ancora - aspetta che currentAppointments sia renderizzato
+        // Il prossimo useEffect lo farà automaticamente
+      } else {
+        console.warn('⚠️ Appuntamento non trovato nella lista. Cercavo:', pendingAppointmentId)
+        console.warn('⚠️ IDs disponibili:', provisionalAppointments.map(a => a.id))
+        // ✅ Resetta il flag anche in caso di errore
+        isNavigatingFromNotification.current = false
+        console.log('🏁 isNavigatingFromNotification = false (appointment not found)')
+        setPendingAppointmentId(null)
+        setPendingOpenDetail(false)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingAppointmentId, provisionalAppointments])
+
+  // ✅ Effetto separato per selezionare l'appuntamento DOPO che currentAppointments è stato renderizzato
+  useEffect(() => {
+    if (pendingAppointmentId && currentAppointments.length > 0) {
+      const appointmentToSelect = currentAppointments.find(app => app.id === pendingAppointmentId)
+      
+      if (appointmentToSelect) {
+        // ✅ Seleziona l'appointment (questo popola la detail card)
+        setSelectedAppointment(appointmentToSelect)
+        
+        // Scroll alla mini-card con delay per dare tempo al rendering
+        setTimeout(() => {
+          const cardElement = document.querySelector(`[data-appointment-id="${pendingAppointmentId}"]`)
+          
+          if (cardElement) {
+            cardElement.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            })
+            // Effetto highlight
+            cardElement.classList.add('highlight-from-notification')
+            setTimeout(() => {
+              cardElement.classList.remove('highlight-from-notification')
+            }, 2000)
+          }
+        }, 500)
+        
+        // Se richiesto, apri anche la modale documenti
+        if (pendingOpenDetail) {
+          setTimeout(() => {
+            handleOpenVerificationModal(appointmentToSelect)
+          }, 800)
+        }
+        
+        // Reset pending states dopo un delay maggiore per evitare race conditions
+        setTimeout(() => {
+          console.log('🔄 Reset pendingAppointmentId e pendingOpenDetail (Notaio)')
+          setPendingAppointmentId(null)
+          setPendingOpenDetail(false)
+          // ✅ Resetta il flag dopo che la navigazione è completata
+          isNavigatingFromNotification.current = false
+          console.log('🏁 isNavigatingFromNotification = false')
+        }, 2000) // Aumentato a 2000ms per dare tempo alla selezione di stabilizzarsi
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingAppointmentId, currentAppointments])
 
   // Funzione di refresh silenziosa per il polling (senza loader)
   const silentRefresh = useCallback(() => {
@@ -146,6 +447,7 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
         time: `${startDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - ${endDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`,
         services: services, // Servizi selezionati
         status: normalizedStatus, // ✅ Normalizza a maiuscolo
+        userRole: 'notary', // ✅ Vista notaio
         rawData: app // Dati completi per il dettaglio
       }
     })
@@ -182,6 +484,52 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
       
       if (result.success) {
         toast('Appuntamento approvato con successo', 'success', 'Approvazione Completata')
+        
+        // ✅ Elimina automaticamente la notifica "Nuova richiesta" associata a questo appuntamento
+        try {
+          console.log('🗑️ Eliminazione notifica nuova richiesta per appuntamento:', appointmentToAction.id)
+          const result = await appointmentExtendedService.getNotifiche()
+          const notifiche = result?.data || result
+          const notificheArray = Array.isArray(notifiche) ? notifiche : (notifiche?.results || notifiche?.data || [])
+          
+          console.log('📋 Notifiche totali:', notificheArray.length)
+          console.log('📋 Tipi notifiche:', notificheArray.map(n => ({ id: n.id, tipo: n.tipo, appuntamento: n.appuntamento })))
+          
+          // Trova la notifica di tipo "appuntamento_richiesto" per questo appuntamento
+          const notificaDaEliminare = notificheArray.find(n => {
+            const tipoLower = (n.tipo || '').toLowerCase()
+            const tipoUpper = (n.tipo || '').toUpperCase()
+            const isMatch = n.appuntamento === appointmentToAction.id && 
+              (tipoLower === 'appuntamento_richiesto' ||  // ✅ Tipo backend
+               tipoUpper === 'APPUNTAMENTO_RICHIESTO' ||
+               tipoUpper === 'NUOVA_RICHIESTA' || 
+               tipoUpper === 'RICHIESTA_APPUNTAMENTO' ||
+               tipoUpper === 'NUOVO_APPUNTAMENTO')
+            
+            if (isMatch) {
+              console.log('✅ Notifica match trovata:', { id: n.id, tipo: n.tipo, appuntamento: n.appuntamento })
+            }
+            return isMatch
+          })
+          
+          if (notificaDaEliminare) {
+            console.log('✅ Notifica trovata, eliminazione in corso:', notificaDaEliminare.id, 'tipo:', notificaDaEliminare.tipo)
+            await appointmentExtendedService.eliminaNotifica(notificaDaEliminare.id)
+            console.log('✅ Notifica eliminata con successo')
+            
+            // Aggiorna le notifiche nel NotificationBell
+            window.dispatchEvent(new CustomEvent('notifications-updated'))
+          } else {
+            console.warn('⚠️ Nessuna notifica di richiesta trovata per questo appuntamento')
+            console.warn('⚠️ Appuntamento cercato:', appointmentToAction.id)
+            console.warn('⚠️ Notifiche per questo appuntamento:', 
+              notificheArray.filter(n => n.appuntamento === appointmentToAction.id)
+            )
+          }
+        } catch (error) {
+          console.error('⚠️ Errore eliminazione notifica:', error)
+          // Non bloccare il flusso se l'eliminazione notifica fallisce
+        }
         
         // ✅ Chiudi modale
         setShowApproveModal(false)
@@ -262,6 +610,11 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
   }
 
   const handleActionSuccess = () => {
+    // Se l'appuntamento eliminato è quello selezionato, chiudi la detail card
+    if (appointmentToAction && selectedAppointment && appointmentToAction.id === selectedAppointment.id) {
+      setSelectedAppointment(null)
+    }
+    
     // Ricarica i dati del calendario
     window.dispatchEvent(new Event('appointment-updated'))
   }
@@ -391,7 +744,8 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
   // Handler per cambio data
   const handleDateSelect = (date) => {
     setSelectedDate(date)
-    setSelectedAppointment(null)
+    // Il reset è gestito dall'useEffect che monitora selectedDate
+    // con protezione isNavigatingFromNotification
   }
 
   // Handler per selezione appuntamento
@@ -418,20 +772,33 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
       const totale = documentiRichiesti.length
       
       // Carica i documenti caricati dal cliente
-      const documentiDalBackend = await appointmentExtendedService.getDocumentiAppuntamento(appointment.id)
+      const docsResult = await appointmentExtendedService.getDocumentiAppuntamento(appointment.id)
+      const documentiDalBackend = docsResult?.data || docsResult
       // ✅ Conta SOLO documenti con file effettivamente caricato
       const caricati = Array.isArray(documentiDalBackend) 
         ? documentiDalBackend.filter(doc => doc.file || doc.file_path).length 
         : 0
       
-      // Conta documenti approvati
+      // Conta documenti approvati (normalizza a uppercase per il confronto)
       const approvati = Array.isArray(documentiDalBackend) 
-        ? documentiDalBackend.filter(doc => 
-            doc.stato === 'VERIFICATO' || 
-            doc.stato === 'ACCETTATO' || 
-            doc.stato === 'APPROVATO'
-          ).length 
+        ? documentiDalBackend.filter(doc => {
+            const statoUpper = (doc.stato || '').toUpperCase()
+            return statoUpper === 'VERIFICATO' || 
+                   statoUpper === 'ACCETTATO' || 
+                   statoUpper === 'APPROVATO'
+          }).length 
         : 0
+      
+      console.log('📊 Conteggio documenti (Notaio):', {
+        totale,
+        caricati,
+        approvati,
+        documentiDalBackend: documentiDalBackend.map(d => ({
+          nome: d.document_type_name,
+          stato: d.stato,
+          hasFile: !!(d.file || d.file_path)
+        }))
+      })
       
       setDocumentiTotali(totale)
       setDocumentiCaricati(caricati)
@@ -454,6 +821,31 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
     }
   }, [calcolaContatori])
 
+  // ✅ Calcola contatori quando selectedAppointment cambia
+  useEffect(() => {
+    if (selectedAppointment && selectedAppointment.type !== 'empty') {
+      console.log('🔢 Ricalcolo contatori per appointment selezionato:', selectedAppointment.id)
+      calcolaContatori(selectedAppointment)
+    }
+  }, [selectedAppointment, calcolaContatori])
+
+  // ✅ Listener per aggiornamenti documenti (DOPO la definizione di calcolaContatori)
+  useEffect(() => {
+    const handleDocumentsUpdate = async (event) => {
+      console.log('📄 Evento documents-updated ricevuto (Notaio)', event.detail)
+      // Ricalcola i contatori per l'appuntamento selezionato
+      if (selectedAppointment && event.detail?.appointmentId === selectedAppointment.id) {
+        await calcolaContatori(selectedAppointment)
+      }
+    }
+
+    window.addEventListener('documents-updated', handleDocumentsUpdate)
+    
+    return () => {
+      window.removeEventListener('documents-updated', handleDocumentsUpdate)
+    }
+  }, [selectedAppointment, calcolaContatori])
+
   const handleOpenVerificationModal = (appointment) => {
     console.log('🚀 DashboardNotaio - handleOpenVerificationModal chiamato!', appointment)
     if (appointment) {
@@ -465,8 +857,13 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
     }
   }
 
-  const handleCloseVerificationModal = () => {
+  const handleCloseVerificationModal = async () => {
     setShowVerificationModal(false)
+    
+    // ✅ Ricalcola i contatori per l'appuntamento selezionato quando si chiude la modale
+    if (selectedAppointment) {
+      await calcolaContatori(selectedAppointment)
+    }
   }
 
   const handleDocumentVerified = () => {
@@ -697,6 +1094,7 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
                   <AppointmentCard
                     key={appointment.id}
                     {...appointment}
+                    appointmentData={appointment}
                     onClick={() => handleAppointmentSelect(appointment)}
                     isSelected={selectedAppointment?.id === appointment.id}
                     showActions={appointment.status === 'PROVVISORIO'}
@@ -705,7 +1103,6 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
                     onEdit={handleEditAppointment}
                     onCancel={handleCancelAppointment}
                     onDelete={handleDeleteAppointment}
-                    appointmentData={appointment.rawData}
                   />
                 ))
               ) : (
@@ -714,6 +1111,7 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
                     <AppointmentCard
                       key={appointment.id}
                       {...appointment}
+                      appointmentData={appointment}
                       onClick={() => handleAppointmentSelect(appointment)}
                       isSelected={selectedAppointment?.id === appointment.id}
                       showActions={appointment.status === 'PROVVISORIO'}
@@ -722,7 +1120,6 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
                       onEdit={handleEditAppointment}
                       onCancel={handleCancelAppointment}
                       onDelete={handleDeleteAppointment}
-                      appointmentData={appointment.rawData}
                     />
                   ))}
                   <AppointmentCard 

@@ -26,6 +26,35 @@ function AppointmentCard({
   appointmentData,
   status = 'provvisorio'  // ✅ Stato dell'appuntamento per il badge
 }) {
+  // ✅ Calcola la durata dell'appuntamento
+  const calculateDuration = () => {
+    // Prima prova a usare duration_minutes se disponibile
+    if (appointmentData?.duration_minutes) {
+      return appointmentData.duration_minutes
+    }
+    if (appointmentData?.rawData?.duration_minutes) {
+      return appointmentData.rawData.duration_minutes
+    }
+    
+    // Altrimenti calcola dalla stringa time (formato: "10:00 - 10:30")
+    if (time && time.includes('-')) {
+      try {
+        const [start, end] = time.split('-').map(t => t.trim())
+        const [startHour, startMin] = start.split(':').map(Number)
+        const [endHour, endMin] = end.split(':').map(Number)
+        const startMinutes = startHour * 60 + startMin
+        const endMinutes = endHour * 60 + endMin
+        return endMinutes - startMinutes
+      } catch (e) {
+        return null
+      }
+    }
+    
+    return null
+  }
+  
+  const duration = calculateDuration()
+
   if (type === 'empty') {
     return (
       <div className="appointment-card empty" style={{ flexGrow: emptySlots }}>
@@ -110,6 +139,7 @@ function AppointmentCard({
       className={`appointment-card ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''} ${showMenu ? 'menu-open' : ''}`}
       onClick={handleClick}
       style={{ cursor: 'pointer' }}
+      data-appointment-id={appointmentData?.id || appointmentData?.rawData?.id}
     >
       {/* Menu Actions */}
       {showActions && (
@@ -174,6 +204,10 @@ function AppointmentCard({
           <div className="appointment-time">
             <Clock size={16} />
             <span>{time}</span>
+            {/* ✅ Durata tra parentesi */}
+            {duration && (
+              <span className="appointment-duration">({duration} min)</span>
+            )}
             {/* ✅ Badge pallino stato */}
             <div 
               className={`status-badge-dot status-${status.toLowerCase()}`}
@@ -182,6 +216,7 @@ function AppointmentCard({
                 status.toUpperCase() === 'CONFERMATO' ? 'Confermato dal Notaio' :
                 status.toUpperCase() === 'ANNULLATO' ? 'Annullato' :
                 status.toUpperCase() === 'DOCUMENTI_IN_CARICAMENTO' ? 'In Lavorazione' :
+                status.toUpperCase() === 'DOCUMENTI_PARZIALI' ? 'Alcuni Documenti Rifiutati' :
                 status.toUpperCase() === 'DOCUMENTI_VERIFICATI' ? 'Verificato' :
                 status.toUpperCase() === 'RIFIUTATO' ? 'Rifiutato' :
                 status
