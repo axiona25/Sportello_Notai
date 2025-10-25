@@ -781,7 +781,7 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
                 <Maximize size={20} />
               </button>
             </div>
-          </div>
+          </div> {/* Chiusura pdf-tools-sidebar */}
           
           {/* Barra ricerca (slide in dall'alto quando attiva) */}
           {showSearch && (
@@ -805,7 +805,8 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
               </button>
             </div>
           )}
-        </div>
+          </div> {/* Chiusura pdf-viewer-content */}
+        </div> {/* Chiusura pdf-viewer-main */}
       </div>
     </div>
   )
