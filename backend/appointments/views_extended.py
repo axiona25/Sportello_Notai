@@ -448,8 +448,8 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # ✅ Verifica stato - Permetti ri-verifica anche per documenti rifiutati
-        if documento.stato not in [DocumentoStato.CARICATO, DocumentoStato.IN_VERIFICA, DocumentoStato.RIFIUTATO]:
+        # ✅ Verifica stato - Permetti ri-verifica anche per documenti rifiutati o già accettati
+        if documento.stato not in [DocumentoStato.CARICATO, DocumentoStato.IN_VERIFICA, DocumentoStato.RIFIUTATO, DocumentoStato.ACCETTATO]:
             return Response(
                 {'error': f'Impossibile verificare documento nello stato {documento.get_stato_display()}'},
                 status=status.HTTP_400_BAD_REQUEST
