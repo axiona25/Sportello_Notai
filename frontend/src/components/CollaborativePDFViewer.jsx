@@ -226,15 +226,27 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
         break
       case 'ACCESS_CHANGE':
         // Gestisci cambio accessi - aggiorna lo stato locale
-        console.log('👁️ Cambio accesso ricevuto:', data)
+        console.log('👁️ [PDF WS] ACCESS_CHANGE ricevuto!')
+        console.log('   - participantId:', data.participantId)
+        console.log('   - hasAccess:', data.hasAccess)
+        console.log('   - currentUser?.id:', currentUser?.id)
+        console.log('   - Match?', data.participantId === currentUser?.id)
+        console.log('   - sharedWith prima:', sharedWith)
+        
         if (data.participantId && typeof data.hasAccess === 'boolean') {
           setSharedWith(prev => {
+            console.log('   - sharedWith (prev):', prev)
+            
             if (data.hasAccess) {
               // Aggiungi accesso
-              return prev.includes(data.participantId) ? prev : [...prev, data.participantId]
+              const newShared = prev.includes(data.participantId) ? prev : [...prev, data.participantId]
+              console.log('   ✅ Accesso CONCESSO - sharedWith dopo:', newShared)
+              return newShared
             } else {
               // Rimuovi accesso
-              return prev.filter(id => id !== data.participantId)
+              const newShared = prev.filter(id => id !== data.participantId)
+              console.log('   ❌ Accesso REVOCATO - sharedWith dopo:', newShared)
+              return newShared
             }
           })
         }
@@ -321,16 +333,26 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
   const toggleParticipantAccess = (participantId) => {
     if (!isNotary) return
     
+    console.log('👁️ Toggle accesso PDF - participantId:', participantId)
+    console.log('   - sharedWith prima:', sharedWith)
+    console.log('   - WebSocket readyState:', wsRef.current?.readyState)
+    console.log('   - WebSocket OPEN:', WebSocket.OPEN)
+    
     setSharedWith(prev => {
-      const newShared = prev.includes(participantId)
+      const hadAccess = prev.includes(participantId)
+      const newShared = hadAccess
         ? prev.filter(id => id !== participantId)
         : [...prev, participantId]
+      
+      const newAccess = !hadAccess
+      console.log('   - Nuovo accesso:', newAccess ? 'CONCESSO' : 'REVOCATO')
+      console.log('   - sharedWith dopo:', newShared)
       
       // Notifica il partecipante del cambio di accesso
       broadcastAction({ 
         type: 'ACCESS_CHANGE', 
         participantId, 
-        hasAccess: !prev.includes(participantId) 
+        hasAccess: newAccess
       })
       
       return newShared
@@ -339,18 +361,25 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
   
   // Broadcast azione a tutti i partecipanti
   const broadcastAction = (action) => {
-    console.log('📡 Broadcast:', action)
+    console.log('📡 Broadcast azione:', action.type)
+    console.log('   - Dettagli:', action)
+    console.log('   - WebSocket readyState:', wsRef.current?.readyState)
     
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ 
+      const message = { 
         ...action, 
         userId: currentUser?.id, 
         userName: currentUser?.name || 'Utente',
+        userRole: userRole,
         timestamp: Date.now() 
-      }))
+      }
+      console.log('✅ Invio messaggio WebSocket:', message)
+      wsRef.current.send(JSON.stringify(message))
+      console.log('✅ Messaggio inviato con successo!')
     } else {
-      // Fallback: log se WebSocket non disponibile
-      console.log('⚠️ WebSocket non disponibile, azione non sincronizzata:', action)
+      console.error('❌ WebSocket NON disponibile!')
+      console.error('   - readyState:', wsRef.current?.readyState)
+      console.error('   - azione NON sincronizzata:', action)
     }
   }
   
