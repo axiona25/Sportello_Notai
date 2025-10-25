@@ -1692,21 +1692,46 @@ function AppointmentRoom() {
             const participants = []
             const currentUserId = authService.getUser()?.id
             
+            console.log('🔍 DEBUG appointmentData completo:', appointmentData)
+            console.log('🔍 appointmentData.notaio_id:', appointmentData.notaio_id)
+            console.log('🔍 appointmentData.notaio:', appointmentData.notaio)
+            console.log('🔍 appointmentData.cliente_id:', appointmentData.cliente_id)
+            console.log('🔍 appointmentData.richiedente:', appointmentData.richiedente)
+            console.log('🔍 appointmentData.client_id:', appointmentData.client_id)
+            
             // Aggiungi notaio (se non è l'utente corrente)
             const notaryId = appointmentData.notaio_id || appointmentData.notaio || currentUser?.id
+            console.log('🆔 Notary ID estratto:', notaryId, 'Current:', currentUserId, 'Match:', notaryId === currentUserId)
             if (notaryId && notaryId !== currentUserId) {
               participants.push({ id: notaryId, name: notaryName, role: 'notaio' })
+              console.log('✅ Notaio aggiunto ai partecipanti')
+            } else {
+              console.log('⏭️ Notaio NON aggiunto (è l\'utente corrente o ID mancante)')
             }
             
             // Aggiungi cliente (se non è l'utente corrente)
             const clientId = appointmentData.cliente_id || 
                             appointmentData.richiedente?.cliente || 
-                            appointmentData.client_id
+                            appointmentData.client_id ||
+                            appointmentData.richiedente_id ||
+                            appointmentData.client
+            console.log('🆔 Client ID estratto:', clientId, 'Current:', currentUserId, 'Match:', clientId === currentUserId)
+            
+            // Se non troviamo l'ID ma abbiamo un nome cliente diverso dall'utente corrente,
+            // usiamo il nome come fallback per identificare il partecipante
             if (clientId && clientId !== currentUserId) {
               participants.push({ id: clientId, name: clientName, role: 'cliente' })
+              console.log('✅ Cliente aggiunto ai partecipanti (con ID reale)')
+            } else if (!clientId && clientName && clientName !== 'Cliente' && userRole === 'notaio') {
+              // Fallback: se siamo notaio e abbiamo un nome cliente, aggiungiamo con ID temporaneo
+              const tempClientId = 'client_' + appointmentData.id
+              participants.push({ id: tempClientId, name: clientName, role: 'cliente' })
+              console.log('⚠️ Cliente aggiunto con ID temporaneo (backend non fornisce ID cliente)')
+            } else {
+              console.log('⏭️ Cliente NON aggiunto (è l\'utente corrente o dati mancanti)')
             }
             
-            console.log('👥 Participants costruiti:', participants)
+            console.log('👥 Participants costruiti FINAL:', participants)
             console.log('🆔 Current user ID:', currentUserId)
             
             return participants
