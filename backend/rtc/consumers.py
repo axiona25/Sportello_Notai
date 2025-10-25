@@ -127,7 +127,7 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
                     self.room_group_name,
                     {
                         'type': 'user_joined',
-                        'userId': self.user.id,
+                        'userId': data['userId'],  # ✅ Usa userId già estratto dai dati
                         'userName': data['userName'],
                         'userRole': data['userRole']
                     }
@@ -157,7 +157,7 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
                     )
                     logger.info(f"📄 Notaio cambia pagina: {data.get('page')}")
                 else:
-                    logger.warning(f"⚠️ Cliente {self.user.id} ha tentato di cambiare pagina (non autorizzato)")
+                    logger.warning(f"⚠️ Cliente {data['userId']} ha tentato di cambiare pagina (non autorizzato)")
             
             elif message_type == 'ZOOM_CHANGE':
                 # Solo notaio/admin può cambiare zoom
@@ -171,7 +171,7 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
                     )
                     logger.info(f"🔍 Notaio cambia zoom: {data.get('zoom')}%")
                 else:
-                    logger.warning(f"⚠️ Cliente {self.user.id} ha tentato di cambiare zoom (non autorizzato)")
+                    logger.warning(f"⚠️ Cliente {data['userId']} ha tentato di cambiare zoom (non autorizzato)")
             
             elif message_type == 'SCROLL':
                 # Solo notaio/admin guida lo scroll
