@@ -25,6 +25,7 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
   const [zoomLevel, setZoomLevel] = useState(100)
   const [viewMode, setViewMode] = useState('double') // 'single' o 'double'
   const [isFlipping, setIsFlipping] = useState(false)
+  const [flipDirection, setFlipDirection] = useState('') // 'next' o 'prev' per animazione
   const [rotation, setRotation] = useState(0) // 0, 90, 180, 270
   const [pdfFile, setPdfFile] = useState(null)
   const [searchText, setSearchText] = useState('')
@@ -177,26 +178,30 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
   // Handlers navigazione
   const handlePrevPage = () => {
     if (currentPage > 1) {
+      setFlipDirection('prev') // Animazione verso sinistra
       setIsFlipping(true)
       setTimeout(() => {
         setCurrentPage(viewMode === 'double' ? Math.max(1, currentPage - 2) : currentPage - 1)
         setIsFlipping(false)
+        setFlipDirection('')
         // Sincronizza con altri partecipanti
         broadcastAction({ type: 'PAGE_CHANGE', page: currentPage - (viewMode === 'double' ? 2 : 1) })
-      }, 300)
+      }, 600) // Durata animazione libro
     }
   }
   
   const handleNextPage = () => {
     const maxPage = viewMode === 'double' ? totalPages - 1 : totalPages
     if (currentPage < maxPage) {
+      setFlipDirection('next') // Animazione verso destra
       setIsFlipping(true)
       setTimeout(() => {
         setCurrentPage(viewMode === 'double' ? Math.min(maxPage, currentPage + 2) : currentPage + 1)
         setIsFlipping(false)
+        setFlipDirection('')
         // Sincronizza con altri partecipanti
         broadcastAction({ type: 'PAGE_CHANGE', page: currentPage + (viewMode === 'double' ? 2 : 1) })
-      }, 300)
+      }, 600) // Durata animazione libro
     }
   }
   
@@ -617,7 +622,7 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
                 userSelect: isPanning ? 'none' : 'auto'
               }}
             >
-              <div className={`pdf-pages-wrapper ${viewMode}`}>
+              <div className={`pdf-pages-wrapper ${viewMode} ${isFlipping ? `flip-${flipDirection}` : ''}`}>
                 {pdfFile ? (
                   <Document
                     file={pdfFile}

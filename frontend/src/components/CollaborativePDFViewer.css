@@ -435,7 +435,8 @@
   gap: 20px;
   max-width: 100%;
   transform-style: preserve-3d;
-  perspective: 1000px;
+  perspective: 2000px; /* Prospettiva 3D per effetto libro */
+  transition: transform 0.6s cubic-bezier(0.45, 0, 0.55, 1);
 }
 
 .pdf-pages-wrapper.single {
@@ -444,6 +445,71 @@
 
 .pdf-pages-wrapper.double {
   justify-content: center;
+}
+
+/* ============================================ */
+/* ANIMAZIONI GIRO PAGINA REALISTICHE */
+/* ============================================ */
+
+/* Animazione: Pagina Successiva (verso DESTRA) */
+.pdf-pages-wrapper.flip-next {
+  animation: pageFlipNext 0.6s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+}
+
+@keyframes pageFlipNext {
+  0% {
+    transform: rotateY(0deg) translateX(0);
+  }
+  25% {
+    transform: rotateY(-5deg) translateX(-15px) scale(0.98);
+  }
+  50% {
+    transform: rotateY(25deg) translateX(50px) scale(0.95);
+    opacity: 0.7;
+  }
+  75% {
+    transform: rotateY(-3deg) translateX(15px) scale(0.98);
+    opacity: 0.85;
+  }
+  100% {
+    transform: rotateY(0deg) translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Animazione: Pagina Precedente (verso SINISTRA) */
+.pdf-pages-wrapper.flip-prev {
+  animation: pageFlipPrev 0.6s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+}
+
+@keyframes pageFlipPrev {
+  0% {
+    transform: rotateY(0deg) translateX(0);
+  }
+  25% {
+    transform: rotateY(5deg) translateX(15px) scale(0.98);
+  }
+  50% {
+    transform: rotateY(-25deg) translateX(-50px) scale(0.95);
+    opacity: 0.7;
+  }
+  75% {
+    transform: rotateY(3deg) translateX(-15px) scale(0.98);
+    opacity: 0.85;
+  }
+  100% {
+    transform: rotateY(0deg) translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Effetto ombra dinamica durante il flip */
+.pdf-pages-wrapper.flip-next .pdf-page,
+.pdf-pages-wrapper.flip-prev .pdf-page {
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 16px 48px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.3s ease;
 }
 
 /* PDF Page */
@@ -459,24 +525,10 @@
   transition: all 0.3s ease;
 }
 
+/* Classi pagina sinistra/destra (rimosse animazioni vecchie, ora gestite dal wrapper) */
 .pdf-page-left,
 .pdf-page-right {
-  animation: pageFlip 0.6s ease;
-}
-
-@keyframes pageFlip {
-  0% {
-    transform: rotateY(-10deg);
-    opacity: 0.8;
-  }
-  50% {
-    transform: rotateY(5deg);
-    opacity: 0.9;
-  }
-  100% {
-    transform: rotateY(0deg);
-    opacity: 1;
-  }
+  /* L'animazione è gestita dal wrapper .pdf-pages-wrapper */
 }
 
 .pdf-page-number {
