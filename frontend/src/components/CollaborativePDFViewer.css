@@ -293,10 +293,17 @@
 .pdf-viewer-content {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row; /* ✅ Layout orizzontale per contenuto + sidebar */
   overflow: hidden;
   background: #F3F4F6;
-  position: relative; /* Per contenere la sidebar assoluta */
+}
+
+/* Wrapper per toolbar + pages (colonna verticale) */
+.pdf-content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* Toolbar */
@@ -688,22 +695,20 @@
 /* ============================================ */
 
 .pdf-tools-sidebar {
-  position: absolute;
-  top: 0;
-  right: -70px; /* Nascosta di default */
-  width: 70px;
+  width: 0; /* ✅ Nascosta di default, non occupa spazio */
   height: 100%;
   background: white;
   border-left: 1px solid #E5E7EB;
   box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
-  transition: right 0.3s ease;
-  z-index: 50;
+  transition: width 0.3s ease;
+  overflow: hidden;
+  flex-shrink: 0; /* Non si comprime */
   display: flex;
   flex-direction: column;
 }
 
 .pdf-tools-sidebar.open {
-  right: 0; /* Slide in da destra */
+  width: 70px; /* ✅ Quando aperta, occupa 70px comprimendo il contenuto */
 }
 
 .pdf-tools-list {

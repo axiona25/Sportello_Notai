@@ -490,8 +490,10 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
           
           {/* PDF Content */}
           <div className="pdf-viewer-content">
-            {/* Toolbar */}
-            <div className="pdf-viewer-toolbar">
+            {/* Wrapper per toolbar + pages */}
+            <div className="pdf-content-wrapper">
+              {/* Toolbar */}
+              <div className="pdf-viewer-toolbar">
               {/* Navigazione */}
               <div className="pdf-toolbar-section">
                 <button 
@@ -717,7 +719,7 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
                 )}
               </div>
             </div>
-          </div>
+            </div> {/* Chiusura pdf-content-wrapper */}
           
           {/* Sidebar Strumenti (a destra, solo icone) */}
           <div className={`pdf-tools-sidebar ${showToolsSidebar ? 'open' : ''}`}>
