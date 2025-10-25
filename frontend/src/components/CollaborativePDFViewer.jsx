@@ -21,6 +21,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 function CollaborativePDFViewer({ document, onClose, userRole, participants = [], currentUser }) {
   // Stati visualizzazione PDF
   const [currentPage, setCurrentPage] = useState(1)
+  const [displayPage, setDisplayPage] = useState(1) // Pagina visualizzata (cambia dopo animazione)
   const [totalPages, setTotalPages] = useState(0)
   const [zoomLevel, setZoomLevel] = useState(130) // ✅ Zoom di default 130%
   const [viewMode, setViewMode] = useState('single') // ✅ Modalità singola pagina di default
@@ -178,14 +179,18 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
   // Handlers navigazione
   const handlePrevPage = () => {
     if (currentPage > 1) {
+      const newPage = viewMode === 'double' ? Math.max(1, currentPage - 2) : currentPage - 1
       setFlipDirection('prev') // Animazione verso sinistra
       setIsFlipping(true)
+      setCurrentPage(newPage) // ✅ Nuova pagina (target) impostata subito
+      
+      // Dopo l'animazione, aggiorna la pagina visualizzata
       setTimeout(() => {
-        setCurrentPage(viewMode === 'double' ? Math.max(1, currentPage - 2) : currentPage - 1)
+        setDisplayPage(newPage) // ✅ Aggiorna solo la pagina visualizzata dopo animazione
         setIsFlipping(false)
         setFlipDirection('')
         // Sincronizza con altri partecipanti
-        broadcastAction({ type: 'PAGE_CHANGE', page: currentPage - (viewMode === 'double' ? 2 : 1) })
+        broadcastAction({ type: 'PAGE_CHANGE', page: newPage })
       }, 1400) // Durata animazione libro realistico (1.4s)
     }
   }
@@ -193,14 +198,18 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
   const handleNextPage = () => {
     const maxPage = viewMode === 'double' ? totalPages - 1 : totalPages
     if (currentPage < maxPage) {
+      const newPage = viewMode === 'double' ? Math.min(maxPage, currentPage + 2) : currentPage + 1
       setFlipDirection('next') // Animazione verso destra
       setIsFlipping(true)
+      setCurrentPage(newPage) // ✅ Nuova pagina (target) impostata subito
+      
+      // Dopo l'animazione, aggiorna la pagina visualizzata
       setTimeout(() => {
-        setCurrentPage(viewMode === 'double' ? Math.min(maxPage, currentPage + 2) : currentPage + 1)
+        setDisplayPage(newPage) // ✅ Aggiorna solo la pagina visualizzata dopo animazione
         setIsFlipping(false)
         setFlipDirection('')
         // Sincronizza con altri partecipanti
-        broadcastAction({ type: 'PAGE_CHANGE', page: currentPage + (viewMode === 'double' ? 2 : 1) })
+        broadcastAction({ type: 'PAGE_CHANGE', page: newPage })
       }, 1400) // Durata animazione libro realistico (1.4s)
     }
   }
@@ -647,19 +656,44 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
                     }
                   >
                     {viewMode === 'single' ? (
-                      /* Pagina singola */
-                      <div className="pdf-page" style={{ transform: `scale(${zoomLevel / 100})` }}>
-                        <div className="pdf-page-number">Pagina {currentPage} di {totalPages}</div>
-                        <Page
-                          pageNumber={currentPage}
-                          rotate={rotation}
-                          renderTextLayer={true}
-                          renderAnnotationLayer={true}
-                          className="pdf-page-render"
-                        />
+                      /* Pagina singola con effetto flip */
+                      <div className="pdf-single-page-wrapper" style={{ transform: `scale(${zoomLevel / 100})`, position: 'relative' }}>
+                        {/* Nuova pagina (sotto) - sempre visibile */}
+                        <div className="pdf-page" style={{ position: isFlipping ? 'relative' : 'relative', zIndex: 1 }}>
+                          <div className="pdf-page-number">Pagina {currentPage} di {totalPages}</div>
+                          <Page
+                            pageNumber={currentPage}
+                            rotate={rotation}
+                            renderTextLayer={true}
+                            renderAnnotationLayer={true}
+                            className="pdf-page-render"
+                          />
+                        </div>
+                        
+                        {/* Pagina vecchia (sopra) - con animazione flip */}
+                        {isFlipping && (
+                          <div 
+                            className={`pdf-page ${flipDirection === 'next' ? 'pdf-page-right' : 'pdf-page-left'} flipping-page`}
+                            style={{ 
+                              position: 'absolute', 
+                              top: 0, 
+                              left: 0, 
+                              zIndex: 10 
+                            }}
+                          >
+                            <div className="pdf-page-number">Pagina {displayPage} di {totalPages}</div>
+                            <Page
+                              pageNumber={displayPage}
+                              rotate={rotation}
+                              renderTextLayer={true}
+                              renderAnnotationLayer={true}
+                              className="pdf-page-render"
+                            />
+                          </div>
+                        )}
                         
                         {/* Annotations overlay */}
-                        {annotations
+                        {!isFlipping && annotations
                           .filter(a => a.page === currentPage)
                           .map(annotation => (
                             <div 

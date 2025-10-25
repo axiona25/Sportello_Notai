@@ -948,6 +948,13 @@
   overflow: hidden;
 }
 
+/* Wrapper pagina singola con effetto flip */
+.pdf-single-page-wrapper {
+  position: relative;
+  transform-style: preserve-3d;
+  perspective: 2500px;
+}
+
 .pdf-double-page-wrapper {
   display: flex;
   gap: 24px;
