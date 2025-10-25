@@ -175,12 +175,36 @@ function NotificationBell() {
           }
 
           // 4. Notifica di documento rifiutato
-          // ❌ NON rimuovere automaticamente! Il cliente deve vedere che deve ricaricare il documento
-          // La notifica resterà fino a quando il documento non viene sostituito o eliminata manualmente
+          // Elimina solo quando tutti i documenti sono al 100%
           if (notifica.tipo === 'DOCUMENTO_RIFIUTATO' && notifica.appuntamento) {
-            // TODO: Verificare se il documento rifiutato è stato sostituito con uno nuovo
-            // Per ora, manteniamo la notifica visibile
-            shouldRemove = false
+            try {
+              const docsResult = await appointmentExtendedService.getDocumentiAppuntamento(notifica.appuntamento)
+              const documenti = docsResult?.data || docsResult
+              const documentiArray = Array.isArray(documenti) ? documenti : []
+              const codiceAtto = notifica.metadata?.codice_atto
+              
+              if (codiceAtto) {
+                const { getDocumentiRichiestiPerAtto } = await import('../config/documentiRichiestiConfig')
+                const documentiRichiesti = getDocumentiRichiestiPerAtto(codiceAtto)
+                const totaleDocs = documentiRichiesti.length
+                
+                // Conta documenti approvati
+                const documentiApprovati = documentiArray.filter(doc => 
+                  doc.stato?.toUpperCase() === 'ACCETTATO' || 
+                  doc.stato?.toUpperCase() === 'VERIFIED'
+                ).length
+                
+                // Elimina solo se tutti i documenti sono approvati (100%)
+                if (totaleDocs > 0 && documentiApprovati >= totaleDocs) {
+                  shouldRemove = true
+                  console.log(`🗑️ Notifica DOCUMENTO_RIFIUTATO - Tutti documenti approvati (100%):`, notifica.id)
+                } else {
+                  console.log(`ℹ️ Notifica DOCUMENTO_RIFIUTATO - Documenti non ancora al 100% (${documentiApprovati}/${totaleDocs})`)
+                }
+              }
+            } catch (error) {
+              console.warn('⚠️ Errore verifica documenti per notifica DOCUMENTO_RIFIUTATO:', error)
+            }
           }
 
           // Se la condizione è soddisfatta, rimuovi dopo 10 secondi
@@ -248,7 +272,7 @@ function NotificationBell() {
         const tipoUpper = (notifica.tipo || '').toUpperCase()
         const tipiDaNonEliminare = [
           'DOCUMENTI_DA_CARICARE',    // Cliente: rimane fino a documenti completi
-          'DOCUMENTO_RIFIUTATO',      // Cliente: rimane fino a documento ricaricato
+          'DOCUMENTO_RIFIUTATO',      // Cliente: gestito dalla logica auto-rimozione (100%)
           'APPUNTAMENTO_RICHIESTO'    // Notaio: rimane fino a gestione (approva/rifiuta)
         ]
         

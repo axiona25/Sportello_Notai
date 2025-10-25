@@ -266,10 +266,55 @@ function Dashboard({ onLogout, user: initialUser }) {
         }
         
         // Tipo: DOCUMENTO_ACCETTATO - elimina sempre (è solo informativa)
-        // ❌ NON eliminare DOCUMENTO_RIFIUTATO! Il cliente deve vedere che deve ricaricare il documento
         if (tipoUpper === 'DOCUMENTO_APPROVATO' || tipoUpper === 'DOCUMENTO_ACCETTATO') {
           shouldDelete = true
           console.log(`🗑️ Notifica ${notifica.tipo} obsoleta:`, notifica.id)
+        }
+        
+        // Tipo: DOCUMENTO_RIFIUTATO - elimina solo quando tutti i documenti sono al 100%
+        if (tipoUpper === 'DOCUMENTO_RIFIUTATO' && appointmentId) {
+          const appointment = allAppointments.find(a => a.id === appointmentId)
+          
+          if (appointment && appointment.tipologia_atto) {
+            try {
+              // Ottieni documenti dell'appuntamento
+              const docsResult = await appointmentExtendedService.getDocumentiAppuntamento(appointmentId)
+              const documenti = docsResult?.data || docsResult
+              const documentiArray = Array.isArray(documenti) ? documenti : []
+              
+              // Importa config documenti richiesti
+              const { getDocumentiRichiestiPerAtto } = await import('../config/documentiRichiestiConfig')
+              const codiceAtto = appointment.tipologia_atto?.code || appointment.act_type_code
+              
+              if (codiceAtto) {
+                const documentiRichiesti = getDocumentiRichiestiPerAtto(codiceAtto)
+                const totaleDocs = documentiRichiesti.length
+                
+                // Conta documenti approvati
+                const documentiApprovati = documentiArray.filter(doc => 
+                  doc.stato?.toUpperCase() === 'ACCETTATO' || 
+                  doc.stato?.toUpperCase() === 'VERIFIED'
+                ).length
+                
+                console.log(`📄 Verifica notifica DOCUMENTO_RIFIUTATO:`, {
+                  appointmentId,
+                  documentiApprovati,
+                  totaleDocs,
+                  percentuale: totaleDocs > 0 ? Math.round((documentiApprovati / totaleDocs) * 100) : 0
+                })
+                
+                // Elimina solo se tutti i documenti sono approvati (100%)
+                if (totaleDocs > 0 && documentiApprovati >= totaleDocs) {
+                  shouldDelete = true
+                  console.log(`🗑️ Notifica DOCUMENTO_RIFIUTATO - Tutti documenti approvati (100%):`, notifica.id)
+                } else {
+                  console.log(`ℹ️ Notifica DOCUMENTO_RIFIUTATO - Documenti non ancora al 100% (${documentiApprovati}/${totaleDocs}), mantieni notifica`)
+                }
+              }
+            } catch (error) {
+              console.warn('⚠️ Errore verifica documenti per notifica DOCUMENTO_RIFIUTATO:', error)
+            }
+          }
         }
         
         // Tipo: DOCUMENTI_DA_CARICARE - elimina solo se TUTTI i documenti sono stati caricati
