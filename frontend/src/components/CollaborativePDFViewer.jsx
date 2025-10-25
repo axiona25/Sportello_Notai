@@ -88,7 +88,11 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
   // Caricamento PDF e WebSocket
   useEffect(() => {
     console.log('📄 Caricamento PDF collaborativo:', document?.document_type_name)
-    console.log('👤 User role:', userRole, 'isNotary:', isNotary)
+    console.log('👤 Current User (da JWT/session):', currentUser)
+    console.log('👤 User ID:', currentUser?.id)
+    console.log('👤 User Role (prop):', userRole)
+    console.log('👤 isNotary (calcolato):', isNotary)
+    console.log('🔐 sharedWith iniziale:', [currentUser?.id])
     
     // Carica il PDF - usa il file_path se disponibile, altrimenti placeholder
     if (document?.file_path) {
@@ -563,30 +567,34 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
             <div className="pdf-viewer-sidebar">
               <div className="pdf-sidebar-header">
                 <Users size={16} />
-                <h4>Partecipanti ({participants.length})</h4>
+                <h4>Partecipanti ({participants.filter(p => p.id !== currentUser?.id).length})</h4>
               </div>
               
               <div className="pdf-participants-list">
-                {participants.map(participant => (
-                  <div key={participant.id} className="pdf-participant-item">
-                    <div className="pdf-participant-info">
-                      <div className="pdf-participant-avatar">
-                        {participant.name?.charAt(0) || 'U'}
+                {/* ✅ Filtra l'utente corrente dalla lista (il notaio non vede sé stesso) */}
+                {participants
+                  .filter(participant => participant.id !== currentUser?.id)
+                  .map(participant => (
+                    <div key={participant.id} className="pdf-participant-item">
+                      <div className="pdf-participant-info">
+                        <div className="pdf-participant-avatar">
+                          {participant.name?.charAt(0) || 'U'}
+                        </div>
+                        <span className="pdf-participant-name">{participant.name}</span>
                       </div>
-                      <span className="pdf-participant-name">{participant.name}</span>
+                      
+                      {isNotary && (
+                        <button
+                          className={`pdf-participant-toggle ${sharedWith.includes(participant.id) ? 'active' : ''}`}
+                          onClick={() => toggleParticipantAccess(participant.id)}
+                          title={sharedWith.includes(participant.id) ? 'Nascondi documento' : 'Mostra documento'}
+                        >
+                          {sharedWith.includes(participant.id) ? <Eye size={14} /> : <EyeOff size={14} />}
+                        </button>
+                      )}
                     </div>
-                    
-                    {isNotary && (
-                      <button
-                        className={`pdf-participant-toggle ${sharedWith.includes(participant.id) ? 'active' : ''}`}
-                        onClick={() => toggleParticipantAccess(participant.id)}
-                        title={sharedWith.includes(participant.id) ? 'Nascondi documento' : 'Mostra documento'}
-                      >
-                        {sharedWith.includes(participant.id) ? <Eye size={14} /> : <EyeOff size={14} />}
-                      </button>
-                    )}
-                  </div>
-                ))}
+                  ))
+                }
               </div>
               
               {!isNotary && (
