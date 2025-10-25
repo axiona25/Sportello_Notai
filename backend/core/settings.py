@@ -23,6 +23,10 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Application definition
 INSTALLED_APPS = [
+    # Third party - MUST BE FIRST
+    'daphne',  # ASGI server for WebSocket support (must be before django.contrib.staticfiles)
+    
+    # Django apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -32,7 +36,6 @@ INSTALLED_APPS = [
     'django.contrib.gis',  # Per supporto geospaziale (coordinates) con PostGIS
     
     # Third party
-    'daphne',  # ASGI server for WebSocket support (must be before django.contrib.staticfiles)
     'channels',  # WebSocket support
     'rest_framework',
     'rest_framework_simplejwt',
