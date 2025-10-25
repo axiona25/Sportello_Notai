@@ -191,7 +191,7 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
         setFlipDirection('')
         // Sincronizza con altri partecipanti
         broadcastAction({ type: 'PAGE_CHANGE', page: newPage })
-      }, 1800) // Durata animazione libro realistico fluido (1.8s)
+      }, 1200) // Durata animazione libro naturale (1.2s)
     }
   }
   
@@ -210,7 +210,7 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
         setFlipDirection('')
         // Sincronizza con altri partecipanti
         broadcastAction({ type: 'PAGE_CHANGE', page: newPage })
-      }, 1800) // Durata animazione libro realistico fluido (1.8s)
+      }, 1200) // Durata animazione libro naturale (1.2s)
     }
   }
   
