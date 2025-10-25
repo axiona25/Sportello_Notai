@@ -186,7 +186,7 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
         setFlipDirection('')
         // Sincronizza con altri partecipanti
         broadcastAction({ type: 'PAGE_CHANGE', page: currentPage - (viewMode === 'double' ? 2 : 1) })
-      }, 600) // Durata animazione libro
+      }, 800) // Durata animazione libro realistico
     }
   }
   
@@ -201,7 +201,7 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
         setFlipDirection('')
         // Sincronizza con altri partecipanti
         broadcastAction({ type: 'PAGE_CHANGE', page: currentPage + (viewMode === 'double' ? 2 : 1) })
-      }, 600) // Durata animazione libro
+      }, 800) // Durata animazione libro realistico
     }
   }
   
@@ -679,9 +679,10 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
                         }
                       </div>
                     ) : (
-                      /* Doppia pagina (libro) */
+                      /* Doppia pagina (libro) - con effetto giro pagina realistico */
                       <div className="pdf-double-page-wrapper" style={{ transform: `scale(${zoomLevel / 100})` }}>
-                        <div className="pdf-page pdf-page-left">
+                        {/* Pagina sinistra */}
+                        <div className={`pdf-page pdf-page-left ${isFlipping && flipDirection === 'prev' ? 'flipping-page' : ''}`}>
                           <div className="pdf-page-number">Pagina {currentPage}</div>
                           <Page
                             pageNumber={currentPage}
@@ -692,8 +693,9 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
                           />
                         </div>
                         
+                        {/* Pagina destra */}
                         {currentPage < totalPages && (
-                          <div className="pdf-page pdf-page-right">
+                          <div className={`pdf-page pdf-page-right ${isFlipping && flipDirection === 'next' ? 'flipping-page' : ''}`}>
                             <div className="pdf-page-number">Pagina {currentPage + 1}</div>
                             <Page
                               pageNumber={currentPage + 1}
