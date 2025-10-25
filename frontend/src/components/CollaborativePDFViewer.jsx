@@ -1080,8 +1080,9 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
                 <Maximize size={20} />
               </button>
             </div>
-          </div> {/* Chiusura pdf-tools-sidebar */}
+          </div>
           )}
+          {/* Chiusura pdf-tools-sidebar */}
           
           {/* Barra ricerca (slide in dall'alto quando attiva) - SOLO per notaio */}
           {isNotary && showSearch && (
