@@ -399,17 +399,34 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
       const selectedText = selection.toString().trim()
       
       if (selectedText.length > 0) {
-        // Ottieni la posizione del testo selezionato
-        const range = selection.getRangeAt(0)
-        const rect = range.getBoundingClientRect()
-        const container = pdfContainerRef.current?.getBoundingClientRect()
-        
-        if (container) {
-          // Calcola posizione relativa
-          const x = ((rect.left - container.left + pdfContainerRef.current.scrollLeft) / container.width) * 100
-          const y = ((rect.top - container.top + pdfContainerRef.current.scrollTop) / container.height) * 100
-          const width = (rect.width / container.width) * 100
-          const height = (rect.height / container.height) * 100
+        try {
+          // Ottieni la posizione del testo selezionato
+          const range = selection.getRangeAt(0)
+          const rect = range.getBoundingClientRect()
+          
+          // Trova l'elemento della pagina PDF corrente (non il container generale!)
+          const pageElement = document.querySelector('.pdf-page:not(.flipping-page)')
+          
+          if (!pageElement) {
+            console.warn('⚠️ Elemento pagina PDF non trovato')
+            selection.removeAllRanges()
+            return
+          }
+          
+          const pageRect = pageElement.getBoundingClientRect()
+          
+          // Calcola posizione relativa ALLA PAGINA SPECIFICA (non al container)
+          const x = ((rect.left - pageRect.left) / pageRect.width) * 100
+          const y = ((rect.top - pageRect.top) / pageRect.height) * 100
+          const width = (rect.width / pageRect.width) * 100
+          const height = (rect.height / pageRect.height) * 100
+          
+          // Verifica che la selezione sia dentro la pagina
+          if (x < 0 || y < 0 || x > 100 || y > 100) {
+            console.warn('⚠️ Selezione fuori dalla pagina')
+            selection.removeAllRanges()
+            return
+          }
           
           // Crea evidenziazione
           const newHighlight = {
@@ -435,9 +452,12 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
             highlight: newHighlight 
           })
           
-          console.log('✨ Evidenziazione creata:', newHighlight)
+          console.log('✨ Evidenziazione creata sulla pagina', currentPage, ':', newHighlight)
           
           // Deseleziona il testo
+          selection.removeAllRanges()
+        } catch (error) {
+          console.error('❌ Errore creazione evidenziazione:', error)
           selection.removeAllRanges()
         }
       }
