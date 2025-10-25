@@ -1428,26 +1428,89 @@ function AppointmentRoom() {
                                   setShowPDFViewer(true)
                                   
                                   // Invia messaggio WebSocket per aprire il PDF anche per il cliente
-                                  console.log('🔍 Verifica WebSocket prima di inviare OPEN_PDF:')
-                                  console.log('   - wsVideoCallRef.current:', wsVideoCallRef.current)
-                                  console.log('   - readyState:', wsVideoCallRef.current?.readyState)
-                                  console.log('   - OPEN =', WebSocket.OPEN)
-                                  
-                                  if (wsVideoCallRef.current && wsVideoCallRef.current.readyState === WebSocket.OPEN) {
-                                    const message = {
-                                      type: 'OPEN_PDF',
-                                      document: docWithAppointment,
-                                      userId: authService.getUser()?.id,
-                                      userName: notaryName,
-                                      userRole: userRole
+                                  const sendOpenPdfMessage = () => {
+                                    if (wsVideoCallRef.current && wsVideoCallRef.current.readyState === WebSocket.OPEN) {
+                                      const message = {
+                                        type: 'OPEN_PDF',
+                                        document: docWithAppointment,
+                                        userId: authService.getUser()?.id,
+                                        userName: notaryName,
+                                        userRole: userRole
+                                      }
+                                      console.log('📡 Invio messaggio OPEN_PDF:', message)
+                                      wsVideoCallRef.current.send(JSON.stringify(message))
+                                      console.log('✅ Messaggio OPEN_PDF inviato con successo')
+                                    } else {
+                                      console.error('❌ WebSocket non connesso! readyState:', wsVideoCallRef.current?.readyState)
+                                      console.error('   Tentativo di riconnessione...')
+                                      
+                                      // Riconnetti WebSocket
+                                      const wsUrl = `ws://localhost:8000/ws/pdf/${activeAppointment?.id || appointmentData?.id}/`
+                                      const newWs = new WebSocket(wsUrl)
+                                      
+                                      newWs.onopen = () => {
+                                        console.log('✅ [VIDEO CALL WS] Riconnesso!')
+                                        wsVideoCallRef.current = newWs
+                                        
+                                        // Invia JOIN_CALL
+                                        newWs.send(JSON.stringify({
+                                          type: 'JOIN_CALL',
+                                          userId: authService.getUser()?.id,
+                                          userName: notaryName,
+                                          userRole: userRole
+                                        }))
+                                        
+                                        // Invia OPEN_PDF
+                                        newWs.send(JSON.stringify({
+                                          type: 'OPEN_PDF',
+                                          document: docWithAppointment,
+                                          userId: authService.getUser()?.id,
+                                          userName: notaryName,
+                                          userRole: userRole
+                                        }))
+                                        console.log('✅ Messaggio OPEN_PDF inviato dopo riconnessione')
+                                      }
+                                      
+                                      newWs.onerror = (error) => {
+                                        console.error('❌ Errore riconnessione WebSocket:', error)
+                                      }
+                                      
+                                      newWs.onmessage = (event) => {
+                                        try {
+                                          const data = JSON.parse(event.data)
+                                          console.log('📨 [VIDEO CALL WS] Messaggio ricevuto:', data, 'userRole:', userRole)
+                                          
+                                          switch (data.type) {
+                                            case 'OPEN_PDF':
+                                              if (userRole !== 'notaio' && userRole !== 'admin') {
+                                                console.log('✅ [VIDEO CALL WS] Cliente: APRO PDF viewer automaticamente!')
+                                                setSelectedDocument(data.document)
+                                                setShowPDFViewer(true)
+                                              }
+                                              break
+                                              
+                                            case 'CLOSE_PDF':
+                                              if (userRole !== 'notaio' && userRole !== 'admin') {
+                                                setShowPDFViewer(false)
+                                                setSelectedDocument(null)
+                                              }
+                                              break
+                                              
+                                            default:
+                                              console.log('ℹ️ [VIDEO CALL WS] Tipo messaggio:', data.type)
+                                          }
+                                        } catch (error) {
+                                          console.error('❌ [VIDEO CALL WS] Errore parsing messaggio:', error)
+                                        }
+                                      }
+                                      
+                                      newWs.onclose = (event) => {
+                                        console.log('🔌 [VIDEO CALL WS] CHIUSO - Code:', event.code, 'Reason:', event.reason)
+                                      }
                                     }
-                                    console.log('📡 Invio messaggio OPEN_PDF:', message)
-                                    wsVideoCallRef.current.send(JSON.stringify(message))
-                                    console.log('✅ Messaggio OPEN_PDF inviato con successo')
-                                  } else {
-                                    console.error('❌ WebSocket non connesso! readyState:', wsVideoCallRef.current?.readyState)
-                                    console.error('   Impossibile sincronizzare apertura PDF con il cliente')
                                   }
+                                  
+                                  sendOpenPdfMessage()
                                 }}
                                 title="Condividi in realtime"
                               >
