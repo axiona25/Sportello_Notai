@@ -798,7 +798,7 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
                       /* Pagina singola con effetto flip */
                       <div className="pdf-single-page-wrapper" style={{ transform: `scale(${zoomLevel / 100})`, position: 'relative' }}>
                         {/* Nuova pagina (sotto) - sempre visibile */}
-                        <div className="pdf-page" style={{ position: isFlipping ? 'relative' : 'relative', zIndex: 1 }}>
+                        <div className="pdf-page" style={{ position: 'relative', zIndex: 1 }}>
                           <div className="pdf-page-number">Pagina {currentPage} di {totalPages}</div>
                           <Page
                             pageNumber={currentPage}
@@ -807,6 +807,31 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
                             renderAnnotationLayer={true}
                             className="pdf-page-render"
                           />
+                          
+                          {/* Evidenziazioni overlay - DENTRO la pagina */}
+                          {!isFlipping && highlights
+                            .filter(h => h.page === currentPage)
+                            .map(highlight => (
+                              <div 
+                                key={highlight.id} 
+                                className="pdf-highlight-overlay"
+                                style={{ 
+                                  position: 'absolute',
+                                  left: highlight.x + '%', 
+                                  top: highlight.y + '%',
+                                  width: highlight.width + '%',
+                                  height: highlight.height + '%',
+                                  backgroundColor: highlight.color,
+                                  opacity: 0.4,
+                                  pointerEvents: 'none',
+                                  zIndex: 5,
+                                  mixBlendMode: 'multiply',
+                                  borderRadius: '2px'
+                                }}
+                                title={`${highlight.userName}: "${highlight.text}"`}
+                              />
+                            ))
+                          }
                         </div>
                         
                         {/* Pagina vecchia (sopra) - con animazione flip */}
@@ -830,31 +855,6 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
                             />
                           </div>
                         )}
-                        
-                        {/* Evidenziazioni overlay */}
-                        {!isFlipping && highlights
-                          .filter(h => h.page === currentPage)
-                          .map(highlight => (
-                            <div 
-                              key={highlight.id} 
-                              className="pdf-highlight-overlay"
-                              style={{ 
-                                position: 'absolute',
-                                left: highlight.x + '%', 
-                                top: highlight.y + '%',
-                                width: highlight.width + '%',
-                                height: highlight.height + '%',
-                                backgroundColor: highlight.color,
-                                opacity: 0.4,
-                                pointerEvents: 'none',
-                                zIndex: 5,
-                                mixBlendMode: 'multiply',
-                                borderRadius: '2px'
-                              }}
-                              title={`${highlight.userName}: "${highlight.text}"`}
-                            />
-                          ))
-                        }
                         
                         {/* Annotations overlay */}
                         {!isFlipping && annotations
