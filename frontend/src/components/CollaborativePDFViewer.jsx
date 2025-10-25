@@ -53,6 +53,7 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
   const [showParticipants, setShowParticipants] = useState(true) // ✅ Sidebar partecipanti APERTA di default
   const [showToolsSidebar, setShowToolsSidebar] = useState(false)
   const [selectedTool, setSelectedTool] = useState('pointer') // 'pointer', 'highlight', 'note', 'signature'
+  const [signatureEnabled, setSignatureEnabled] = useState(false) // ✅ Firma abilitata dal notaio
   
   // Stati evidenziatore
   const [highlightColor, setHighlightColor] = useState('#FFEB3B') // Giallo di default
@@ -202,6 +203,13 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
               return prev.filter(id => id !== data.participantId)
             }
           })
+        }
+        break
+      case 'SIGNATURE_ENABLED':
+        // Il notaio ha abilitato la firma
+        if (!isNotary) {
+          setSignatureEnabled(data.enabled)
+          console.log('🖊️ Firma', data.enabled ? 'abilitata' : 'disabilitata', 'dal notaio')
         }
         break
       default:
@@ -529,32 +537,79 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
     alert('Salvataggio e conservazione - Da implementare')
   }
   
+  // ✅ Funzione per abilitare/disabilitare firma (solo notaio)
+  const toggleSignatureEnabled = () => {
+    if (!isNotary) return
+    
+    const newState = !signatureEnabled
+    setSignatureEnabled(newState)
+    
+    // Broadcast ai clienti
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'SIGNATURE_ENABLED',
+        enabled: newState,
+        userId: currentUser?.id,
+        userName: currentUser?.name || currentUser?.email || 'Notaio'
+      }))
+      console.log('📡 Firma', newState ? 'abilitata' : 'disabilitata', 'per i clienti')
+    }
+  }
+  
   return (
     <div className="pdf-viewer-overlay">
       <div className="pdf-viewer-container">
-        {/* Header */}
-        <div className="pdf-viewer-header">
-          <div className="pdf-viewer-title">
-            <FileText size={20} />
-            <h3>{document?.document_type_name || 'Documento'}</h3>
-            <span className="pdf-viewer-badge">Condivisione Realtime</span>
+        {/* Header - Diverso per notaio e cliente */}
+        {isNotary ? (
+          /* Header completo per notaio */
+          <div className="pdf-viewer-header">
+            <div className="pdf-viewer-title">
+              <FileText size={20} />
+              <h3>{document?.document_type_name || 'Documento'}</h3>
+              <span className="pdf-viewer-badge">Condivisione Realtime</span>
+            </div>
+            
+            <div className="pdf-viewer-header-controls">
+              <button 
+                className="pdf-viewer-btn"
+                onClick={() => setShowParticipants(!showParticipants)}
+                title="Gestisci partecipanti"
+              >
+                <Users size={18} />
+              </button>
+              <button 
+                className={`pdf-viewer-btn ${showToolsSidebar ? 'active' : ''}`}
+                onClick={() => setShowToolsSidebar(!showToolsSidebar)}
+                title="Strumenti"
+              >
+                <Settings size={18} />
+              </button>
+              
+              {/* ✅ Toggle firma per notaio */}
+              <button 
+                className={`pdf-viewer-btn ${signatureEnabled ? 'active' : ''}`}
+                onClick={toggleSignatureEnabled}
+                title={signatureEnabled ? 'Disabilita firma clienti' : 'Abilita firma clienti'}
+              >
+                <PenTool size={18} />
+              </button>
+              
+              <button 
+                className="pdf-viewer-btn pdf-viewer-btn-close"
+                onClick={onClose}
+                title="Chiudi"
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
-          
-          <div className="pdf-viewer-header-controls">
-            <button 
-              className="pdf-viewer-btn"
-              onClick={() => setShowParticipants(!showParticipants)}
-              title="Gestisci partecipanti"
-            >
-              <Users size={18} />
-            </button>
-            <button 
-              className={`pdf-viewer-btn ${showToolsSidebar ? 'active' : ''}`}
-              onClick={() => setShowToolsSidebar(!showToolsSidebar)}
-              title="Strumenti"
-            >
-              <Settings size={18} />
-            </button>
+        ) : (
+          /* Header semplice per cliente */
+          <div className="pdf-viewer-header pdf-viewer-header-simple">
+            <span className="pdf-page-indicator">
+              Pagina {currentPage} di {totalPages}
+            </span>
+            
             <button 
               className="pdf-viewer-btn pdf-viewer-btn-close"
               onClick={onClose}
@@ -563,12 +618,12 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
               <X size={20} />
             </button>
           </div>
-        </div>
+        )}
         
         {/* Main Content */}
         <div className="pdf-viewer-main">
-          {/* Sidebar Partecipanti */}
-          {showParticipants && (
+          {/* Sidebar Partecipanti - SOLO per notaio */}
+          {isNotary && showParticipants && (
             <div className="pdf-viewer-sidebar">
               <div className="pdf-sidebar-header">
                 <Users size={16} />
@@ -614,7 +669,8 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
           <div className="pdf-viewer-content">
             {/* Wrapper per toolbar + pages */}
             <div className="pdf-content-wrapper">
-              {/* Toolbar */}
+              {/* Toolbar - SOLO per notaio */}
+              {isNotary && (
               <div className="pdf-viewer-toolbar">
               {/* Navigazione */}
               <div className="pdf-toolbar-section">
@@ -774,6 +830,21 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
                 </button>
               </div>
             </div>
+              )}
+              
+              {/* ✅ Pulsante firma per cliente - SOLO se abilitato dal notaio */}
+              {!isNotary && signatureEnabled && (
+                <div className="pdf-client-signature-bar">
+                  <button 
+                    className="pdf-toolbar-btn pdf-toolbar-btn-primary pdf-client-sign-btn"
+                    onClick={handleSign}
+                    title="Firma documento"
+                  >
+                    <PenTool size={20} />
+                    <span>Firma Documento</span>
+                  </button>
+                </div>
+              )}
             
             {/* PDF Pages Container */}
             <div 
@@ -948,7 +1019,8 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
             </div>
             </div> {/* Chiusura pdf-content-wrapper */}
           
-          {/* Sidebar Strumenti (a destra, solo icone) */}
+          {/* Sidebar Strumenti (a destra, solo icone) - SOLO per notaio */}
+          {isNotary && (
           <div className={`pdf-tools-sidebar ${showToolsSidebar ? 'open' : ''}`}>
             <div className="pdf-tools-list">
               <button 
@@ -1009,9 +1081,10 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
               </button>
             </div>
           </div> {/* Chiusura pdf-tools-sidebar */}
+          )}
           
-          {/* Barra ricerca (slide in dall'alto quando attiva) */}
-          {showSearch && (
+          {/* Barra ricerca (slide in dall'alto quando attiva) - SOLO per notaio */}
+          {isNotary && showSearch && (
             <div className="pdf-search-bar">
               <Search size={16} />
               <input
