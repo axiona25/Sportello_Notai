@@ -188,6 +188,7 @@ class AppuntamentoSerializer(serializers.ModelSerializer):
     can_be_modified = serializers.BooleanField(read_only=True)
     
     # Info cliente e tipologia atto
+    client_id = serializers.SerializerMethodField()
     client_name = serializers.SerializerMethodField()
     created_by_email = serializers.SerializerMethodField()
     tipologia_atto_nome = serializers.CharField(source='tipologia_atto.name', read_only=True)
@@ -210,7 +211,7 @@ class AppuntamentoSerializer(serializers.ModelSerializer):
             'richiede_conferma', 'confermato_at', 'confermato_da',
             'partecipanti', 'numero_partecipanti',
             'is_past', 'duration_minutes', 'can_be_modified',
-            'client_name', 'created_by_email',
+            'client_id', 'client_name', 'created_by_email',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
@@ -234,6 +235,14 @@ class AppuntamentoSerializer(serializers.ModelSerializer):
         elif obj.notaio:
             return obj.notaio.nome_completo
         return "N/A"
+    
+    def get_client_id(self, obj):
+        """Restituisce l'ID del cliente che ha richiesto l'appuntamento."""
+        # Cerca il partecipante con ruolo 'richiedente'
+        richiedente = obj.partecipanti.filter(ruolo='richiedente').first()
+        if richiedente and richiedente.cliente:
+            return str(richiedente.cliente.id)  # Restituisce UUID come stringa
+        return None
     
     def get_client_name(self, obj):
         """Restituisce il nome del cliente che ha richiesto l'appuntamento."""

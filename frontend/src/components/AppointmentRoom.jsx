@@ -1710,25 +1710,24 @@ function AppointmentRoom() {
             }
             
             // Aggiungi cliente (se non è l'utente corrente)
-            const clientId = appointmentData.cliente_id || 
-                            appointmentData.richiedente?.cliente || 
-                            appointmentData.client_id ||
+            // ✅ Backend ora include client_id nel serializer
+            const clientId = appointmentData.client_id || 
+                            appointmentData.cliente_id || 
+                            appointmentData.richiedente?.cliente ||
                             appointmentData.richiedente_id ||
                             appointmentData.client
             console.log('🆔 Client ID estratto:', clientId, 'Current:', currentUserId, 'Match:', clientId === currentUserId)
             
-            // Se non troviamo l'ID ma abbiamo un nome cliente diverso dall'utente corrente,
-            // usiamo il nome come fallback per identificare il partecipante
+            // Aggiungi cliente solo se ha un ID valido e non è l'utente corrente
             if (clientId && clientId !== currentUserId) {
               participants.push({ id: clientId, name: clientName, role: 'cliente' })
-              console.log('✅ Cliente aggiunto ai partecipanti (con ID reale)')
-            } else if (!clientId && clientName && clientName !== 'Cliente' && userRole === 'notaio') {
-              // Fallback: se siamo notaio e abbiamo un nome cliente, aggiungiamo con ID temporaneo
-              const tempClientId = 'client_' + appointmentData.id
-              participants.push({ id: tempClientId, name: clientName, role: 'cliente' })
-              console.log('⚠️ Cliente aggiunto con ID temporaneo (backend non fornisce ID cliente)')
+              console.log('✅ Cliente aggiunto ai partecipanti (ID reale dal backend)')
             } else {
-              console.log('⏭️ Cliente NON aggiunto (è l\'utente corrente o dati mancanti)')
+              console.log('⏭️ Cliente NON aggiunto:', {
+                hasClientId: !!clientId,
+                isCurrentUser: clientId === currentUserId,
+                clientName
+              })
             }
             
             console.log('👥 Participants costruiti FINAL:', participants)
