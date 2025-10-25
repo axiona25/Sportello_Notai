@@ -292,9 +292,20 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
         action = event['action']
         
         # Non inviare al mittente stesso (evita echo)
-        current_user_id = self.user.id if self.user and hasattr(self.user, 'id') else None
-        if action.get('userId') != current_user_id:
+        current_user_id = str(self.user.id) if self.user and hasattr(self.user, 'id') else None
+        action_user_id = str(action.get('userId')) if action.get('userId') else None
+        
+        # ✅ DEBUG: Log dettagliato per OPEN_PDF
+        if action.get('type') == 'OPEN_PDF':
+            logger.info(f"🔍 pdf_action OPEN_PDF - current_user: {current_user_id}, action_user: {action_user_id}, match: {action_user_id == current_user_id}")
+        
+        if action_user_id != current_user_id:
             await self.send(text_data=json.dumps(action))
+            if action.get('type') == 'OPEN_PDF':
+                logger.info(f"✅ OPEN_PDF inviato a user {current_user_id}")
+        else:
+            if action.get('type') == 'OPEN_PDF':
+                logger.info(f"⏭️ OPEN_PDF skip (è il mittente stesso)")
     
     async def user_joined(self, event):
         """
