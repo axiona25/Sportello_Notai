@@ -265,8 +265,9 @@ function Dashboard({ onLogout, user: initialUser }) {
           }
         }
         
-        // Tipo: DOCUMENTO_APPROVATO o DOCUMENTO_RIFIUTATO - elimina sempre
-        if (tipoUpper === 'DOCUMENTO_APPROVATO' || tipoUpper === 'DOCUMENTO_RIFIUTATO') {
+        // Tipo: DOCUMENTO_ACCETTATO - elimina sempre (è solo informativa)
+        // ❌ NON eliminare DOCUMENTO_RIFIUTATO! Il cliente deve vedere che deve ricaricare il documento
+        if (tipoUpper === 'DOCUMENTO_APPROVATO' || tipoUpper === 'DOCUMENTO_ACCETTATO') {
           shouldDelete = true
           console.log(`🗑️ Notifica ${notifica.tipo} obsoleta:`, notifica.id)
         }

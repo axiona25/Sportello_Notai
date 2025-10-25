@@ -169,14 +169,18 @@ function NotificationBell() {
             }
           }
 
-          // 3. Notifica di documento approvato/accettato
+          // 3. Notifica di documento approvato/accettato (solo informativa, può essere rimossa)
           if (notifica.tipo === 'DOCUMENTO_APPROVATO' || notifica.tipo === 'DOCUMENTO_ACCETTATO') {
             shouldRemove = true
           }
 
           // 4. Notifica di documento rifiutato
-          if (notifica.tipo === 'DOCUMENTO_RIFIUTATO') {
-            shouldRemove = true
+          // ❌ NON rimuovere automaticamente! Il cliente deve vedere che deve ricaricare il documento
+          // La notifica resterà fino a quando il documento non viene sostituito o eliminata manualmente
+          if (notifica.tipo === 'DOCUMENTO_RIFIUTATO' && notifica.appuntamento) {
+            // TODO: Verificare se il documento rifiutato è stato sostituito con uno nuovo
+            // Per ora, manteniamo la notifica visibile
+            shouldRemove = false
           }
 
           // Se la condizione è soddisfatta, rimuovi dopo 10 secondi
@@ -243,8 +247,9 @@ function NotificationBell() {
         // MA solo per certi tipi di notifiche
         const tipoUpper = (notifica.tipo || '').toUpperCase()
         const tipiDaNonEliminare = [
-          'DOCUMENTI_DA_CARICARE',  // Cliente: rimane fino a documenti completi
-          'APPUNTAMENTO_RICHIESTO'   // Notaio: rimane fino a gestione (approva/rifiuta)
+          'DOCUMENTI_DA_CARICARE',    // Cliente: rimane fino a documenti completi
+          'DOCUMENTO_RIFIUTATO',      // Cliente: rimane fino a documento ricaricato
+          'APPUNTAMENTO_RICHIESTO'    // Notaio: rimane fino a gestione (approva/rifiuta)
         ]
         
         if (!tipiDaNonEliminare.includes(tipoUpper)) {
