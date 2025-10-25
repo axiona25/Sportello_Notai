@@ -466,8 +466,17 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
             
             if azione == 'accetta':
                 documento.accetta(request.user, note_interne)
-                # ✅ NON inviare notifica per singolo documento approvato
-                # La notifica verrà inviata solo quando TUTTI i documenti sono approvati (vedi sotto)
+                # ✅ Invia notifica per documento approvato
+                if cliente and cliente.cliente:
+                    Notifica.crea_notifica(
+                        user=cliente.cliente.user,
+                        tipo=NotificaTipo.DOCUMENTO_ACCETTATO,
+                        titolo='Documento Approvato',
+                        messaggio=f'Il documento "{documento.document_type.name}" è stato approvato dal notaio.',
+                        link_url=f'/dashboard/appuntamenti/{appuntamento.id}/documenti',
+                        appuntamento=appuntamento,
+                        invia_email=False  # No email per singoli documenti
+                    )
             else:  # rifiuta
                 documento.rifiuta(request.user, note_rifiuto)
                 # ✅ Invia notifica singola SOLO per documenti rifiutati
