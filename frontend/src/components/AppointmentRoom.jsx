@@ -278,9 +278,9 @@ function AppointmentRoom() {
       
       console.log('🔍 Polling setup - UserRole SESSIONE:', userRole, 'AppointmentID:', appointmentId)
       
-      // ❌ Non fare polling se non c'è un ID valido
+      // ❌ Non fare polling se non c'è un ID valido (normale se non in video call)
       if (!appointmentId) {
-        console.warn('⚠️ Nessun appointmentId valido, non avvio polling')
+        console.log('⏭️ Nessun appointmentId - polling non necessario (utente non in video call)')
         return
       }
       
