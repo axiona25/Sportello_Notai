@@ -1356,6 +1356,25 @@
   min-height: 60px;
 }
 
+/* Pulsante chiusura DISABILITATO per cliente */
+.pdf-client-close-disabled {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #F3F4F6;
+  cursor: not-allowed;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+}
+
+.pdf-client-close-disabled:hover {
+  background: #E5E7EB;
+  opacity: 0.8;
+}
+
 .pdf-page-indicator {
   font-family: 'Poppins', sans-serif;
   font-size: 16px;

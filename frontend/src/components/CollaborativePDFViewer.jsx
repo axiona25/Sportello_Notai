@@ -258,6 +258,20 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
           console.log('🖊️ Firma', data.enabled ? 'abilitata' : 'disabilitata', 'dal notaio')
         }
         break
+      case 'CLOSE_PDF':
+        // Il notaio ha chiuso il PDF per tutti
+        console.log('❌ [PDF WS] CLOSE_PDF ricevuto dal notaio')
+        console.log('   - documentId:', data.documentId)
+        console.log('   - currentUser?.id:', currentUser?.id)
+        console.log('   - isNotary:', isNotary)
+        
+        if (!isNotary) {
+          console.log('✅ Cliente: chiudo PDF automaticamente')
+          onClose()
+        } else {
+          console.log('⏭️ Notaio: ignoro CLOSE_PDF (l\'ho chiuso io stesso)')
+        }
+        break
       default:
         console.log('Unknown message type:', data.type)
     }
@@ -381,6 +395,25 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
       console.error('   - readyState:', wsRef.current?.readyState)
       console.error('   - azione NON sincronizzata:', action)
     }
+  }
+  
+  // Handler chiusura PDF (solo notaio può chiudere per tutti)
+  const handleClose = () => {
+    if (!isNotary) {
+      console.log('⏭️ Cliente: non può chiudere il PDF autonomamente')
+      return // Cliente NON può chiudere
+    }
+    
+    console.log('❌ Notaio: chiusura PDF per tutti i partecipanti')
+    
+    // Invia messaggio a tutti i partecipanti per chiudere il PDF
+    broadcastAction({ 
+      type: 'CLOSE_PDF',
+      documentId: document?.id
+    })
+    
+    // Chiudi per il notaio stesso
+    onClose()
   }
   
   // Handlers strumenti sidebar
@@ -659,7 +692,7 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
               
               <button 
                 className="pdf-viewer-btn pdf-viewer-btn-close"
-                onClick={onClose}
+                onClick={handleClose}
                 title="Chiudi"
               >
                 <X size={20} />
@@ -673,13 +706,10 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
               Pagina {currentPage} di {totalPages}
             </span>
             
-            <button 
-              className="pdf-viewer-btn pdf-viewer-btn-close"
-              onClick={onClose}
-              title="Chiudi"
-            >
-              <X size={20} />
-            </button>
+            {/* ❌ Cliente NON può chiudere il PDF */}
+            <div className="pdf-client-close-disabled" title="Solo il notaio può chiudere il PDF">
+              <X size={20} color="#9CA3AF" />
+            </div>
           </div>
         )}
         
