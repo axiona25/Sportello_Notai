@@ -48,6 +48,21 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
   const [showToolsSidebar, setShowToolsSidebar] = useState(false)
   const [selectedTool, setSelectedTool] = useState('pointer') // 'pointer', 'highlight', 'note', 'signature'
   
+  // Stati evidenziatore
+  const [highlightColor, setHighlightColor] = useState('#FFEB3B') // Giallo di default
+  const [showColorPicker, setShowColorPicker] = useState(false)
+  const [highlights, setHighlights] = useState([]) // Array di evidenziazioni
+  
+  // Colori evidenziatore disponibili
+  const highlightColors = [
+    { name: 'Giallo', color: '#FFEB3B' },
+    { name: 'Verde', color: '#4CAF50' },
+    { name: 'Azzurro', color: '#03A9F4' },
+    { name: 'Rosa', color: '#E91E63' },
+    { name: 'Arancione', color: '#FF9800' },
+    { name: 'Viola', color: '#9C27B0' }
+  ]
+  
   // Refs
   const pdfContainerRef = useRef(null)
   const isNotary = userRole === 'notaio' || userRole === 'notary' || userRole === 'admin'
@@ -157,6 +172,13 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
         break
       case 'ANNOTATION_ADD':
         setAnnotations(prev => [...prev, data.annotation])
+        break
+      case 'HIGHLIGHT_ADD':
+        // Ricevi evidenziazione da altri partecipanti
+        if (data.highlight && data.highlight.userId !== currentUser?.id) {
+          setHighlights(prev => [...prev, data.highlight])
+          console.log('✨ Evidenziazione ricevuta da:', data.highlight.userName)
+        }
         break
       case 'ACCESS_CHANGE':
         // Gestisci cambio accessi
@@ -368,8 +390,58 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
     })
   }
   
-  const handleMouseUp = () => {
+  const handleMouseUp = (e) => {
     setIsPanning(false)
+    
+    // Cattura selezione testo per evidenziazione
+    if (selectedTool === 'highlight') {
+      const selection = window.getSelection()
+      const selectedText = selection.toString().trim()
+      
+      if (selectedText.length > 0) {
+        // Ottieni la posizione del testo selezionato
+        const range = selection.getRangeAt(0)
+        const rect = range.getBoundingClientRect()
+        const container = pdfContainerRef.current?.getBoundingClientRect()
+        
+        if (container) {
+          // Calcola posizione relativa
+          const x = ((rect.left - container.left + pdfContainerRef.current.scrollLeft) / container.width) * 100
+          const y = ((rect.top - container.top + pdfContainerRef.current.scrollTop) / container.height) * 100
+          const width = (rect.width / container.width) * 100
+          const height = (rect.height / container.height) * 100
+          
+          // Crea evidenziazione
+          const newHighlight = {
+            id: Date.now(),
+            type: 'highlight',
+            page: currentPage,
+            text: selectedText,
+            color: highlightColor,
+            x,
+            y,
+            width,
+            height,
+            userId: currentUser?.id,
+            userName: currentUser?.name || currentUser?.email || 'Utente',
+            timestamp: Date.now()
+          }
+          
+          setHighlights(prev => [...prev, newHighlight])
+          
+          // Sincronizza via WebSocket
+          broadcastAction({ 
+            type: 'HIGHLIGHT_ADD', 
+            highlight: newHighlight 
+          })
+          
+          console.log('✨ Evidenziazione creata:', newHighlight)
+          
+          // Deseleziona il testo
+          selection.removeAllRanges()
+        }
+      }
+    }
   }
   
   const handleMouseLeave = () => {
@@ -568,17 +640,61 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
               
               {/* Tools */}
               <div className="pdf-toolbar-section pdf-toolbar-tools">
-                <button 
-                  className={`pdf-toolbar-btn ${selectedTool === 'highlight' ? 'active' : ''}`}
-                  onClick={() => setSelectedTool('highlight')}
-                  title="Evidenzia"
-                >
-                  <Highlighter size={18} />
-                </button>
+                {/* Evidenziatore con picker colori */}
+                <div className="pdf-highlight-tool">
+                  <button 
+                    className={`pdf-toolbar-btn ${selectedTool === 'highlight' ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedTool('highlight')
+                      setShowColorPicker(!showColorPicker)
+                    }}
+                    title="Evidenzia testo"
+                    style={{ 
+                      background: selectedTool === 'highlight' ? highlightColor + '40' : undefined 
+                    }}
+                  >
+                    <Highlighter size={18} style={{ color: selectedTool === 'highlight' ? highlightColor : undefined }} />
+                  </button>
+                  
+                  {/* Picker colori */}
+                  {showColorPicker && (
+                    <div className="pdf-color-picker">
+                      <div className="pdf-color-picker-header">
+                        <span>Colore evidenziatore</span>
+                        <button 
+                          className="pdf-color-picker-close"
+                          onClick={() => setShowColorPicker(false)}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                      <div className="pdf-color-list">
+                        {highlightColors.map(({ name, color }) => (
+                          <button
+                            key={color}
+                            className={`pdf-color-btn ${highlightColor === color ? 'active' : ''}`}
+                            style={{ backgroundColor: color }}
+                            onClick={() => {
+                              setHighlightColor(color)
+                              setSelectedTool('highlight')
+                              console.log(`✨ Evidenziatore attivo - colore: ${name}`)
+                            }}
+                            title={name}
+                          >
+                            {highlightColor === color && <span className="pdf-color-check">✓</span>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 
                 <button 
                   className={`pdf-toolbar-btn ${selectedTool === 'note' ? 'active' : ''}`}
-                  onClick={() => setSelectedTool('note')}
+                  onClick={() => {
+                    setSelectedTool('note')
+                    setShowColorPicker(false)
+                  }}
                   title="Aggiungi nota"
                 >
                   <MessageSquare size={18} />
@@ -586,7 +702,10 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
                 
                 <button 
                   className={`pdf-toolbar-btn ${selectedTool === 'signature' ? 'active' : ''}`}
-                  onClick={() => setSelectedTool('signature')}
+                  onClick={() => {
+                    setSelectedTool('signature')
+                    setShowColorPicker(false)
+                  }}
                   title="Firma"
                 >
                   <PenTool size={18} />
@@ -691,6 +810,31 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
                             />
                           </div>
                         )}
+                        
+                        {/* Evidenziazioni overlay */}
+                        {!isFlipping && highlights
+                          .filter(h => h.page === currentPage)
+                          .map(highlight => (
+                            <div 
+                              key={highlight.id} 
+                              className="pdf-highlight-overlay"
+                              style={{ 
+                                position: 'absolute',
+                                left: highlight.x + '%', 
+                                top: highlight.y + '%',
+                                width: highlight.width + '%',
+                                height: highlight.height + '%',
+                                backgroundColor: highlight.color,
+                                opacity: 0.4,
+                                pointerEvents: 'none',
+                                zIndex: 5,
+                                mixBlendMode: 'multiply',
+                                borderRadius: '2px'
+                              }}
+                              title={`${highlight.userName}: "${highlight.text}"`}
+                            />
+                          ))
+                        }
                         
                         {/* Annotations overlay */}
                         {!isFlipping && annotations

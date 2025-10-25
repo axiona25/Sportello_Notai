@@ -220,6 +220,18 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
                 )
                 logger.info(f"✏️ {data['userName']} aggiunge annotazione tipo {data.get('annotation', {}).get('type')}")
             
+            elif message_type == 'HIGHLIGHT_ADD':
+                # Tutti possono evidenziare testo
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'pdf_action',
+                        'action': data
+                    }
+                )
+                highlight = data.get('highlight', {})
+                logger.info(f"✨ {data['userName']} evidenzia testo (colore: {highlight.get('color')}, pagina: {highlight.get('page')})")
+            
             elif message_type == 'ACCESS_CHANGE':
                 # Solo notaio/admin può gestire accessi
                 if data['userRole'] in ['notaio', 'notary', 'admin']:
