@@ -4,6 +4,7 @@ import appointmentExtendedService from '../services/appointmentExtendedService'
 import AppointmentRequestModal from './AppointmentRequestModal'
 import { useToast } from '../contexts/ToastContext'
 import { useAutoRefresh } from '../hooks/useAutoRefresh'
+import { getDocumentiRichiestiPerAtto } from '../config/documentiRichiestiConfig'
 import './NotificationBell.css'
 
 function NotificationBell() {
@@ -159,7 +160,6 @@ function NotificationBell() {
             const codiceAtto = notifica.metadata?.codice_atto
             
             if (codiceAtto) {
-              const { getDocumentiRichiestiPerAtto } = await import('../config/documentiRichiestiConfig')
               const documentiRichiesti = getDocumentiRichiestiPerAtto(codiceAtto)
               const documentiCaricati = Array.isArray(documenti) ? documenti.filter(doc => doc.file || doc.file_path).length : 0
               
@@ -184,7 +184,6 @@ function NotificationBell() {
               const codiceAtto = notifica.metadata?.codice_atto
               
               if (codiceAtto) {
-                const { getDocumentiRichiestiPerAtto } = await import('../config/documentiRichiestiConfig')
                 const documentiRichiesti = getDocumentiRichiestiPerAtto(codiceAtto)
                 const totaleDocs = documentiRichiesti.length
                 

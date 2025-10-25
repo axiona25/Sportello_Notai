@@ -14,6 +14,7 @@ import ConfirmDeleteModal from './ConfirmDeleteModal'
 import { parseDateTimeLocal } from '../utils/dateUtils'
 import { useAutoRefresh } from '../hooks/useAutoRefresh'
 import appointmentExtendedService from '../services/appointmentExtendedService'
+import { getDocumentiRichiestiPerAtto } from '../config/documentiRichiestiConfig'
 import './Dashboard.css'
 
 function Dashboard({ onLogout, user: initialUser }) {
@@ -282,8 +283,7 @@ function Dashboard({ onLogout, user: initialUser }) {
               const documenti = docsResult?.data || docsResult
               const documentiArray = Array.isArray(documenti) ? documenti : []
               
-              // Importa config documenti richiesti
-              const { getDocumentiRichiestiPerAtto } = await import('../config/documentiRichiestiConfig')
+              // Usa config documenti richiesti
               const codiceAtto = appointment.tipologia_atto?.code || appointment.act_type_code
               
               if (codiceAtto) {
@@ -614,8 +614,7 @@ function Dashboard({ onLogout, user: initialUser }) {
       }
       
       // Ottieni la lista dei documenti richiesti per questo tipo di atto
-      const documentiRichiestiConfig = await import('../config/documentiRichiestiConfig')
-      const documentiRichiesti = documentiRichiestiConfig.getDocumentiRichiestiPerAtto(codiceAtto)
+      const documentiRichiesti = getDocumentiRichiestiPerAtto(codiceAtto)
       const totale = documentiRichiesti.length
       
       // Carica i documenti caricati dal cliente

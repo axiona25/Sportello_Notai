@@ -315,7 +315,7 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
         
         # Verifica che l'appuntamento sia confermato (case-insensitive)
         status_upper = appuntamento.status.upper() if appuntamento.status else ''
-        if status_upper not in ['CONFERMATO', 'DOCUMENTI_IN_CARICAMENTO']:
+        if status_upper not in ['CONFERMATO', 'DOCUMENTI_IN_CARICAMENTO', 'DOCUMENTI_PARZIALI', 'DOCUMENTI_IN_VERIFICA', 'PRONTO_ATTO_VIRTUALE']:
             print(f"❌ Status non valido: {appuntamento.status} (upper: {status_upper})")
             return Response(
                 {'error': f'L\'appuntamento deve essere confermato prima di caricare documenti (stato attuale: {appuntamento.status})'},
