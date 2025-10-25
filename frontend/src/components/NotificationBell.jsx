@@ -169,8 +169,8 @@ function NotificationBell() {
             }
           }
 
-          // 3. Notifica di documento approvato
-          if (notifica.tipo === 'DOCUMENTO_APPROVATO') {
+          // 3. Notifica di documento approvato/accettato
+          if (notifica.tipo === 'DOCUMENTO_APPROVATO' || notifica.tipo === 'DOCUMENTO_ACCETTATO') {
             shouldRemove = true
           }
 
@@ -282,7 +282,8 @@ function NotificationBell() {
       const tipoUpper = (notifica.tipo || '').toUpperCase()
       const shouldOpenModal = [
         'DOCUMENTO_CARICATO', 
-        'DOCUMENTO_APPROVATO', 
+        'DOCUMENTO_APPROVATO',
+        'DOCUMENTO_ACCETTATO',
         'DOCUMENTO_RIFIUTATO',
         'DOCUMENTI_PRONTI'
       ].includes(tipoUpper)
