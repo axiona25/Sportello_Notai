@@ -37,6 +37,9 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
   const [startPanPosition, setStartPanPosition] = useState({ x: 0, y: 0 })
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 })
   
+  // ✅ Determina ruolo utente PRIMA di usarlo negli stati
+  const isNotary = userRole === 'notaio' || userRole === 'notary' || userRole === 'admin'
+  
   // Stati collaborazione
   const [activeParticipants, setActiveParticipants] = useState([])
   // ✅ Solo il NOTAIO vede il PDF di default, gli altri utenti devono aspettare l'autorizzazione
@@ -68,7 +71,6 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
   
   // Refs
   const pdfContainerRef = useRef(null)
-  const isNotary = userRole === 'notaio' || userRole === 'notary' || userRole === 'admin'
   
   // WebSocket ref
   const wsRef = useRef(null)
