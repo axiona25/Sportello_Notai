@@ -22,7 +22,7 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
   // Stati visualizzazione PDF
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(0)
-  const [zoomLevel, setZoomLevel] = useState(140) // ✅ Zoom di default 140%
+  const [zoomLevel, setZoomLevel] = useState(130) // ✅ Zoom di default 130%
   const [viewMode, setViewMode] = useState('single') // ✅ Modalità singola pagina di default
   const [isFlipping, setIsFlipping] = useState(false)
   const [flipDirection, setFlipDirection] = useState('') // 'next' o 'prev' per animazione
