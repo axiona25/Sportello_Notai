@@ -39,7 +39,10 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
   
   // Stati collaborazione
   const [activeParticipants, setActiveParticipants] = useState([])
-  const [sharedWith, setSharedWith] = useState([currentUser?.id]) // ✅ Solo notaio vede di default
+  // ✅ Solo il NOTAIO vede il PDF di default, gli altri utenti devono aspettare l'autorizzazione
+  const [sharedWith, setSharedWith] = useState(
+    isNotary ? [currentUser?.id] : []
+  )
   const [annotations, setAnnotations] = useState([]) // Evidenziazioni, note
   const [cursorPositions, setCursorPositions] = useState({}) // Posizioni cursori partecipanti
   
@@ -92,7 +95,7 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
     console.log('👤 User ID:', currentUser?.id)
     console.log('👤 User Role (prop):', userRole)
     console.log('👤 isNotary (calcolato):', isNotary)
-    console.log('🔐 sharedWith iniziale:', [currentUser?.id])
+    console.log('🔐 sharedWith iniziale:', isNotary ? [currentUser?.id] : [], '← Solo notaio vede PDF subito')
     
     // Carica il PDF - usa il file_path se disponibile, altrimenti placeholder
     if (document?.file_path) {
