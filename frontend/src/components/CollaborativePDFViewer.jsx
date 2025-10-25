@@ -93,6 +93,12 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
   
   // Caricamento PDF e WebSocket
   useEffect(() => {
+    // ✅ NON creare WebSocket se non c'è un documento valido
+    if (!document) {
+      console.log('⏭️ PDF Viewer: Nessun documento, skip WebSocket init')
+      return
+    }
+    
     console.log('📄 Caricamento PDF collaborativo:', document?.document_type_name)
     console.log('👤 Current User (da JWT/session):', currentUser)
     console.log('👤 User ID:', currentUser?.id)
@@ -113,23 +119,48 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
     const appointmentId = document?.appuntamento_id || 
                          document?.appointment_id || 
                          document?.id || 
-                         (typeof document === 'object' && document.rawData?.id) ||
-                         'demo'
+                         (typeof document === 'object' && document.rawData?.id)
+    
+    // ✅ NON creare WebSocket se non c'è un appointmentId valido
+    if (!appointmentId) {
+      console.log('⚠️ PDF Viewer: Nessun appointmentId valido, skip WebSocket init')
+      return
+    }
     
     console.log('🔍 PDF Viewer - Appointment ID estratto:', appointmentId, 'da document:', document)
     
+    // ✅ NON ricreare WebSocket se è già connesso allo stesso appointment
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && wsRef.current.url.includes(appointmentId)) {
+      console.log('⏭️ PDF Viewer: WebSocket già connesso allo stesso appointment, skip ricreazione')
+      // Cleanup registrato comunque
+      return () => {
+        if (wsRef.current) {
+          console.log('🧹 PDF Viewer: Cleanup WebSocket (skip case)')
+          wsRef.current.close()
+        }
+      }
+    }
+    
+    // Chiudi WebSocket precedente se esiste ma è per un appointment diverso
+    if (wsRef.current) {
+      console.log('🔄 PDF Viewer: Chiudo WebSocket precedente per crearne uno nuovo')
+      wsRef.current.close()
+    }
+    
     const wsUrl = `ws://localhost:8000/ws/pdf/${appointmentId}/`
+    console.log('🔌 PDF Viewer: Creo nuovo WebSocket per', wsUrl)
     
     try {
       wsRef.current = new WebSocket(wsUrl)
       
       wsRef.current.onopen = () => {
-        console.log('✅ WebSocket connesso per sincronizzazione PDF')
+        console.log('✅ WebSocket PDF connesso per sincronizzazione')
         // Invia join message
         wsRef.current.send(JSON.stringify({
           type: 'JOIN',
           userId: currentUser?.id,
-          userName: currentUser?.name || currentUser?.email || 'Utente'
+          userName: currentUser?.name || currentUser?.email || 'Utente',
+          userRole: userRole
         }))
       }
       
@@ -139,20 +170,23 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
       }
       
       wsRef.current.onerror = (error) => {
-        console.error('❌ WebSocket error:', error)
+        console.error('❌ WebSocket PDF error:', error)
       }
       
       wsRef.current.onclose = (event) => {
-        console.log('🔌 WebSocket chiuso:', event.code, event.reason)
+        console.log('🔌 WebSocket PDF chiuso:', event.code, event.reason)
       }
       
     } catch (error) {
-      console.error('❌ Errore connessione WebSocket:', error)
+      console.error('❌ Errore connessione WebSocket PDF:', error)
     }
     
+    // Cleanup: chiudi WebSocket quando componente viene smontato o document cambia
     return () => {
       if (wsRef.current) {
+        console.log('🧹 PDF Viewer: Cleanup - chiudo WebSocket')
         wsRef.current.close()
+        wsRef.current = null
       }
     }
   }, [document, currentUser])
