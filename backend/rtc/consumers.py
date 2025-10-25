@@ -244,6 +244,20 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
                     )
                     logger.info(f"🔐 Notaio modifica accessi: participant {data.get('participantId')} -> {data.get('hasAccess')}")
             
+            elif message_type == 'SIGNATURE_ENABLED':
+                # Solo notaio/admin può abilitare/disabilitare firma
+                if data['userRole'] in ['notaio', 'notary', 'admin']:
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            'type': 'pdf_action',
+                            'action': data
+                        }
+                    )
+                    logger.info(f"🖊️ Notaio {'abilita' if data.get('enabled') else 'disabilita'} firma per i clienti")
+                else:
+                    logger.warning(f"⚠️ Cliente {data['userId']} ha tentato di modificare stato firma (non autorizzato)")
+            
             else:
                 # Altri messaggi: broadcast generico
                 await self.channel_layer.group_send(
