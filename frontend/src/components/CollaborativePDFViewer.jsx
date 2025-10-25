@@ -39,12 +39,12 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
   
   // Stati collaborazione
   const [activeParticipants, setActiveParticipants] = useState([])
-  const [sharedWith, setSharedWith] = useState(participants.map(p => p.id)) // Tutti possono vedere di default
+  const [sharedWith, setSharedWith] = useState([currentUser?.id]) // ✅ Solo notaio vede di default
   const [annotations, setAnnotations] = useState([]) // Evidenziazioni, note
   const [cursorPositions, setCursorPositions] = useState({}) // Posizioni cursori partecipanti
   
   // Stati UI
-  const [showParticipants, setShowParticipants] = useState(false) // ✅ Sidebar partecipanti chiusa di default
+  const [showParticipants, setShowParticipants] = useState(true) // ✅ Sidebar partecipanti APERTA di default
   const [showToolsSidebar, setShowToolsSidebar] = useState(false)
   const [selectedTool, setSelectedTool] = useState('pointer') // 'pointer', 'highlight', 'note', 'signature'
   
@@ -181,10 +181,18 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
         }
         break
       case 'ACCESS_CHANGE':
-        // Gestisci cambio accessi
-        if (data.participantId === currentUser?.id && !data.hasAccess) {
-          alert('Il notaio ha rimosso il tuo accesso al documento')
-          onClose()
+        // Gestisci cambio accessi - aggiorna lo stato locale
+        console.log('👁️ Cambio accesso ricevuto:', data)
+        if (data.participantId && typeof data.hasAccess === 'boolean') {
+          setSharedWith(prev => {
+            if (data.hasAccess) {
+              // Aggiungi accesso
+              return prev.includes(data.participantId) ? prev : [...prev, data.participantId]
+            } else {
+              // Rimuovi accesso
+              return prev.filter(id => id !== data.participantId)
+            }
+          })
         }
         break
       default:
@@ -773,7 +781,15 @@ function CollaborativePDFViewer({ document, onClose, userRole, participants = []
               }}
             >
               <div className={`pdf-pages-wrapper ${viewMode} ${isFlipping ? `flip-${flipDirection}` : ''}`}>
-                {pdfFile ? (
+                {/* ✅ Controllo accesso: mostra PDF solo se utente ha permesso */}
+                {!sharedWith.includes(currentUser?.id) ? (
+                  <div className="pdf-access-denied">
+                    <EyeOff size={64} color="#9CA3AF" />
+                    <h3>Documento non condiviso</h3>
+                    <p>Il notaio non ha ancora abilitato la visualizzazione del documento.</p>
+                    <p className="pdf-access-wait">Attendere che il notaio conceda l'accesso...</p>
+                  </div>
+                ) : pdfFile ? (
                   <Document
                     file={pdfFile}
                     onLoadSuccess={onDocumentLoadSuccess}
