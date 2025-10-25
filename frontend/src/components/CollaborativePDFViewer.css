@@ -401,8 +401,8 @@
   padding: 40px;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  transform-origin: top center;
+  align-items: center; /* ✅ Centrato verticalmente per evitare taglio quando ingrandito */
+  transform-origin: center center; /* ✅ Zoom dal centro */
   transition: transform 0.3s ease;
 }
 
