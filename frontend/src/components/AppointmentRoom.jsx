@@ -1687,10 +1687,30 @@ function AppointmentRoom() {
             }
           }}
           userRole={userRole}
-          participants={[
-            { id: 'notary-1', name: notaryName },
-            { id: 'client-1', name: clientName }
-          ]}
+          participants={(() => {
+            // Costruisci array partecipanti con ID reali
+            const participants = []
+            const currentUserId = authService.getUser()?.id
+            
+            // Aggiungi notaio (se non è l'utente corrente)
+            const notaryId = appointmentData.notaio_id || appointmentData.notaio || currentUser?.id
+            if (notaryId && notaryId !== currentUserId) {
+              participants.push({ id: notaryId, name: notaryName, role: 'notaio' })
+            }
+            
+            // Aggiungi cliente (se non è l'utente corrente)
+            const clientId = appointmentData.cliente_id || 
+                            appointmentData.richiedente?.cliente || 
+                            appointmentData.client_id
+            if (clientId && clientId !== currentUserId) {
+              participants.push({ id: clientId, name: clientName, role: 'cliente' })
+            }
+            
+            console.log('👥 Participants costruiti:', participants)
+            console.log('🆔 Current user ID:', currentUserId)
+            
+            return participants
+          })()}
           currentUser={authService.getUser()}
         />
       )}
