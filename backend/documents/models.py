@@ -201,3 +201,61 @@ class DocumentPermission(models.Model):
             return False
         return True
 
+
+class PDFAnnotation(models.Model):
+    """
+    Annotazioni Fabric.js su documenti PDF.
+    Salva oggetti canvas (testi, forme, disegni) per persistenza.
+    """
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    document = models.ForeignKey(
+        ActDocument, 
+        on_delete=models.CASCADE, 
+        related_name='annotations',
+        help_text="Documento PDF annotato"
+    )
+    
+    # Pagina PDF
+    page_number = models.IntegerField(
+        help_text="Numero pagina (1-indexed)"
+    )
+    
+    # Dati Fabric.js (serializzato JSON)
+    fabric_object = models.JSONField(
+        help_text="Oggetto Fabric.js serializzato (canvas.toJSON())"
+    )
+    
+    # Tipo di annotazione
+    object_type = models.CharField(
+        max_length=50,
+        help_text="Tipo oggetto: text, path (disegno), rect, circle, line, etc."
+    )
+    
+    # Metadati
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='pdf_annotations_created',
+        help_text="Utente che ha creato l'annotazione"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Ordine rendering (z-index)
+    z_index = models.IntegerField(default=0, help_text="Ordine di rendering")
+    
+    class Meta:
+        db_table = 'pdf_annotations'
+        verbose_name = 'PDF Annotation'
+        verbose_name_plural = 'PDF Annotations'
+        ordering = ['document', 'page_number', 'z_index', 'created_at']
+        indexes = [
+            models.Index(fields=['document', 'page_number']),
+            models.Index(fields=['created_by']),
+        ]
+    
+    def __str__(self):
+        return f"{self.object_type} on page {self.page_number} of {self.document.filename}"
+

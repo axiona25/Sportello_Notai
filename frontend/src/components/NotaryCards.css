@@ -63,7 +63,7 @@
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%);
+  background: linear-gradient(135deg, #4FADFF 0%, #1668B0 100%);
   color: white;
   font-size: 11px;
   font-weight: 600;
@@ -103,6 +103,13 @@
   animation: slideUp 0.3s ease;
 }
 
+/* ✅ LAYOUT ORIZZONTALE COMPATTO */
+.filter-modal-horizontal {
+  max-width: 900px;
+  max-height: none;
+  border-radius: 12px;
+}
+
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -120,6 +127,10 @@
   align-items: center;
   padding: 20px 24px;
   border-bottom: 1px solid #F1F5F9;
+}
+
+.filter-modal-horizontal .filter-modal-header {
+  padding: 14px 20px;
 }
 
 .filter-modal-title {
@@ -164,10 +175,40 @@
   gap: 24px;
 }
 
+/* ✅ Body orizzontale compatto */
+.filter-modal-body-horizontal {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 16px 20px;
+  flex-wrap: wrap;
+}
+
 .filter-section {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* ✅ Sezione orizzontale compatta */
+.filter-section-horizontal {
+  flex: 0 0 auto;
+  min-width: 150px;
+  gap: 6px;
+}
+
+.filter-section-horizontal:first-child {
+  flex: 1 1 200px;
+  min-width: 200px;
+}
+
+.filter-section-actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .filter-label {
@@ -249,6 +290,13 @@
   gap: 6px;
 }
 
+/* ✅ Opzioni orizzontali */
+.filter-options-horizontal {
+  flex-direction: row;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
 .filter-option {
   display: flex;
   align-items: center;
@@ -266,6 +314,14 @@
   text-align: left;
 }
 
+/* ✅ Opzione compatta */
+.filter-option-compact {
+  padding: 6px 12px;
+  font-size: 12px;
+  gap: 4px;
+  white-space: nowrap;
+}
+
 .filter-option:hover {
   background: #EFF6FF;
   border-color: #BFDBFE;
@@ -273,8 +329,8 @@
 }
 
 .filter-option.active {
-  background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%);
-  border-color: #4FACFE;
+  background: linear-gradient(135deg, #4FADFF 0%, #1668B0 100%);
+  border-color: #4FADFF;
   color: white;
   font-weight: 500;
 }
@@ -285,6 +341,74 @@
 }
 
 /* Footer Modale */
+/* ✅ Select compatto per città aggiuntive */
+.filter-select-compact {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: #475569;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.filter-select-compact:hover {
+  background: #EFF6FF;
+  border-color: #BFDBFE;
+}
+
+.filter-select-compact:focus {
+  border-color: #1668B0;
+  box-shadow: 0 0 0 3px rgba(22, 104, 176, 0.1);
+}
+
+/* ✅ Pulsanti azioni compatti */
+.filter-reset-btn-compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #64748B;
+  transition: all 0.2s ease;
+}
+
+.filter-reset-btn-compact:hover {
+  background: #FEF2F2;
+  border-color: #FECACA;
+  color: #DC2626;
+}
+
+.filter-apply-btn-compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #4FADFF 0%, #1668B0 100%);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-apply-btn-compact:hover {
+  background: linear-gradient(135deg, #1668B0 0%, #0F4C81 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 173, 255, 0.3);
+}
+
 .filter-modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -323,18 +447,19 @@
   font-size: 14px;
   font-weight: 500;
   color: white;
-  background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%);
+  background: linear-gradient(135deg, #4FADFF 0%, #1668B0 100%);
   border: none;
   border-radius: 8px;
   padding: 10px 24px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(79, 172, 254, 0.25);
+  box-shadow: 0 2px 8px rgba(79, 173, 255, 0.25);
 }
 
 .filter-apply-btn:hover {
+  background: linear-gradient(135deg, #1668B0 0%, #0F4C81 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.35);
+  box-shadow: 0 4px 12px rgba(79, 173, 255, 0.35);
 }
 
 .notary-cards-grid {
@@ -760,6 +885,31 @@
   
   .filter-modal {
     max-width: 380px;
+  }
+
+  /* ✅ Modale orizzontale su tablet diventa verticale */
+  .filter-modal-horizontal {
+    max-width: 95%;
+  }
+
+  .filter-modal-body-horizontal {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .filter-section-horizontal {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .filter-section-horizontal:first-child {
+    flex: 1 1 auto;
+  }
+
+  .filter-section-actions {
+    margin-left: 0;
+    justify-content: flex-end;
   }
   
   .notary-cards-grid {

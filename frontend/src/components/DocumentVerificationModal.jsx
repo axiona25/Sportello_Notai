@@ -135,7 +135,8 @@ function DocumentVerificationModal({ appointment, onClose, onDocumentVerified })
 
 
   const getDocumentsStats = () => {
-    const totalAttesi = documentiRichiesti.length // Totale documenti richiesti/attesi
+    // ✅ Escludi documenti del notaio dal conteggio totale richiesto al cliente
+    const totalAttesi = documentiRichiesti.filter(d => d.required_from !== 'notaio').length
     const totalCaricati = documentiCaricati.filter(d => d.file || d.file_path).length // ✅ Conta solo documenti con file effettivamente caricato
     const accepted = documentiCaricati.filter(d => {
       const statoUpper = (d.stato || '').toUpperCase()

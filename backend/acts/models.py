@@ -5,6 +5,10 @@ import uuid
 from django.db import models
 from notaries.models import Notary, Client
 
+# Import ActTemplate from models_templates
+from .models_templates import ActTemplate, ACT_CODE_PREFIXES
+from .models_protocollo import ProtocolloAttoNotarile
+
 
 class NotarialActMainCategory(models.Model):
     """Main categories of notarial acts (Repubblica di San Marino)."""

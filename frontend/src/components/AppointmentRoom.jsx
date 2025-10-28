@@ -1,11 +1,43 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { X, Maximize2, Minus, Video, VideoOff, Mic, MicOff, Phone, Monitor, MessageSquare, Users, Clock, LogIn, Edit, Trash2, FileText, Lock, Unlock, Share2, PenTool, Archive, Mail } from 'lucide-react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { X, Maximize2, Minus, Video, VideoOff, Mic, MicOff, Phone, Monitor, MessageSquare, Users, Clock, LogIn, Edit, Trash2, FileText, Lock, Unlock, Share2, PenTool, Archive, Mail, Folder, ChevronDown, ChevronRight, Upload, CheckCircle, XCircle, UserMinus, AlertTriangle, Send } from 'lucide-react'
 import { useAppointmentRoom } from '../contexts/AppointmentRoomContext'
 import authService from '../services/authService'
 import ConfirmExitAppointmentModal from './ConfirmExitAppointmentModal'
 import AcceptGuestModal from './AcceptGuestModal'
 import CollaborativePDFViewer from './CollaborativePDFViewer'
+import ConfirmModal from './ConfirmModal'
+import LibreOfficeViewer from './viewers/LibreOfficeViewer'
+import { ICON_MAP, getTipologieAtti } from '../config/tipologieAttiConfig'
+import { detectFileType, FileType, isOfficeDocument } from '../utils/fileTypeDetector'
 import './AppointmentRoom.css'
+
+// ✅ Componente Timer separato e memoizzato per evitare re-render di AppointmentRoom
+const CallTimer = React.memo(({ connectionStatus }) => {
+  const [callDuration, setCallDuration] = useState(0)
+
+  useEffect(() => {
+    if (connectionStatus === 'connected') {
+      const timer = setInterval(() => {
+        setCallDuration(prev => prev + 1)
+      }, 1000)
+      
+      return () => clearInterval(timer)
+    }
+  }, [connectionStatus])
+
+  const formatDuration = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
+  return (
+    <div className="video-timer">
+      <Clock size={14} />
+      <span>{formatDuration(callDuration)}</span>
+    </div>
+  )
+})
 
 function AppointmentRoom() {
   const { activeAppointment, isMinimized, isFloating, exitAppointment, minimizeAppointment, toggleFloating } = useAppointmentRoom()
@@ -13,6 +45,12 @@ function AppointmentRoom() {
   const [showExitModal, setShowExitModal] = useState(false)
   const [showAcceptGuestModal, setShowAcceptGuestModal] = useState(false)
   const [isClientAccepted, setIsClientAccepted] = useState(false) // Traccia se il cliente è stato accettato
+  const [isClientOnline, setIsClientOnline] = useState(false) // ✅ Traccia se il cliente è effettivamente connesso in video
+  const [isClientWaiting, setIsClientWaiting] = useState(false) // ✅ Traccia se il cliente è in sala d'attesa (connesso ma non accettato)
+  
+  // Estrai appointmentId e dati
+  const appointmentData = activeAppointment?.rawData || activeAppointment
+  const appointmentId = activeAppointment?.id || appointmentData?.id
   
   // Stati controlli partecipante (per notaio)
   const [isClientCameraForced, setIsClientCameraForced] = useState(false) // Camera sempre attiva
@@ -21,6 +59,10 @@ function AppointmentRoom() {
   // Stati lettore PDF collaborativo
   const [showPDFViewer, setShowPDFViewer] = useState(false)
   const [selectedDocument, setSelectedDocument] = useState(null)
+  
+  // Stati lettore Office (Word, Excel, PowerPoint) - SOLO NOTAIO
+  const [showOfficeViewer, setShowOfficeViewer] = useState(false)
+  const [selectedOfficeDocument, setSelectedOfficeDocument] = useState(null)
   
   // WebSocket per sincronizzazione generale video call
   const wsVideoCallRef = useRef(null)
@@ -32,11 +74,23 @@ function AppointmentRoom() {
   const [showChat, setShowChat] = useState(false)
   const [mediaStream, setMediaStream] = useState(null)
   
-  // Timer chiamata
-  const [callDuration, setCallDuration] = useState(0)
-  
   // Documenti appuntamento
   const [documenti, setDocumenti] = useState([])
+  const [templateInfo, setTemplateInfo] = useState(null)
+  const [protocolloInfo, setProtocolloInfo] = useState(null)
+  const [expandedFolders, setExpandedFolders] = useState(['cliente', 'studio']) // ✅ Cartelle espanse di default (2 cartelle principali)
+  const [uploadingStudioDoc, setUploadingStudioDoc] = useState(false)
+  
+  // Ref per input file upload (Documenti di Studio)
+  const studioFileInputRef = useRef(null)
+  
+  // ✅ Modali custom per upload/delete documenti studio
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [documentToDelete, setDocumentToDelete] = useState(null)
+  const [notificationModal, setNotificationModal] = useState({ show: false, type: 'success', title: '', message: '' })
+  
+  // Stati modale rimozione utente dalla video
+  const [showRemoveUserConfirm, setShowRemoveUserConfirm] = useState(false)
   
   // Ref per video element
   const videoRef = useRef(null)
@@ -117,148 +171,21 @@ function AppointmentRoom() {
         
         startStreamImmediately()
       } else if (userRole === 'cliente' || userRole === 'client' || userRole === 'partner') {
-        // 🔍 Controlla se il cliente è già stato accettato in precedenza
-        const appointmentData = activeAppointment?.rawData || activeAppointment
-        const appointmentId = activeAppointment?.id || appointmentData?.id
-        
-        // ❌ Se non c'è ID valido, vai in sala d'attesa per sicurezza
-        if (!appointmentId) {
-          console.warn('⚠️ Nessun appointmentId valido → Sala d\'attesa per sicurezza')
+        // ✅ LOGICA MIGLIORATA: Mantiene lo stato del cliente quando già connesso
+        // 
+        // COMPORTAMENTO CORRETTO:
+        // 1. Al primo accesso: cliente entra in sala d'attesa (connectionStatus !== 'connected')
+        // 2. Notaio accetta: cliente passa a 'connected' tramite messaggio WebSocket
+        // 3. Chiusura viewer: activeAppointment cambia, ma cliente mantiene stato 'connected'
+        // 4. Rimozione manuale: notaio clicca "Rimuovi" → messaggio BLOCK_CLIENT → cliente torna 'waiting'
+        //
+        // ❌ PROBLEMA RISOLTO: Prima, ogni cambio di activeAppointment (es. chiusura viewer)
+        //    causava setConnectionStatus('waiting'), riportando erroneamente il cliente in sala d'attesa
+        if (connectionStatus !== 'connected') {
+          console.log('👤 Cliente → Sala d\'attesa (attende accettazione notaio)')
           setConnectionStatus('waiting')
-          return
-        }
-        
-        const storageKey = 'client_accepted_' + appointmentId
-        
-        // ⚡ OTTIMIZZAZIONE: Controlla PRIMA il localStorage per accesso IMMEDIATO
-        const cachedAcceptance = localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey)
-        
-        if (cachedAcceptance === 'true') {
-          // ✅ Cliente già accettato (cache localStorage) → Entra IMMEDIATAMENTE
-          console.log('⚡ Cliente GIÀ ACCETTATO (cache) → Ingresso IMMEDIATO nella video chiamata!')
-          console.log('🔍 Stati prima del set: connectionStatus:', connectionStatus, 'isCameraOn:', isCameraOn, 'isMicOn:', isMicOn, 'mediaStream:', mediaStream)
-          setConnectionStatus('connected')
-          setIsCameraOn(true)
-          setIsMicOn(true)
-          console.log('📹 Camera e microfono attivati IMMEDIATAMENTE da cache')
-          
-          // ⚡ AVVIA LO STREAM IMMEDIATAMENTE (non aspettare il re-render)
-          const startStreamImmediately = async () => {
-            try {
-              console.log('🎥🎥🎥 AVVIO IMMEDIATO dello stream (senza aspettare re-render)')
-              const stream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 1280, height: 720 },
-                audio: true
-              })
-              console.log('✅✅✅ Stream ottenuto IMMEDIATAMENTE:', stream)
-              setMediaStream(stream)
-              
-              // ⚡ Attendi che videoRef sia disponibile con retry
-              let retries = 0
-              const maxRetries = 10
-              
-              const assignStreamToVideo = () => {
-                if (videoRef.current) {
-                  console.log('✅ videoRef disponibile, assegno stream')
-                  videoRef.current.srcObject = stream
-                  videoRef.current.play().then(() => {
-                    console.log('✅✅✅ Video avviato IMMEDIATAMENTE')
-                  }).catch((playError) => {
-                    console.warn('⚠️ Errore play (normale):', playError)
-                  })
-                } else if (retries < maxRetries) {
-                  retries++
-                  console.log(`⏳ videoRef non ancora disponibile, retry ${retries}/${maxRetries}`)
-                  requestAnimationFrame(assignStreamToVideo)
-                } else {
-                  console.log('⚠️ videoRef non disponibile dopo max retries, lo stream sarà assegnato dal useEffect')
-                }
-              }
-              
-              assignStreamToVideo()
-            } catch (error) {
-              console.error('❌ Errore avvio stream immediato:', error)
-              // L'useEffect normale gestirà il retry
-            }
-          }
-          
-          startStreamImmediately()
-          
-          // ✅ Verifica in BACKGROUND (non blocca l'ingresso)
-          const verifyAcceptanceInBackground = async () => {
-            try {
-              const token = localStorage.getItem('access_token')
-              const response = await fetch(`http://localhost:8000/api/appointments/appuntamenti/${appointmentId}/check-acceptance/`, {
-                method: 'GET',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                }
-              })
-              
-              if (response.ok) {
-                const data = await response.json()
-                console.log('🔍 Verifica accettazione (background):', data)
-                
-                if (!data.is_accepted) {
-                  // ⚠️ Il notaio ha BLOCCATO il cliente nel frattempo
-                  console.warn('⚠️ Cliente BLOCCATO dal notaio → Espulsione dalla chiamata')
-                  localStorage.removeItem(storageKey)
-                  sessionStorage.removeItem(storageKey)
-                  setConnectionStatus('waiting')
-                  setIsCameraOn(false)
-                  setIsMicOn(false)
-                  alert('Sei stato rimosso dalla chiamata dal notaio.')
-                }
-              }
-            } catch (error) {
-              console.warn('⚠️ Errore verifica background (ignoro, cliente già dentro):', error)
-            }
-          }
-          
-          verifyAcceptanceInBackground()
         } else {
-          // 📡 Nessuna cache → Controlla API (prima volta o dopo blocco)
-          const checkPreviousAcceptance = async () => {
-            try {
-              const token = localStorage.getItem('access_token')
-              const response = await fetch(`http://localhost:8000/api/appointments/appuntamenti/${appointmentId}/check-acceptance/`, {
-                method: 'GET',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                }
-              })
-              
-              if (response.ok) {
-                const data = await response.json()
-                console.log('🔍 Check accettazione precedente:', data)
-                
-                if (data.is_accepted) {
-                  console.log('✅ Cliente GIÀ ACCETTATO (API) → Entra nella video chiamata')
-                  setConnectionStatus('connected')
-                  setIsCameraOn(true)
-                  setIsMicOn(true)
-                  console.log('📹 Camera e microfono attivati per cliente già accettato')
-                  // Salva in cache per prossimi ingressi
-                  localStorage.setItem(storageKey, 'true')
-                  sessionStorage.setItem(storageKey, 'true')
-                } else {
-                  console.log('📡 Cliente NON ancora accettato → Sala d\'attesa')
-                  setConnectionStatus('waiting')
-                }
-              } else {
-                console.warn('⚠️ Errore controllo accettazione, uso sala d\'attesa per sicurezza')
-                setConnectionStatus('waiting')
-              }
-            } catch (error) {
-              console.error('❌ Errore chiamata API check-acceptance:', error)
-              console.log('📡 Fallback → Sala d\'attesa')
-              setConnectionStatus('waiting')
-            }
-          }
-          
-          checkPreviousAcceptance()
+          console.log('👤 Cliente → GIÀ CONNESSO, mantiene stato video call (non torna in sala d\'attesa)')
         }
       } else {
         // Fallback: ruoli sconosciuti vanno in sala d'attesa per sicurezza
@@ -266,160 +193,17 @@ function AppointmentRoom() {
         setConnectionStatus('waiting')
       }
     }
-  }, [activeAppointment])
+  }, [activeAppointment, connectionStatus])
   
-  // Polling per cliente/partner: controlla se è stato accettato dal notaio
-  useEffect(() => {
-    if (connectionStatus === 'waiting') {
-      // 🔑 LEGGI IL RUOLO DALLA SESSIONE CORRENTE
-      const userRole = authService.getUserRole()
-      const appointmentData = activeAppointment?.rawData || activeAppointment
-      const appointmentId = activeAppointment?.id || appointmentData?.id
-      
-      console.log('🔍 Polling setup - UserRole SESSIONE:', userRole, 'AppointmentID:', appointmentId)
-      
-      // ❌ Non fare polling se non c'è un ID valido (normale se non in video call)
-      if (!appointmentId) {
-        console.log('⏭️ Nessun appointmentId - polling non necessario (utente non in video call)')
-        return
-      }
-      
-      // Solo clienti e partner fanno polling (notai/admin non devono aspettare)
-      const isGuestRole = userRole === 'cliente' || userRole === 'client' || userRole === 'partner'
-      
-      if (isGuestRole) {
-        console.log('👤 Cliente/Partner in attesa - Inizio polling per accettazione...')
-        
-        // Listener BroadcastChannel (per tab stesso browser)
-        let channel
-        try {
-          channel = new BroadcastChannel('appointment_' + appointmentId)
-          channel.onmessage = (event) => {
-            console.log('📡 Messaggio ricevuto via BroadcastChannel:', event.data)
-            if (event.data.type === 'CLIENT_ACCEPTED') {
-              console.log('✅✅✅ Cliente ACCETTATO dal notaio (via BroadcastChannel)!')
-              setConnectionStatus('connected')
-              // ✅ Attiva IMMEDIATAMENTE camera e microfono per il cliente
-              setIsCameraOn(true)
-              setIsMicOn(true)
-              console.log('📹 Camera e microfono attivati IMMEDIATAMENTE per cliente')
-              // ✅ MANTIENI il flag in localStorage per rientri veloci (NON cancellare!)
-            }
-          }
-          console.log('📻 BroadcastChannel listener attivo')
-        } catch (error) {
-          console.warn('⚠️ BroadcastChannel non disponibile:', error)
-        }
-        
-        // Polling API Django
-        const pollInterval = setInterval(async () => {
-          const storageKey = 'client_accepted_' + appointmentId
-          
-          try {
-            // Chiamata API per controllare se accettato
-            const token = localStorage.getItem('access_token')
-            const response = await fetch(`http://localhost:8000/api/appointments/appuntamenti/${appointmentId}/check-acceptance/`, {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
-            })
-            
-            if (response.ok) {
-              const data = await response.json()
-              console.log('🔄 Polling API - Response:', data)
-              
-              if (data.is_accepted) {
-                console.log('✅✅✅ Cliente ACCETTATO dal notaio (via API) - Ingresso in video chiamata!')
-                setConnectionStatus('connected')
-                // ✅ Attiva IMMEDIATAMENTE camera e microfono per il cliente
-                setIsCameraOn(true)
-                setIsMicOn(true)
-                console.log('📹 Camera e microfono attivati IMMEDIATAMENTE per cliente')
-                // ✅ MANTIENI il flag in localStorage per rientri veloci (NON cancellare!)
-                return
-              }
-            }
-          } catch (error) {
-            console.warn('⚠️ Errore polling API, uso localStorage fallback:', error)
-          }
-          
-          // Fallback: controlla localStorage (per tab stesso browser)
-          const isAccepted = localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey)
-          console.log('🔄 Polling fallback localStorage - Key:', storageKey, 'Value:', isAccepted)
-          
-          if (isAccepted === 'true') {
-            console.log('✅✅✅ Cliente ACCETTATO dal notaio (via localStorage) - Ingresso in video chiamata!')
-            setConnectionStatus('connected')
-            // ✅ Attiva IMMEDIATAMENTE camera e microfono per il cliente
-            setIsCameraOn(true)
-            setIsMicOn(true)
-            console.log('📹 Camera e microfono attivati IMMEDIATAMENTE per cliente')
-            // ✅ MANTIENI il flag in localStorage per rientri veloci (NON cancellare!)
-          }
-        }, 2000) // Controlla ogni 2 secondi
-        
-        return () => {
-          console.log('🛑 Polling fermato')
-          clearInterval(pollInterval)
-          if (channel) {
-            channel.close()
-          }
-        }
-      }
-    }
-  }, [connectionStatus, activeAppointment])
+  // ❌ RIMOSSO: Polling check-acceptance non più necessario
+  // Il cliente ora parte sempre dalla sala d'attesa e viene accettato manualmente dal notaio tramite WebSocket
   
   // ✅ RIMOSSO: Camera e microfono ora si attivano IMMEDIATAMENTE quando si imposta connectionStatus='connected'
   // Non serve più un useEffect separato che reagisce a connectionStatus, eliminando il delay di rendering
   
-  // ✅ Controlla stato accettazione cliente (per notaio) all'inizio
-  useEffect(() => {
-    if (activeAppointment && connectionStatus === 'connected') {
-      const userRole = authService.getUserRole()
-      
-      // Solo il notaio/admin controlla lo stato del cliente
-      if (userRole === 'notaio' || userRole === 'notary' || userRole === 'admin') {
-        const appointmentData = activeAppointment?.rawData || activeAppointment
-        const appointmentId = activeAppointment?.id || appointmentData?.id
-        
-        const checkClientAcceptance = async () => {
-          try {
-            const token = localStorage.getItem('access_token')
-            const response = await fetch(`http://localhost:8000/api/appointments/appuntamenti/${appointmentId}/check-acceptance/`, {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
-            })
-            
-            if (response.ok) {
-              const data = await response.json()
-              console.log('🔍 Notaio controlla stato accettazione cliente:', data)
-              setIsClientAccepted(data.is_accepted)
-            }
-          } catch (error) {
-            console.error('❌ Errore controllo accettazione cliente:', error)
-          }
-        }
-        
-        checkClientAcceptance()
-      }
-    }
-  }, [activeAppointment, connectionStatus])
-  
-  // Timer chiamata
-  useEffect(() => {
-    if (connectionStatus === 'connected') {
-      const timer = setInterval(() => {
-        setCallDuration(prev => prev + 1)
-      }, 1000)
-      
-      return () => clearInterval(timer)
-    }
-  }, [connectionStatus])
+  // ✅ REGOLA FISSA: Cliente SEMPRE in sala d'attesa ad ogni accesso
+  // Non controlliamo più accettazioni precedenti - il notaio deve accettare manualmente ogni volta
+  // isClientAccepted rimane false finché il notaio non clicca "Accetta" nella sessione corrente
   
   // Carica documenti appuntamento (solo per notaio)
   useEffect(() => {
@@ -456,16 +240,88 @@ function AppointmentRoom() {
     fetchDocumenti()
   }, [activeAppointment, connectionStatus])
   
-  // Formatta durata chiamata
-  const formatDuration = (seconds) => {
-    const hrs = Math.floor(seconds / 3600)
-    const mins = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
-    
-    if (hrs > 0) {
-      return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  // Carica info template e protocollo per la tipologia atto
+  useEffect(() => {
+    const fetchTemplateAndProtocollo = async () => {
+      const appointmentData = activeAppointment?.rawData || activeAppointment
+      const tipologiaCode = appointmentData?.tipologia_atto_code || appointmentData?.appointment_type
+      const appointmentId = appointmentData?.id
+      
+      console.log('🔍 fetchTemplateAndProtocollo - appointmentData:', appointmentData)
+      console.log('🔍 fetchTemplateAndProtocollo - tipologiaCode:', tipologiaCode)
+      console.log('🔍 fetchTemplateAndProtocollo - appointmentId:', appointmentId)
+      console.log('🔍 fetchTemplateAndProtocollo - connectionStatus:', connectionStatus)
+      
+      if (tipologiaCode && appointmentId && connectionStatus === 'connected') {
+        try {
+          // Carica template
+          const templateService = (await import('../services/templateService')).default
+          console.log('🔍 Richiesta template per:', tipologiaCode)
+          const templateResult = await templateService.getTemplateByActType(tipologiaCode)
+          
+          if (templateResult.success) {
+            console.log('✅ Template caricato con successo:', templateResult.data)
+            setTemplateInfo(templateResult.data)
+          } else {
+            console.log('ℹ️ Template non trovato per:', tipologiaCode)
+          }
+          
+          // Carica o crea protocollo
+          const protocolloService = (await import('../services/protocolloService')).default
+          console.log('📋 Richiesta protocollo per appuntamento:', appointmentId)
+          const protocolloResult = await protocolloService.getOrCreateProtocollo(appointmentId)
+          
+          if (protocolloResult.success) {
+            console.log('✅ Protocollo ottenuto:', protocolloResult.data.numero_protocollo)
+            setProtocolloInfo(protocolloResult.data)
+          } else {
+            console.warn('⚠️ Errore caricamento/creazione protocollo:', protocolloResult.error)
+          }
+        } catch (error) {
+          console.error('❌ Errore caricamento template/protocollo:', error)
+        }
+      } else {
+        console.log('⏭️ Skip caricamento - tipologiaCode:', tipologiaCode, 'appointmentId:', appointmentId, 'connectionStatus:', connectionStatus)
+      }
     }
-    return `${mins}:${secs.toString().padStart(2, '0')}`
+    
+    fetchTemplateAndProtocollo()
+  }, [activeAppointment, connectionStatus])
+  
+  // Gestione espansione cartelle
+  const toggleFolder = (folderName) => {
+    setExpandedFolders(prev => 
+      prev.includes(folderName)
+        ? prev.filter(f => f !== folderName)
+        : [...prev, folderName]
+    )
+  }
+  
+  // Organizza documenti per categoria (2 cartelle di default)
+  const groupDocumentsByCategory = (docs) => {
+    const categories = {
+      cliente: { name: 'Documenti Cliente', docs: [] },
+      studio: { name: 'Documenti di Studio', docs: [] }
+    }
+    
+    docs.forEach(doc => {
+      const docName = (doc.document_type_name || '').toLowerCase()
+      
+      // ✅ Documenti di Studio (template del notaio e documenti generati dal notaio)
+      // Questi NON concorrono al conteggio totale dei documenti da caricare del cliente
+      if (docName.includes('template') || 
+          docName.includes('atto notarile') ||
+          doc.required_from === 'notaio' ||
+          doc.document_type?.required_from === 'notaio') {
+        categories.studio.docs.push(doc)
+      }
+      // ✅ Documenti Cliente (tutti i documenti richiesti al cliente)
+      else {
+        categories.cliente.docs.push(doc)
+      }
+    })
+    
+    return categories
   }
   
   // Gestione stream video/audio
@@ -642,6 +498,7 @@ function AppointmentRoom() {
     console.log('✅ Notaio conferma accettazione cliente dalla sala d\'attesa')
     console.log('📊 ActiveAppointment:', activeAppointment)
     console.log('🆔 AppointmentID:', appointmentId)
+    console.log('🔌 WebSocket stato:', wsVideoCallRef.current?.readyState, '(1=OPEN)')
     
     // ❌ Verifica ID valido
     if (!appointmentId) {
@@ -673,25 +530,33 @@ function AppointmentRoom() {
       
       // ✅ Aggiorna lo stato locale
       setIsClientAccepted(true)
+      setIsClientWaiting(false) // ✅ Non più in sala d'attesa
+      setIsClientOnline(true) // ✅ Ora è online in video
       
-      // Fallback: localStorage per tab stesso browser
-      const storageKey = 'client_accepted_' + appointmentId
-      localStorage.setItem(storageKey, 'true')
-      sessionStorage.setItem(storageKey, 'true')
-      
-      // BroadcastChannel per tab stesso browser
-      try {
-        const channel = new BroadcastChannel('appointment_' + appointmentId)
-        channel.postMessage({ type: 'CLIENT_ACCEPTED', appointmentId, timestamp: Date.now() })
-        console.log('📡 Messaggio inviato via BroadcastChannel:', appointmentId)
-        channel.close()
-      } catch (error) {
-        console.warn('⚠️ BroadcastChannel non disponibile:', error)
+      // ✅ Invia messaggio WebSocket per notificare il cliente
+      if (wsVideoCallRef.current && wsVideoCallRef.current.readyState === WebSocket.OPEN) {
+        const message = {
+          type: 'CLIENT_ACCEPTED',
+          appointmentId,
+          timestamp: Date.now(),
+          userId: authService.getUser()?.id
+        }
+        console.log('📡 Invio messaggio CLIENT_ACCEPTED via WebSocket:', message)
+        wsVideoCallRef.current.send(JSON.stringify(message))
+        console.log('✅ Messaggio CLIENT_ACCEPTED inviato con successo')
+      } else {
+        console.error('❌ WebSocket non disponibile! ReadyState:', wsVideoCallRef.current?.readyState)
       }
+      
+      // ✅ Chiudi la modale
+      setShowAcceptGuestModal(false)
+      console.log('✅ Modale accettazione chiusa')
       
     } catch (error) {
       console.error('❌ Errore chiamata API:', error)
       alert('Errore di connessione. Il cliente potrebbe non ricevere la notifica.')
+      // ✅ Chiudi la modale anche in caso di errore
+      setShowAcceptGuestModal(false)
     }
   }
   
@@ -897,8 +762,90 @@ function AppointmentRoom() {
               }
               break
               
+            // ❌ OFFICE VIEWER DISABILITATO
+            // case 'OPEN_OFFICE':
+            // case 'CLOSE_OFFICE':
+            
+            // ✅ Traccia connessione/disconnessione cliente
+            case 'USER_JOINED':
+              console.log('👤 [VIDEO CALL WS] USER_JOINED:', data.userName, '- Role:', data.userRole)
+              // Se è il cliente che si connette, aggiorna stato
+              if (data.userRole === 'cliente' || data.userRole === 'client') {
+                console.log('✅ Cliente entrato in SALA D\'ATTESA')
+                setIsClientWaiting(true) // ✅ Cliente in attesa di essere accettato
+                // isClientOnline sarà true solo dopo accettazione
+              }
+              break
+              
+            case 'USER_LEFT':
+              console.log('👋 [VIDEO CALL WS] USER_LEFT ricevuto!')
+              console.log('   userName:', data.userName)
+              console.log('   userRole:', data.userRole)
+              console.log('   userId:', data.userId)
+              console.log('   Stati PRIMA del reset:')
+              console.log('     - isClientWaiting:', isClientWaiting)
+              console.log('     - isClientOnline:', isClientOnline)
+              console.log('     - isClientAccepted:', isClientAccepted)
+              
+              // Se è il cliente che si disconnette, aggiorna stato
+              if (data.userRole === 'cliente' || data.userRole === 'client') {
+                console.log('✅ Identificato come CLIENTE → Reset stati...')
+                setIsClientWaiting(false)  // ✅ Non più in attesa
+                setIsClientOnline(false)   // ✅ Non più online
+                setIsClientAccepted(false) // ✅ Reset anche l'accettazione
+                
+                console.log('✅ Stati aggiornati:')
+                console.log('   → isClientWaiting: false')
+                console.log('   → isClientOnline: false')
+                console.log('   → isClientAccepted: false')
+                console.log('   → Placeholder dovrebbe apparire!')
+              } else {
+                console.log('⚠️ NON identificato come cliente (userRole:', data.userRole, ') → Stati NON aggiornati')
+              }
+              break
+              
+            case 'CLIENT_ACCEPTED':
+              console.log('✅ [VIDEO CALL WS] CLIENT_ACCEPTED ricevuto')
+              // Se sei il cliente e vieni accettato, entra nella video
+              if (userRole === 'cliente' || userRole === 'client') {
+                console.log('✅ Sei stato accettato nella videochiamata!')
+                setConnectionStatus('connected')
+                setIsCameraOn(true)
+                setIsMicOn(true)
+                console.log('📹 Camera e microfono attivati')
+              }
+              break
+              
+            case 'BLOCK_CLIENT':
+              console.log('🚫 [VIDEO CALL WS] BLOCK_CLIENT ricevuto')
+              // Se sei il cliente e vieni bloccato, torna in sala d'attesa
+              if (userRole === 'cliente' || userRole === 'client') {
+                console.log('❌ Sei stato rimosso dalla videochiamata dal notaio')
+                
+                // ✅ Cambia lo stato di connessione del cliente a 'waiting'
+                setConnectionStatus('waiting')
+                
+                // ✅ Ferma camera e microfono
+                setIsCameraOn(false)
+                setIsMicOn(false)
+                
+                // ✅ Mostra notifica personalizzata
+                setNotificationModal({
+                  show: true,
+                  type: 'warning',
+                  title: 'Sei stato disconnesso',
+                  message: 'Sei stato rimosso dalla videochiamata dal notaio. Sei stato riportato in sala d\'attesa.'
+                })
+                
+                // Chiudi automaticamente dopo 5 secondi
+                setTimeout(() => {
+                  setNotificationModal({ show: false, type: 'success', title: '', message: '' })
+                }, 5000)
+              }
+              break
+              
             default:
-              console.log('ℹ️ [VIDEO CALL WS] Tipo messaggio:', data.type, '(potrebbe essere gestito dal PDF viewer)')
+              console.log('ℹ️ [VIDEO CALL WS] Tipo messaggio:', data.type, '(potrebbe essere gestito dai viewer)')
               break
           }
         } catch (error) {
@@ -936,14 +883,13 @@ function AppointmentRoom() {
     }
   }
 
-  if (!activeAppointment || isMinimized) {
-    return null
-  }
+  // ⚠️ NON fare early return qui - viola le Rules of Hooks!
+  // Tutti gli hooks devono essere chiamati prima di qualsiasi return condizionale
 
-  const appointmentData = activeAppointment.rawData || activeAppointment
-  const appointmentType = activeAppointment.appointmentType || appointmentData.tipologia_atto_nome || appointmentData.appointment_type || 'Appuntamento'
-  const appointmentDate = activeAppointment.date || appointmentData.date || ''
-  const appointmentTime = activeAppointment.time || appointmentData.time || ''
+  // appointmentData e appointmentId già dichiarati in alto (righe 19-20)
+  const appointmentType = activeAppointment?.appointmentType || appointmentData?.tipologia_atto_nome || appointmentData?.appointment_type || 'Appuntamento'
+  const appointmentDate = activeAppointment?.date || appointmentData?.date || ''
+  const appointmentTime = activeAppointment?.time || appointmentData?.time || ''
   
   // 🔑 RECUPERA IL RUOLO E NOME DALLA SESSIONE CORRENTE (JWT Token / localStorage)
   const userRole = authService.getUserRole()
@@ -952,25 +898,106 @@ function AppointmentRoom() {
   // Se l'utente è un notaio, usa il suo nome dalla sessione (nel notary_profile)
   const notaryName = (userRole === 'notaio' || userRole === 'notary' || userRole === 'admin')
     ? (currentUser?.notary_profile?.studio_name || 'Notaio')
-    : (activeAppointment.notaryName || appointmentData.notaio_nome || 'Notaio')
+    : (activeAppointment?.notaryName || appointmentData?.notaio_nome || 'Notaio')
   
   // NOME CLIENTE: usa SEMPRE il nome dall'appointment (come nelle mini card)
   // Il backend lo popola da richiedente.cliente.nome + richiedente.cliente.cognome
-  const clientName = appointmentData.client_name || 
-                     appointmentData.cliente_nome || 
-                     appointmentData.clientName || 
-                     activeAppointment.clientName || 
+  const clientName = appointmentData?.client_name || 
+                     appointmentData?.cliente_nome || 
+                     appointmentData?.clientName || 
+                     activeAppointment?.clientName || 
                      'Cliente'
   
+  // ✅ Genera avatar con iniziali dal nome
+  const getInitials = (name) => {
+    if (!name || name === 'Cliente') return 'CL'
+    const parts = name.trim().split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
+  
+  // ✅ Genera colore avatar basato sul nome (sempre lo stesso per lo stesso nome)
+  const getAvatarColor = (name) => {
+    if (!name) return '#4FADFF'
+    let hash = 0
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash)
+    }
+    const colors = [
+      '#4FADFF', // Blu
+      '#10B981', // Verde
+      '#F59E0B', // Arancione
+      '#EF4444', // Rosso
+      '#8B5CF6', // Viola
+      '#EC4899', // Rosa
+      '#14B8A6', // Teal
+      '#F97316'  // Arancione scuro
+    ]
+    return colors[Math.abs(hash) % colors.length]
+  }
+  
+  const clientInitials = getInitials(clientName)
+  const clientAvatarColor = getAvatarColor(clientName)
+  const clientAvatarUrl = appointmentData?.client_avatar_url || appointmentData?.cliente_avatar
+  
+  const notaryInitials = getInitials(notaryName)
+  const notaryAvatarColor = getAvatarColor(notaryName)
+  const notaryAvatarUrl = currentUser?.notary_profile?.avatar || appointmentData?.notaio_avatar
+  
+  // ✅ DEBUG: traccia render di AppointmentRoom
+  console.log('🔄🔄🔄 AppointmentRoom RENDER - Timestamp:', new Date().getTime())
   console.log('📊 AppointmentRoom - appointmentData:', appointmentData)
   console.log('👤 Current user dalla sessione:', currentUser)
-  console.log('🔍 appointmentData.client_name:', appointmentData.client_name)
-  console.log('🔍 appointmentData.cliente_nome:', appointmentData.cliente_nome)
-  console.log('🔍 appointmentData.clientName:', appointmentData.clientName)
+  console.log('🔍 appointmentData.client_name:', appointmentData?.client_name)
+  console.log('🔍 appointmentData.cliente_nome:', appointmentData?.cliente_nome)
+  console.log('🔍 appointmentData.clientName:', appointmentData?.clientName)
   console.log('👤 Notaio nome:', notaryName)
   console.log('👤 Cliente nome finale:', clientName)
   console.log('🎭 User role SESSIONE CORRENTE:', userRole)
   console.log('📍 Connection status:', connectionStatus)
+  console.log('📄 showPDFViewer:', showPDFViewer)
+  console.log('📄 selectedDocument:', selectedDocument?.id)
+
+  // ✅ Memoizza l'array participants per evitare re-render infiniti
+  // ✅ USA SOLO LE PROPRIETÀ SPECIFICHE come dipendenze, non gli oggetti interi
+  const participants = useMemo(() => {
+    if (!appointmentData || !currentUser) return []
+    
+    const participants = []
+    const currentUserId = currentUser?.id
+    
+    // Aggiungi notaio (se non è l'utente corrente)
+    const notaryId = appointmentData.notaio_id || appointmentData.notaio || currentUser?.id
+    if (notaryId && notaryId !== currentUserId) {
+      participants.push({ id: notaryId, name: notaryName, role: 'notaio' })
+    }
+    
+    // Aggiungi cliente (se non è l'utente corrente)
+    const clientId = appointmentData.client_id || 
+                    appointmentData.cliente_id || 
+                    appointmentData.richiedente?.cliente ||
+                    appointmentData.richiedente_id ||
+                    appointmentData.client
+    
+    if (clientId && clientId !== currentUserId) {
+      participants.push({ id: clientId, name: clientName, role: 'cliente' })
+    }
+    
+    return participants
+  }, [
+    appointmentData?.notaio_id,
+    appointmentData?.notaio, 
+    appointmentData?.client_id,
+    appointmentData?.cliente_id,
+    appointmentData?.richiedente_id,
+    appointmentData?.richiedente?.cliente,
+    appointmentData?.client,
+    notaryName,
+    clientName,
+    currentUser?.id
+  ])
 
   const handleClose = () => {
     setShowExitModal(true)
@@ -980,6 +1007,219 @@ function AppointmentRoom() {
     exitAppointment()
   }
 
+  // ✅ Memoizza currentUser per evitare re-render di CollaborativePDFViewer
+  const memoizedCurrentUser = useMemo(() => authService.getUser(), [])
+
+  // ✅ Memoizza onClose handler per evitare re-render di CollaborativePDFViewer
+  const handlePDFClose = useCallback(() => {
+    console.log('🚪 Chiusura PDF viewer')
+    setShowPDFViewer(false)
+    setSelectedDocument(null)
+    
+    // Se è il notaio, invia CLOSE_PDF al cliente
+    if ((userRole === 'notaio' || userRole === 'admin') && wsVideoCallRef.current && wsVideoCallRef.current.readyState === WebSocket.OPEN) {
+      wsVideoCallRef.current.send(JSON.stringify({
+        type: 'CLOSE_PDF',
+        userId: authService.getUser()?.id,
+        userName: notaryName
+      }))
+      console.log('📡 Messaggio CLOSE_PDF inviato al cliente')
+    }
+  }, [userRole, notaryName])
+
+  // ✅ Handler per chiudere Office Viewer (SOLO NOTAIO - non condiviso)
+  const handleOfficeClose = useCallback(() => {
+    console.log('🚪 Chiusura Office viewer (SOLO NOTAIO)')
+    setShowOfficeViewer(false)
+    setSelectedOfficeDocument(null)
+  }, [])
+
+  // ✅ Handler per upload documenti di studio (SOLO NOTAIO)
+  const handleStudioUpload = useCallback(async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const appointmentId = activeAppointment?.id || appointmentData?.id
+    if (!appointmentId) {
+      console.error('❌ ID appuntamento mancante per upload studio')
+      return
+    }
+
+    console.log('📤 Caricamento documento di studio:', file.name)
+    setUploadingStudioDoc(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('document_name', file.name)
+
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+      const response = await fetch(
+        `${apiUrl}/appointments/documenti-appuntamento/appuntamento/${appointmentId}/upload-studio/`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          },
+          body: formData
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Errore durante il caricamento')
+      }
+
+      const result = await response.json()
+      console.log('✅ Documento di studio caricato:', result)
+
+      // ✅ Ricarica i documenti per mostrare il nuovo upload
+      const docsResponse = await fetch(
+        `${apiUrl}/appointments/documenti-appuntamento/appuntamento/${appointmentId}/`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          }
+        }
+      )
+      if (docsResponse.ok) {
+        const docsData = await docsResponse.json()
+        setDocumenti(Array.isArray(docsData) ? docsData : docsData?.data || [])
+      }
+
+      // Reset input file
+      event.target.value = ''
+      
+      // ✅ Mostra notifica di successo
+      setNotificationModal({
+        show: true,
+        type: 'success',
+        message: `Documento "${file.name}" caricato con successo`
+      })
+      
+      // Chiudi automaticamente dopo 3 secondi
+      setTimeout(() => {
+        setNotificationModal({ show: false, type: 'success', title: '', message: '' })
+      }, 3000)
+    } catch (error) {
+      console.error('❌ Errore upload documento di studio:', error)
+      
+      // ✅ Mostra notifica di errore
+      setNotificationModal({
+        show: true,
+        type: 'error',
+        message: `Errore durante il caricamento: ${error.message}`
+      })
+    } finally {
+      setUploadingStudioDoc(false)
+    }
+  }, [activeAppointment, appointmentData])
+
+  // ✅ Handler per aprire modale conferma eliminazione
+  const openDeleteConfirm = useCallback((docId, docName) => {
+    setDocumentToDelete({ id: docId, name: docName })
+    setShowDeleteConfirm(true)
+  }, [])
+
+  // ✅ Handler per eliminare documento di studio (SOLO NOTAIO)
+  const handleDeleteStudioDoc = useCallback(async () => {
+    if (!documentToDelete) return
+
+    console.log('🗑️ Eliminazione documento:', documentToDelete.id, documentToDelete.name)
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+      const response = await fetch(
+        `${apiUrl}/appointments/documenti-appuntamento/${documentToDelete.id}/`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          }
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Errore durante l\'eliminazione')
+      }
+
+      console.log('✅ Documento eliminato con successo')
+
+      // ✅ Ricarica i documenti per aggiornare la lista
+      const appointmentId = activeAppointment?.id || appointmentData?.id
+      const docsResponse = await fetch(
+        `${apiUrl}/appointments/documenti-appuntamento/appuntamento/${appointmentId}/`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          }
+        }
+      )
+      if (docsResponse.ok) {
+        const docsData = await docsResponse.json()
+        setDocumenti(Array.isArray(docsData) ? docsData : docsData?.data || [])
+      }
+      
+      // ✅ Mostra notifica di successo
+      setNotificationModal({
+        show: true,
+        type: 'success',
+        message: `Documento "${documentToDelete.name}" eliminato con successo`
+      })
+      
+      // Chiudi automaticamente dopo 3 secondi
+      setTimeout(() => {
+        setNotificationModal({ show: false, type: 'success', title: '', message: '' })
+      }, 3000)
+    } catch (error) {
+      console.error('❌ Errore eliminazione documento:', error)
+      
+      // ✅ Mostra notifica di errore
+      setNotificationModal({
+        show: true,
+        type: 'error',
+        message: `Errore durante l'eliminazione: ${error.message}`
+      })
+    }
+  }, [activeAppointment, appointmentData, documentToDelete])
+
+  // ✅ Handler per rimuovere utente dalla video e riportarlo in sala d'attesa
+  const handleRemoveUserFromVideo = useCallback(() => {
+    console.log('🚪 Rimozione cliente dalla video:', clientName)
+    
+    // ✅ Aggiorna SOLO gli stati relativi al cliente
+    setIsClientAccepted(false)
+    setIsClientOnline(false)
+    setIsClientWaiting(true) // ✅ Cliente torna in sala d'attesa
+    
+    // ❌ NON modificare connectionStatus - quello è dello stato del NOTAIO!
+    // Il notaio rimane connesso, solo il cliente viene rimosso
+    
+    // Invia messaggio WebSocket per disconnettere il cliente
+    if (wsVideoCallRef.current && wsVideoCallRef.current.readyState === WebSocket.OPEN) {
+      wsVideoCallRef.current.send(JSON.stringify({
+        type: 'BLOCK_CLIENT',
+        clientId: appointmentData?.client_id || appointmentData?.cliente_id,
+        userId: authService.getUser()?.id
+      }))
+    }
+    
+    // ✅ Chiudi la modale
+    setShowRemoveUserConfirm(false)
+    
+    console.log('✅ Cliente rimosso dalla video e riportato in sala d\'attesa')
+  }, [clientName, appointmentData])
+
+  // ✅ ORA possiamo fare il check condizionale DOPO aver chiamato tutti gli hooks
+  if (!activeAppointment) {
+    return null
+  }
+
+  // ✅ Se minimizzato, nascondi con CSS invece di smontare il componente
+  // Questo mantiene attivo lo stream video e gli stati
+  const appointmentRoomStyle = isMinimized ? { display: 'none' } : {}
+
   return (
     <div 
       ref={floatingRef}
@@ -988,8 +1228,9 @@ function AppointmentRoom() {
         left: `${position.x}px`,
         top: `${position.y}px`,
         width: `${size.width}px`,
-        height: `${size.height}px`
-      } : {}}
+        height: `${size.height}px`,
+        ...appointmentRoomStyle
+      } : appointmentRoomStyle}
     >
       {/* Background animato */}
       <div className="appointment-room-background">
@@ -1100,10 +1341,7 @@ function AppointmentRoom() {
                 <div className={`video-client-main ${showChat ? 'chat-open' : ''}`}>
                   <div className="video-card video-card-client">
                     {/* Timer in alto a sinistra */}
-                    <div className="video-timer">
-                      <Clock size={14} />
-                      <span>{formatDuration(callDuration)}</span>
-                    </div>
+                    <CallTimer connectionStatus={connectionStatus} />
                     
                     {/* Video feed - Cliente vede: il proprio video + video del notaio */}
                     <div className="video-feed">
@@ -1112,8 +1350,20 @@ function AppointmentRoom() {
                         <div className="video-participant-box">
                           {/* TODO: Stream WebRTC reale del notaio */}
                           <div className="video-participant-placeholder">
-                            <div className="video-participant-avatar notary-avatar">
-                              <Users size={64} />
+                            <div 
+                              className="video-participant-avatar notary-avatar"
+                              style={{
+                                backgroundColor: notaryAvatarUrl ? 'transparent' : notaryAvatarColor,
+                                backgroundImage: notaryAvatarUrl ? `url(${notaryAvatarUrl})` : 'none',
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                color: 'white',
+                                fontWeight: '700',
+                                fontSize: '28px'
+                              }}
+                              title={notaryName}
+                            >
+                              {notaryAvatarUrl ? null : notaryInitials}
                             </div>
                             <p className="video-participant-name">{notaryName}</p>
                             <p className="video-participant-status">
@@ -1205,11 +1455,6 @@ function AppointmentRoom() {
                         <MessageSquare size={18} />
                       </button>
                     </div>
-                    
-                    {/* Icona fullscreen in alto a destra */}
-                    <button className="video-fullscreen-btn" title="Schermo intero">
-                      <Maximize2 size={18} />
-                    </button>
                   </div>
                 </div>
                 
@@ -1223,12 +1468,17 @@ function AppointmentRoom() {
                     </button>
                   </div>
                   <div className="chat-messages">
-                    <p className="chat-empty">Nessun messaggio</p>
+                    <div className="chat-placeholder">
+                      <MessageSquare size={48} />
+                      <p>
+                        Nessun messaggio
+                      </p>
+                    </div>
                   </div>
                   <div className="chat-input">
                     <input type="text" placeholder="Scrivi un messaggio..." />
                     <button className="chat-send-btn">
-                      <MessageSquare size={18} />
+                      <Send size={18} />
                     </button>
                   </div>
                 </div>
@@ -1241,14 +1491,11 @@ function AppointmentRoom() {
                   {/* Contenitore Video Grid Dinamico (1-4 video) */}
                   <div className="video-grid-container">
                     {/* Timer in alto a sinistra */}
-                    <div className="video-timer">
-                      <Clock size={14} />
-                      <span>{formatDuration(callDuration)}</span>
-                    </div>
+                    <CallTimer connectionStatus={connectionStatus} />
                     
-                    {/* Grid video dinamica - max 4 video principali */}
-                    <div className={`video-grid video-grid-${Math.min(isClientAccepted ? 2 : 1, 4)}`}>
-                      {/* Video del notaio (sempre visibile) */}
+                    {/* Grid video dinamica - ✅ Mostra 1 video se cliente offline, 2 se online */}
+                    <div className={`video-grid video-grid-${isClientOnline ? 2 : 1}`}>
+                      {/* Video del notaio (sempre visibile, schermo pieno se cliente non connesso) */}
                       <div className="video-grid-item">
                         {isCameraOn && mediaStream ? (
                           <>
@@ -1269,8 +1516,20 @@ function AppointmentRoom() {
                           </>
                         ) : (
                           <div className="video-placeholder">
-                            <div className="video-avatar notary-avatar">
-                              <Users size={48} />
+                            <div 
+                              className="video-avatar notary-avatar"
+                              style={{
+                                backgroundColor: notaryAvatarUrl ? 'transparent' : notaryAvatarColor,
+                                backgroundImage: notaryAvatarUrl ? `url(${notaryAvatarUrl})` : 'none',
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                color: 'white',
+                                fontWeight: '700',
+                                fontSize: '24px'
+                              }}
+                              title={notaryName}
+                            >
+                              {notaryAvatarUrl ? null : notaryInitials}
                             </div>
                             <p className="video-name">Tu ({notaryName})</p>
                             <p className="video-status">
@@ -1280,12 +1539,24 @@ function AppointmentRoom() {
                         )}
                       </div>
                       
-                      {/* Video cliente (se accettato) */}
-                      {isClientAccepted && clientName && clientName !== 'Cliente' && (
+                      {/* ✅ Video cliente: SOLO se accettato E online */}
+                      {isClientAccepted && isClientOnline && clientName && clientName !== 'Cliente' && (
                         <div className="video-grid-item">
                           <div className="video-placeholder">
-                            <div className="video-avatar">
-                              <Users size={32} />
+                            <div 
+                              className="video-avatar"
+                              style={{
+                                backgroundColor: clientAvatarUrl ? 'transparent' : clientAvatarColor,
+                                backgroundImage: clientAvatarUrl ? `url(${clientAvatarUrl})` : 'none',
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                color: 'white',
+                                fontWeight: '700',
+                                fontSize: '16px'
+                              }}
+                              title={clientName}
+                            >
+                              {clientAvatarUrl ? null : clientInitials}
                             </div>
                             <p className="video-name">{clientName}</p>
                             <p className="video-status">Connesso</p>
@@ -1368,12 +1639,17 @@ function AppointmentRoom() {
                     <h3>Chat</h3>
                   </div>
                   <div className="chat-messages">
-                    <p className="chat-empty">Nessun messaggio</p>
+                    <div className="chat-placeholder">
+                      <MessageSquare size={48} />
+                      <p>
+                        Nessun messaggio
+                      </p>
+                    </div>
                   </div>
                   <div className="chat-input">
                     <input type="text" placeholder="Scrivi un messaggio..." />
                     <button className="chat-send-btn">
-                      <MessageSquare size={18} />
+                      <Send size={18} />
                     </button>
                   </div>
                 </div>
@@ -1381,53 +1657,109 @@ function AppointmentRoom() {
               
               {/* Seconda riga: Documenti + Prossimi Appuntamenti + Partecipanti */}
               <div className="notary-bottom-row">
-                  {/* Card Documenti Richiesti */}
+                  {/* Card Documenti Atto */}
                   <div className="documents-card">
                     <div className="card-header">
                       <FileText size={18} />
-                      <h3>Documenti Richiesti</h3>
+                      <h3>
+                        {appointmentData?.tipologia_atto_nome || 'Atto'} 
+                        {protocolloInfo?.numero_protocollo && ` - N. Protocollo ${protocolloInfo.numero_protocollo}`}
+                        {appointmentData?.start_time && (() => {
+                          const date = new Date(appointmentData.start_time)
+                          const dateStr = date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                          const timeStr = date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+                          return ` - ${dateStr} ${timeStr}`
+                        })()}
+                      </h3>
                     </div>
-                    <div className="documents-list">
-                      {documenti.length > 0 ? (
-                        documenti.map((doc) => (
-                          <div 
-                            key={doc.id} 
-                            className="document-item document-item-clickable"
-                            onClick={() => {
-                              if (doc.file_path) {
-                                // Apri il documento in una nuova tab
-                                window.open(doc.file_path, '_blank')
-                              } else {
-                                console.warn('File non disponibile per:', doc.document_type_name)
-                              }
-                            }}
-                            title="Clicca per visualizzare il documento"
-                          >
-                            <div className="document-info">
-                              <FileText size={14} className="document-icon" />
-                              <span className="document-name">{doc.document_type_name || doc.document_type?.name || 'Documento'}</span>
-                            </div>
-                            {/* Icone azioni documento */}
-                            <div className="document-actions">
-                              <button 
-                                className="document-action-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  console.log('📤 Condividi in realtime:', doc.document_type_name)
+                    <div className="documents-content-wrapper">
+                      {/* SEZIONE 1: BOX AZZURRO - Template Atto (SOLO PDF GENERATO) */}
+                      {(() => {
+                        // ✅ Mostra nel BOX AZZURRO solo se il template è un PDF (generato da "CREA ATTO")
+                        // Il documento Word rimane in "Documenti di Studio" per modifiche
+                        if (!templateInfo) {
+                          console.log('📦 BOX AZZURRO: templateInfo è null/undefined')
+                          return null
+                        }
+                        
+                        const filePath = templateInfo.file_url || templateInfo.template_url || templateInfo.template_file
+                        console.log('📦 BOX AZZURRO - Template Info:', {
+                          file_url: templateInfo.file_url,
+                          template_url: templateInfo.template_url,
+                          template_file: templateInfo.template_file,
+                          filePath_usato: filePath
+                        })
+                        
+                        const isPDF = filePath && (
+                          filePath.toLowerCase().endsWith('.pdf') ||
+                          filePath.toLowerCase().includes('.pdf')
+                        )
+                        
+                        console.log('📦 BOX AZZURRO - Check PDF:', {
+                          filePath,
+                          isPDF,
+                          toLowerCase: filePath?.toLowerCase(),
+                          endsWith_pdf: filePath?.toLowerCase().endsWith('.pdf'),
+                          includes_pdf: filePath?.toLowerCase().includes('.pdf')
+                        })
+                        
+                        // ✅ BOX AZZURRO: Mostra SOLO PDF generato, NON il Word
+                        if (!isPDF) {
+                          console.log('❌ BOX AZZURRO NASCOSTO - Template Word (visibile in "Documenti di Studio"):', filePath)
+                          return null
+                        }
+                        
+                        console.log('✅ BOX AZZURRO VISIBILE - Template PDF:', filePath)
+                        
+                        return (
+                          <div className="template-document-section">
+                            <div 
+                              className="template-document-item"
+                              style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                
+                                console.log('\n========================================')
+                                console.log('🎯 CLICK PDF TEMPLATE DAL BOX AZZURRO')
+                                console.log('========================================')
+                                console.log('📄 File Path:', filePath)
+                                console.log('📋 Template Info:', templateInfo)
+                                console.log('📌 Stato viewer PRIMA del click:')
+                                console.log('   showPDFViewer:', showPDFViewer)
+                                console.log('   showOfficeViewer:', showOfficeViewer)
+                                console.log('   selectedDocument:', selectedDocument)
+                                console.log('   selectedOfficeDocument:', selectedOfficeDocument)
+                                
+                                const docWithAppointment = {
+                                  id: templateInfo.id,
+                                  document_id: templateInfo.id,
+                                  file_path: filePath,  // ✅ file_path reale determina il viewer
+                                  filename: templateInfo.original_filename || templateInfo.act_type_name || 'Template',
+                                  document_type_name: templateInfo.act_type_name,
+                                  appuntamento_id: activeAppointment?.id || appointmentData?.id,
+                                  appointment_id: activeAppointment?.id || appointmentData?.id,
+                                  isTemplate: true
+                                }
+                                
+                                console.log('📄 Documento preparato:', docWithAppointment)
+                                console.log('🔒 Chiudo Office Viewer...')
+                                
+                                // ✅ CHIUDI ESPLICITAMENTE l'Office viewer
+                                setShowOfficeViewer(false)
+                                setSelectedOfficeDocument(null)
+                                
+                                console.log('📂 Apro PDF Viewer...')
+                                
+                                // ✅ APRI il PDF viewer
+                                setSelectedDocument(docWithAppointment)
+                                setShowPDFViewer(true)
+                                
+                                // ✅ CONDIVISIONE CON CLIENTE: Invia messaggio WebSocket OPEN_PDF
+                                // Solo se il notaio apre il PDF dal BOX AZZURRO
+                                if (userRole === 'notaio' || userRole === 'admin') {
+                                  console.log('📡 BOX AZZURRO: Invio OPEN_PDF al cliente...')
                                   
-                                  // Aggiungi appointment_id al documento per WebSocket
-                                  const docWithAppointment = {
-                                    ...doc,
-                                    appuntamento_id: activeAppointment?.id || appointmentData?.id,
-                                    appointment_id: activeAppointment?.id || appointmentData?.id
-                                  }
-                                  console.log('📄 Documento con appointment_id:', docWithAppointment)
-                                  
-                                  // Apri il PDF viewer per il notaio
-                                  setSelectedDocument(docWithAppointment)
-                                  setShowPDFViewer(true)
-                                  
-                                  // Invia messaggio WebSocket per aprire il PDF anche per il cliente
                                   const sendOpenPdfMessage = () => {
                                     if (wsVideoCallRef.current && wsVideoCallRef.current.readyState === WebSocket.OPEN) {
                                       const message = {
@@ -1437,7 +1769,7 @@ function AppointmentRoom() {
                                         userName: notaryName,
                                         userRole: userRole
                                       }
-                                      console.log('📡 Invio messaggio OPEN_PDF:', message)
+                                      console.log('📡 Invio messaggio OPEN_PDF (BOX AZZURRO):', message)
                                       wsVideoCallRef.current.send(JSON.stringify(message))
                                       console.log('✅ Messaggio OPEN_PDF inviato con successo')
                                     } else {
@@ -1511,11 +1843,296 @@ function AppointmentRoom() {
                                   }
                                   
                                   sendOpenPdfMessage()
+                                }
+                                
+                                console.log('✅ Comandi inviati:')
+                                console.log('   setShowOfficeViewer(false)')
+                                console.log('   setSelectedOfficeDocument(null)')
+                                console.log('   setSelectedDocument(docWithAppointment)')
+                                console.log('   setShowPDFViewer(true)')
+                                console.log('   + WebSocket OPEN_PDF (se notaio)')
+                                console.log('========================================\n')
+                              }}
+                              title="Clicca per visualizzare il PDF dell'atto"
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                                <div className="template-icon-wrapper">
+                                  {(() => {
+                                    const appointmentData = activeAppointment?.rawData || activeAppointment
+                                    const tipologiaCode = appointmentData?.tipologia_atto_code || appointmentData?.appointment_type
+                                    
+                                    // Cerca l'icona dalla configurazione frontend
+                                    const tipologieAtti = getTipologieAtti()
+                                    const tipologiaAtto = tipologieAtti.find(t => 
+                                      t.code.toLowerCase().includes(tipologiaCode?.toLowerCase()) || 
+                                      tipologiaCode?.toLowerCase().includes(t.id.toLowerCase())
+                                    )
+                                    
+                                    const iconName = tipologiaAtto?.iconName || appointmentData?.tipologia_atto_icon || 'FileText'
+                                    const IconComponent = ICON_MAP[iconName] || FileText
+                                    return <IconComponent size={20} />
+                                  })()}
+                                </div>
+                                <div className="template-info">
+                                  <strong>{templateInfo.act_type_name} (PDF)</strong>
+                                  <span className="template-client-name">{appointmentData?.client_name || 'Cliente'}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })()}
+                      
+                      {/* SEZIONE 2: Documenti Cliente (Cartelle Espandibili) */}
+                      <div className="client-documents-section">
+                        {documenti.length > 0 ? (
+                          (() => {
+                            const categories = groupDocumentsByCategory(documenti)
+                            return Object.entries(categories).map(([key, category]) => {
+                              if (category.docs.length === 0) return null
+                              const isExpanded = expandedFolders.includes(key)
+                              
+                              return (
+                                <div key={key} className="document-folder">
+                                  <div 
+                                    className="folder-header"
+                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                                  >
+                                    <div 
+                                      style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, cursor: 'pointer' }}
+                                      onClick={() => toggleFolder(key)}
+                                    >
+                                      {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                      <Folder size={16} />
+                                      <span>{category.name}</span>
+                                    </div>
+                                    
+                                    {/* ✅ Pulsante Upload solo per "Documenti di Studio" */}
+                                    {key === 'studio' && userRole === 'notaio' && (
+                                      <button
+                                        className="studio-upload-btn"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          studioFileInputRef.current?.click()
+                                        }}
+                                        disabled={uploadingStudioDoc}
+                                        title="Carica documento di studio"
+                                        style={{
+                                          background: 'none',
+                                          border: 'none',
+                                          cursor: uploadingStudioDoc ? 'wait' : 'pointer',
+                                          padding: '4px',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          color: 'var(--primary-color, #0066cc)',
+                                          opacity: uploadingStudioDoc ? 0.5 : 1
+                                        }}
+                                      >
+                                        <Upload size={18} />
+                                      </button>
+                                    )}
+                                  </div>
+                                  
+                                  {isExpanded && (
+                                    <div className="folder-content">
+                                      {category.docs.map((doc) => (
+                          <div 
+                            key={doc.id} 
+                            className="document-item document-item-clickable"
+                            onClick={() => {
+                              if (doc.file_path) {
+                                // ✅ REGOLA FISSA: detectFileType usa file_path reale
+                                // Solo doc/docx/xls/xlsx/ppt/pptx → LibreOffice Collabora
+                                // Tutto il resto (PDF, immagini, etc.) → Nostro viewer o download
+                                const fileType = detectFileType(doc)
+                                const isOffice = isOfficeDocument(fileType)
+                                
+                                console.log('📄 Click documento:', doc.document_type_name)
+                                console.log('   file_path:', doc.file_path)
+                                console.log('   fileType:', fileType, '| isOffice:', isOffice)
+                                
+                                if (isOffice) {
+                                  // ✅ Documenti Office → LibreOffice Collabora
+                                  console.log('→ Apro con LibreOffice Collabora')
+                                  setSelectedOfficeDocument(doc)
+                                  setShowOfficeViewer(true)
+                                } else {
+                                  // ✅ PDF/Immagini → Nostro viewer (in nuova tab per ora)
+                                  console.log('→ Apro con nostro viewer/browser')
+                                  window.open(doc.file_path, '_blank')
+                                }
+                              } else {
+                                console.warn('File non disponibile per:', doc.document_type_name)
+                              }
+                            }}
+                            title="Clicca per visualizzare il documento"
+                          >
+                            <div className="document-info">
+                              <FileText size={14} className="document-icon" />
+                              <div className="document-details">
+                                <span className="document-name">{doc.document_type_name || doc.document_type?.name || 'Documento'}</span>
+                                {/* ✅ Data e ora ultimo aggiornamento */}
+                                {doc.updated_at && (
+                                  <span className="document-date">
+                                    {new Date(doc.updated_at).toLocaleString('it-IT', {
+                                      day: '2-digit',
+                                      month: '2-digit',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {/* Icone azioni documento */}
+                            <div className="document-actions">
+                              {/* ✅ LOGICA DIVERSA per cartella Studio vs Cliente */}
+                              {key === 'studio' ? (
+                                /* 🗑️ Solo icona cestino per "Documenti di Studio" (escluso template) */
+                                (() => {
+                                  const docName = (doc.document_type_name || '').toLowerCase()
+                                  const isTemplate = docName.includes('template') || docName.includes('atto notarile')
+                                  
+                                  // ❌ Template NON si può eliminare (versioning specifico)
+                                  if (isTemplate) return null
+                                  
+                                  // ✅ Altri documenti possono essere eliminati
+                                  return (
+                                    <button 
+                                      className="document-action-btn"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        openDeleteConfirm(doc.id, doc.document_type_name || 'Documento')
+                                      }}
+                                      title="Elimina documento"
+                                      style={{ color: '#dc3545' }}
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  )
+                                })()
+                              ) : (
+                                /* 📤 Icone complete per "Documenti Cliente" */
+                                <>
+                                  {/* ✅ Pulsante Condividi - SOLO per PDF e immagini, NON per Office */}
+                                  {(() => {
+                                    const fileType = detectFileType(doc)
+                                    const isOffice = isOfficeDocument(fileType)
+                                    if (isOffice) return null // ❌ NON mostrare condividi per Office
+                                    
+                                    return (
+                                  <button 
+                                    className="document-action-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      console.log('📤 Condividi PDF in realtime:', doc.document_type_name)
+                                  
+                                  // Aggiungi appointment_id al documento per WebSocket
+                                  const docWithAppointment = {
+                                    ...doc,
+                                    appuntamento_id: activeAppointment?.id || appointmentData?.id,
+                                    appointment_id: activeAppointment?.id || appointmentData?.id
+                                  }
+                                  console.log('📄 Documento con appointment_id:', docWithAppointment)
+                                  
+                                  // ✅ CONDIVISIONE SOLO PDF - Office escluso
+                                  console.log('📄 Apertura PDF viewer condiviso per:', doc.document_type_name)
+                                  setSelectedDocument(docWithAppointment)
+                                  setShowPDFViewer(true)
+                                  
+                                  // Invia messaggio WebSocket per aprire il PDF anche per il cliente
+                                  const sendOpenPdfMessage = () => {
+                                      if (wsVideoCallRef.current && wsVideoCallRef.current.readyState === WebSocket.OPEN) {
+                                        const message = {
+                                          type: 'OPEN_PDF',
+                                          document: docWithAppointment,
+                                          userId: authService.getUser()?.id,
+                                          userName: notaryName,
+                                          userRole: userRole
+                                        }
+                                        console.log('📡 Invio messaggio OPEN_PDF:', message)
+                                        wsVideoCallRef.current.send(JSON.stringify(message))
+                                        console.log('✅ Messaggio OPEN_PDF inviato con successo')
+                                      } else {
+                                      console.error('❌ WebSocket non connesso! readyState:', wsVideoCallRef.current?.readyState)
+                                      console.error('   Tentativo di riconnessione...')
+                                      
+                                      // Riconnetti WebSocket
+                                      const wsUrl = `ws://localhost:8000/ws/pdf/${activeAppointment?.id || appointmentData?.id}/`
+                                      const newWs = new WebSocket(wsUrl)
+                                      
+                                      newWs.onopen = () => {
+                                        console.log('✅ [VIDEO CALL WS] Riconnesso!')
+                                        wsVideoCallRef.current = newWs
+                                        
+                                        // Invia JOIN_CALL
+                                        newWs.send(JSON.stringify({
+                                          type: 'JOIN_CALL',
+                                          userId: authService.getUser()?.id,
+                                          userName: notaryName,
+                                          userRole: userRole
+                                        }))
+                                        
+                                        // Invia OPEN_PDF
+                                        newWs.send(JSON.stringify({
+                                          type: 'OPEN_PDF',
+                                          document: docWithAppointment,
+                                          userId: authService.getUser()?.id,
+                                          userName: notaryName,
+                                          userRole: userRole
+                                        }))
+                                        console.log('✅ Messaggio OPEN_PDF inviato dopo riconnessione')
+                                      }
+                                      
+                                      newWs.onerror = (error) => {
+                                        console.error('❌ Errore riconnessione WebSocket:', error)
+                                      }
+                                      
+                                      newWs.onmessage = (event) => {
+                                        try {
+                                          const data = JSON.parse(event.data)
+                                          console.log('📨 [VIDEO CALL WS] Messaggio ricevuto:', data, 'userRole:', userRole)
+                                          
+                                          switch (data.type) {
+                                            case 'OPEN_PDF':
+                                              if (userRole !== 'notaio' && userRole !== 'admin') {
+                                                console.log('✅ [VIDEO CALL WS] Cliente: APRO PDF viewer automaticamente!')
+                                                setSelectedDocument(data.document)
+                                                setShowPDFViewer(true)
+                                              }
+                                              break
+                                              
+                                            case 'CLOSE_PDF':
+                                              if (userRole !== 'notaio' && userRole !== 'admin') {
+                                                setShowPDFViewer(false)
+                                                setSelectedDocument(null)
+                                              }
+                                              break
+                                              
+                                            default:
+                                              console.log('ℹ️ [VIDEO CALL WS] Tipo messaggio:', data.type)
+                                          }
+                                        } catch (error) {
+                                          console.error('❌ [VIDEO CALL WS] Errore parsing messaggio:', error)
+                                        }
+                                      }
+                                      
+                                      newWs.onclose = (event) => {
+                                        console.log('🔌 [VIDEO CALL WS] CHIUSO - Code:', event.code, 'Reason:', event.reason)
+                                      }
+                                    }
+                                  }
+                                  
+                                  sendOpenPdfMessage()
                                 }}
-                                title="Condividi in realtime"
+                                title="Condividi PDF in realtime"
                               >
                                 <Share2 size={14} />
                               </button>
+                                )
+                              })()}
                               <button 
                                 className="document-action-btn"
                                 onClick={(e) => {
@@ -1549,12 +2166,21 @@ function AppointmentRoom() {
                               >
                                 <Mail size={14} />
                               </button>
+                                </>
+                              )}
                             </div>
                           </div>
-                        ))
-                      ) : (
-                        <p className="documents-empty">Nessun documento caricato</p>
-                      )}
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })
+                          })()
+                        ) : (
+                          <p className="documents-empty">Nessun documento caricato</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                   
@@ -1663,58 +2289,102 @@ function AppointmentRoom() {
                 {/* Card Partecipanti */}
                 <div className="meeting-room-card">
                     <div className="card-header">
+                      <Users size={18} />
                       <h3>Partecipanti</h3>
                     </div>
                     <div className="meeting-room-list">
-                      {/* Box partecipante: sempre visibile */}
-                      <div className="participant-waiting-item">
-                        <div className="participant-waiting-info">
-                          <div className="participant-waiting-avatar">
-                            <Users size={14} />
-                          </div>
-                          <span className="participant-waiting-name">
-                            {clientName}
-                          </span>
-                        </div>
-                        
-                        {/* Badge e pulsante: visibili SOLO se NON ancora accettato */}
-                        {!isClientAccepted ? (
-                          <div className="participant-waiting-actions">
-                            <div className="waiting-badge">
-                              <Clock size={10} />
-                              <span>Sala d'Attesa</span>
+                      {/* ✅ Mostra partecipante SOLO se è in attesa o già connesso */}
+                      {(() => {
+                        console.log('🎨 Rendering lista partecipanti:')
+                        console.log('   isClientWaiting:', isClientWaiting)
+                        console.log('   isClientAccepted:', isClientAccepted)
+                        console.log('   → Mostra:', (isClientWaiting || isClientAccepted) ? 'CLIENTE' : 'PLACEHOLDER')
+                        return (isClientWaiting || isClientAccepted)
+                      })() ? (
+                        <div className="participant-waiting-item">
+                          <div className="participant-waiting-info">
+                            <div 
+                              className="participant-waiting-avatar"
+                              style={{
+                                backgroundColor: clientAvatarUrl ? 'transparent' : clientAvatarColor,
+                                backgroundImage: clientAvatarUrl ? `url(${clientAvatarUrl})` : 'none',
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                borderRadius: '50%',
+                                color: 'white',
+                                fontWeight: '600',
+                                fontSize: '11px'
+                              }}
+                              title={clientName}
+                            >
+                              {clientAvatarUrl ? null : clientInitials}
                             </div>
-                            <button className="accept-guest-btn" onClick={handleAcceptGuest}>
-                              Accetta
-                            </button>
+                            <span className="participant-waiting-name">
+                              {clientName}
+                            </span>
                           </div>
-                        ) : (
-                          /* Icone di controllo: visibili quando cliente è accettato */
-                          <div className="participant-control-actions">
-                            <button 
-                              className={`participant-control-btn ${isClientCameraForced ? 'active' : ''}`}
-                              onClick={handleToggleForceCamera}
-                              title={isClientCameraForced ? 'Camera forzata sempre ON' : 'Forza camera sempre ON'}
-                            >
-                              {isClientCameraForced ? <Video size={14} /> : <VideoOff size={14} />}
-                            </button>
-                            <button 
-                              className={`participant-control-btn ${isClientMicForced ? 'active' : ''}`}
-                              onClick={handleToggleForceMic}
-                              title={isClientMicForced ? 'Microfono forzato sempre ON' : 'Forza microfono sempre ON'}
-                            >
-                              {isClientMicForced ? <Mic size={14} /> : <MicOff size={14} />}
-                            </button>
-                            <button 
-                              className="participant-control-btn participant-control-btn-block"
-                              onClick={handleBlockClient}
-                              title="Blocca partecipante"
-                            >
-                              <Lock size={14} />
-                            </button>
-                          </div>
-                        )}
+                          
+                          {/* ✅ CONTROLLI SEMPRE VISIBILI quando partecipante è presente */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {/* ✅ Badge stato - Solo se in sala d'attesa */}
+                            {!isClientAccepted && (
+                              <div className="waiting-badge">
+                                <Clock size={10} />
+                                <span>Sala d'Attesa</span>
+                              </div>
+                            )}
+                            
+                            {/* ✅ Pulsante Accetta - Solo quando cliente è connesso in sala d'attesa */}
+                            <div className="participant-waiting-actions">
+                              {!isClientAccepted && isClientWaiting && (
+                                <button className="accept-guest-btn" onClick={handleAcceptGuest}>
+                                  Accetta
+                                </button>
+                              )}
+                            </div>
+                            
+                            {/* ✅ Controlli icone: SOLO quando cliente è online in video */}
+                            {isClientAccepted && isClientOnline && (
+                              <div className="participant-control-actions">
+                              {/* Rimuovi - Riporta alla sala d'attesa */}
+                              <button 
+                                className="participant-control-btn participant-control-btn-block"
+                                onClick={() => setShowRemoveUserConfirm(true)}
+                                title="Rimuovi dalla video (torna in sala d'attesa)"
+                              >
+                                <UserMinus size={14} />
+                              </button>
+                              
+                              {/* Forza Video */}
+                              <button 
+                                className={`participant-control-btn ${isClientCameraForced ? 'active' : ''}`}
+                                onClick={handleToggleForceCamera}
+                                title={isClientCameraForced ? 'Camera forzata sempre ON' : 'Forza camera sempre ON'}
+                              >
+                                {isClientCameraForced ? <Video size={14} /> : <VideoOff size={14} />}
+                              </button>
+                              
+                              {/* Forza Audio */}
+                              <button 
+                                className={`participant-control-btn ${isClientMicForced ? 'active' : ''}`}
+                                onClick={handleToggleForceMic}
+                                title={isClientMicForced ? 'Microfono forzato sempre ON' : 'Forza microfono sempre ON'}
+                              >
+                                {isClientMicForced ? <Mic size={14} /> : <MicOff size={14} />}
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
+                      ) : (
+                        /* ✅ Placeholder elegante quando nessuno è in sala d'attesa */
+                        <div className="participant-placeholder">
+                          <Users size={48} />
+                          <p>
+                            Nessun partecipante in sala d'attesa
+                          </p>
+                        </div>
+                      )}
                       
                       {/* Slot vuoti per altri partecipanti */}
                       <div className="participant-empty-slot"></div>
@@ -1748,75 +2418,263 @@ function AppointmentRoom() {
       )}
       
       {/* Lettore PDF Collaborativo */}
-      {showPDFViewer && selectedDocument && (
-        <CollaborativePDFViewer
-          document={selectedDocument}
-          onClose={() => {
-            console.log('🚪 Chiusura PDF viewer')
-            setShowPDFViewer(false)
-            setSelectedDocument(null)
+      {(() => {
+        const shouldShowPDFViewer = showPDFViewer && selectedDocument
+        console.log('🖥️ Render PDF Viewer:', shouldShowPDFViewer, { showPDFViewer, hasSelectedDocument: !!selectedDocument })
+        
+        if (shouldShowPDFViewer) {
+          return (
+            <CollaborativePDFViewer
+              document={selectedDocument}
+              appointmentId={appointmentId}
+              onClose={handlePDFClose}
+              userRole={userRole}
+              participants={participants}
+              currentUser={memoizedCurrentUser}
+            />
+          )
+        }
+        return null
+      })()}
+      
+      {/* Lettore Office (Word, Excel, PowerPoint) - SOLO NOTAIO */}
+      {(() => {
+        const shouldShowOfficeViewer = showOfficeViewer && selectedOfficeDocument
+        console.log('🖥️ Render Office Viewer:', shouldShowOfficeViewer, { showOfficeViewer, hasSelectedOfficeDocument: !!selectedOfficeDocument })
+        
+        if (!shouldShowOfficeViewer) return null
+        
+        return (
+        <div className="pdf-viewer-overlay">
+          <div className="pdf-viewer-container">
+            {/* Header identico al PDF viewer */}
+            <div className="pdf-viewer-header">
+              <div className="pdf-viewer-title">
+                {(() => {
+                  // Trova icona dall'atto come nel template
+                  const appointmentData = activeAppointment?.rawData || activeAppointment
+                  const tipologiaCode = appointmentData?.tipologia_atto_code || appointmentData?.appointment_type
+                  
+                  const tipologieAtti = getTipologieAtti()
+                  const tipologiaAtto = tipologieAtti.find(t => 
+                    t.code.toLowerCase().includes(tipologiaCode?.toLowerCase()) || 
+                    tipologiaCode?.toLowerCase().includes(t.id.toLowerCase())
+                  )
+                  
+                  const iconName = tipologiaAtto?.iconName || appointmentData?.tipologia_atto_icon || 'FileText'
+                  const IconComponent = ICON_MAP[iconName] || FileText
+                  return <IconComponent size={20} />
+                })()}
+                <h3>{appointmentData?.tipologia_atto_nome || (activeAppointment?.rawData || activeAppointment)?.tipologia_atto_nome || 'Documento'}</h3>
+              </div>
+              
+              <div className="pdf-viewer-header-controls">
+                <button 
+                  className="pdf-viewer-btn"
+                  onClick={async (e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    
+                    console.log('🎯 Click su CREA ATTO')
+                    console.log('📋 Dati disponibili:', {
+                      selectedOfficeDocument,
+                      appointmentId,
+                      hasAuthToken: !!authService.getAccessToken()
+                    })
+                    
+                    try {
+                      console.log('🔄 Conversione Word → PDF in corso...')
+                      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+                      const token = authService.getAccessToken()
+                      
+                      if (!token) {
+                        throw new Error('Token di autenticazione non disponibile')
+                      }
+                      
+                      if (!selectedOfficeDocument?.id) {
+                        throw new Error('ID documento non disponibile')
+                      }
+                      
+                      if (!appointmentId) {
+                        throw new Error('ID appuntamento non disponibile')
+                      }
+                      
+                      const requestBody = {
+                        document_id: selectedOfficeDocument.id,
+                        appointment_id: appointmentId
+                      }
+                      
+                      console.log('📤 Invio richiesta a:', `${apiUrl}/acts/convert-template-to-pdf/`)
+                      console.log('📤 Body:', requestBody)
+                      
+                      const response = await fetch(`${apiUrl}/acts/convert-template-to-pdf/`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(requestBody)
+                      })
+                      
+                      console.log('📥 Risposta status:', response.status)
+                      
+                      const data = await response.json()
+                      console.log('📥 Risposta data:', data)
+                      
+                      if (response.status === 501) {
+                        alert('⚠️ ' + (data.message || 'Funzionalità in sviluppo'))
+                        return
+                      }
+                      
+                      if (!response.ok) {
+                        throw new Error(data.error || `Errore conversione PDF (${response.status})`)
+                      }
+                      
+                      console.log('✅ PDF creato con successo:', data)
+                      
+                      // Chiudi viewer
+                      handleOfficeClose()
+                      
+                      // Forza ricaricamento della pagina per mostrare il PDF nel BOX AZZURRO
+                      alert('✅ PDF creato nel BOX AZZURRO! Ricarico la pagina...')
+                      window.location.reload()
+                    } catch (error) {
+                      console.error('❌ Errore completo:', error)
+                      alert('❌ Errore: ' + error.message)
+                    }
+                  }}
+                  title="Converti in PDF e salva come atto"
+                  style={{
+                    background: '#10b981',
+                    color: 'white',
+                    fontWeight: '600',
+                    padding: '8px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <FileText size={18} />
+                  CREA ATTO
+                </button>
+                
+                <button 
+                  className="pdf-viewer-btn pdf-viewer-btn-close"
+                  onClick={handleOfficeClose}
+                  title="Chiudi"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
             
-            // Se è il notaio, invia CLOSE_PDF al cliente
-            if ((userRole === 'notaio' || userRole === 'admin') && wsVideoCallRef.current && wsVideoCallRef.current.readyState === WebSocket.OPEN) {
-              wsVideoCallRef.current.send(JSON.stringify({
-                type: 'CLOSE_PDF',
-                userId: authService.getUser()?.id,
-                userName: notaryName
-              }))
-              console.log('📡 Messaggio CLOSE_PDF inviato al cliente')
-            }
-          }}
-          userRole={userRole}
-          participants={(() => {
-            // Costruisci array partecipanti con ID reali
-            const participants = []
-            const currentUserId = authService.getUser()?.id
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <LibreOfficeViewer
+                documentId={selectedOfficeDocument.id}
+                documentPath={selectedOfficeDocument.file_path}
+                appointmentId={appointmentId}
+                editable={userRole === 'notaio' || userRole === 'admin'}
+                wsConnection={wsVideoCallRef.current}
+                userRole={userRole}
+              />
+            </div>
+          </div>
+        </div>
+        )
+      })()}
+
+      {/* ✅ Input file nascosto per upload documenti di studio */}
+      <input
+        ref={studioFileInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png"
+        style={{ display: 'none' }}
+        onChange={handleStudioUpload}
+      />
+
+      {/* ✅ Modale conferma eliminazione documento */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false)
+          setDocumentToDelete(null)
+        }}
+        onConfirm={handleDeleteStudioDoc}
+        type="delete"
+        title="Conferma Eliminazione"
+        message="Sei sicuro di voler eliminare questo documento? L'operazione non può essere annullata."
+        itemName={documentToDelete?.name}
+        itemLabel="Documento"
+        confirmText="Elimina"
+        cancelText="Annulla"
+      />
+
+      {/* ✅ Modale conferma rimozione utente dalla video */}
+      <ConfirmModal
+        isOpen={showRemoveUserConfirm}
+        onClose={() => setShowRemoveUserConfirm(false)}
+        onConfirm={handleRemoveUserFromVideo}
+        type="warning"
+        title="Rimuovi dalla Videochiamata"
+        message="Vuoi rimuovere questo partecipante dalla chiamata e riportarlo in sala d'attesa?"
+        itemName={clientName}
+        itemLabel="Partecipante"
+        confirmText="Rimuovi"
+        cancelText="Annulla"
+      />
+
+      {/* ✅ Modale notifica compatta (successo/errore) */}
+      {notificationModal.show && (
+        <div className="confirm-modal-overlay" onClick={() => setNotificationModal({ show: false, type: 'success', title: '', message: '' })}>
+          <div className="confirm-modal confirm-modal-compact" onClick={(e) => e.stopPropagation()}>
+            {/* Header con icona */}
+            <div className="confirm-modal-header">
+              <button 
+                className="modal-close-btn" 
+                onClick={() => setNotificationModal({ show: false, type: 'success', title: '', message: '' })}
+              >
+                <X size={16} />
+              </button>
+              
+              <div className={`modal-icon-container ${
+                notificationModal.type === 'success' ? 'success' : 
+                notificationModal.type === 'warning' ? 'warning' : 
+                'delete'
+              }`}>
+                {notificationModal.type === 'success' ? (
+                  <CheckCircle size={32} strokeWidth={2} />
+                ) : notificationModal.type === 'warning' ? (
+                  <AlertTriangle size={32} strokeWidth={2} />
+                ) : (
+                  <XCircle size={32} strokeWidth={2} />
+                )}
+              </div>
+              
+              <h3 className="confirm-modal-title">
+                {notificationModal.title || (notificationModal.type === 'success' ? 'Operazione Completata' : 'Errore')}
+              </h3>
+            </div>
             
-            console.log('🔍 DEBUG appointmentData completo:', appointmentData)
-            console.log('🔍 appointmentData.notaio_id:', appointmentData.notaio_id)
-            console.log('🔍 appointmentData.notaio:', appointmentData.notaio)
-            console.log('🔍 appointmentData.cliente_id:', appointmentData.cliente_id)
-            console.log('🔍 appointmentData.richiedente:', appointmentData.richiedente)
-            console.log('🔍 appointmentData.client_id:', appointmentData.client_id)
+            {/* Body */}
+            <div className="confirm-modal-body">
+              <p className="confirm-modal-message">{notificationModal.message}</p>
+            </div>
             
-            // Aggiungi notaio (se non è l'utente corrente)
-            const notaryId = appointmentData.notaio_id || appointmentData.notaio || currentUser?.id
-            console.log('🆔 Notary ID estratto:', notaryId, 'Current:', currentUserId, 'Match:', notaryId === currentUserId)
-            if (notaryId && notaryId !== currentUserId) {
-              participants.push({ id: notaryId, name: notaryName, role: 'notaio' })
-              console.log('✅ Notaio aggiunto ai partecipanti')
-            } else {
-              console.log('⏭️ Notaio NON aggiunto (è l\'utente corrente o ID mancante)')
-            }
-            
-            // Aggiungi cliente (se non è l'utente corrente)
-            // ✅ Backend ora include client_id nel serializer
-            const clientId = appointmentData.client_id || 
-                            appointmentData.cliente_id || 
-                            appointmentData.richiedente?.cliente ||
-                            appointmentData.richiedente_id ||
-                            appointmentData.client
-            console.log('🆔 Client ID estratto:', clientId, 'Current:', currentUserId, 'Match:', clientId === currentUserId)
-            
-            // Aggiungi cliente solo se ha un ID valido e non è l'utente corrente
-            if (clientId && clientId !== currentUserId) {
-              participants.push({ id: clientId, name: clientName, role: 'cliente' })
-              console.log('✅ Cliente aggiunto ai partecipanti (ID reale dal backend)')
-            } else {
-              console.log('⏭️ Cliente NON aggiunto:', {
-                hasClientId: !!clientId,
-                isCurrentUser: clientId === currentUserId,
-                clientName
-              })
-            }
-            
-            console.log('👥 Participants costruiti FINAL:', participants)
-            console.log('🆔 Current user ID:', currentUserId)
-            
-            return participants
-          })()}
-          currentUser={authService.getUser()}
-        />
+            {/* Footer */}
+            <div className="confirm-modal-footer">
+              <button 
+                className={
+                  notificationModal.type === 'success' ? 'btn-success' : 
+                  notificationModal.type === 'warning' ? 'btn-warning' : 
+                  'btn-danger-strong'
+                }
+                onClick={() => setNotificationModal({ show: false, type: 'success', title: '', message: '' })}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

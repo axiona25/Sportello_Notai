@@ -2,14 +2,34 @@ import React, { useState, useEffect } from 'react'
 import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
 import appointmentService from '../services/appointmentService'
 import { isHoliday, isWeekend } from '../utils/holidays'
+import { SLOT_ORARI } from '../config/tipologieAttiConfig'
 import './AppointmentCalendar.css'
 
-function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSlot: externalSelectedSlot, excludeAppointmentId = null }) {
-  const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [selectedDate, setSelectedDate] = useState(null)
+function AppointmentCalendar({ 
+  notaryId, 
+  duration = 30, 
+  giorniDisponibili = null, // Array di ID giorni (1=Lun, 2=Mar, etc.) 
+  slotDisponibili = null, // Array di ID slot (1=Mattina, 2=Pomeriggio, 3=Sera)
+  onSlotSelect, 
+  selectedSlot: externalSelectedSlot, 
+  excludeAppointmentId = null,
+  initialDate = null // ✅ Data iniziale dal calendario della Dashboard
+}) {
+  // ✅ Usa initialDate se fornita, altrimenti la data corrente
+  const [currentMonth, setCurrentMonth] = useState(initialDate && initialDate instanceof Date ? initialDate : new Date())
+  const [selectedDate, setSelectedDate] = useState(initialDate && initialDate instanceof Date ? initialDate : null)
   const [availableSlots, setAvailableSlots] = useState([])
   const [loading, setLoading] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState(null)
+
+  // ✅ Log per debugging: verifica che initialDate sia ricevuta correttamente
+  useEffect(() => {
+    if (initialDate instanceof Date) {
+      console.log('📅 AppointmentCalendar - initialDate ricevuta:', initialDate.toLocaleDateString('it-IT'))
+      console.log('📅 Mese impostato:', currentMonth.toLocaleDateString('it-IT'))
+      console.log('📅 Data selezionata:', selectedDate ? selectedDate.toLocaleDateString('it-IT') : 'Nessuna')
+    }
+  }, [initialDate])
 
   // Load available slots when month or duration changes
   useEffect(() => {
@@ -182,6 +202,16 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
     setSelectedSlot(null)
   }
 
+  // Verifica se un giorno della settimana è disponibile per il tipo di atto
+  const isDayOfWeekAvailable = (date) => {
+    if (!giorniDisponibili || giorniDisponibili.length === 0) {
+      return true // Se non ci sono restrizioni, tutti i giorni sono disponibili
+    }
+    
+    const dayOfWeek = date.getDay() // 0=Domenica, 1=Lunedì, ..., 6=Sabato
+    return giorniDisponibili.includes(dayOfWeek)
+  }
+
   const handleDateClick = (date) => {
     if (!date) return
     
@@ -191,6 +221,11 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
     
     if (holiday || weekend) {
       // Non permettere la selezione di festivi o weekend
+      return
+    }
+    
+    // Verifica se il giorno della settimana è disponibile per questo tipo di atto
+    if (!isDayOfWeekAvailable(date)) {
       return
     }
     
@@ -233,7 +268,36 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
   const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab']
 
   const days = getDaysInMonth()
-  const rawSlots = selectedDate ? getSlotsForDate(selectedDate) : []
+  
+  // Funzione per verificare se uno slot appartiene a una fascia oraria disponibile
+  const isSlotInAvailableTimeRange = (slot) => {
+    if (!slotDisponibili || slotDisponibili.length === 0) {
+      return true // Se non ci sono restrizioni, tutti gli slot sono disponibili
+    }
+    
+    // Converti lo start_time dello slot in un oggetto confrontabile
+    const [hours, minutes] = slot.start_time.split(':').map(Number)
+    const slotTimeInMinutes = hours * 60 + minutes
+    
+    // Verifica se lo slot ricade in almeno una delle fasce disponibili
+    return slotDisponibili.some(slotId => {
+      const fascia = SLOT_ORARI.find(s => s.id === slotId)
+      if (!fascia) return false
+      
+      const [startHours, startMinutes] = fascia.inizio.split(':').map(Number)
+      const [endHours, endMinutes] = fascia.fine.split(':').map(Number)
+      
+      const fasciaStartMinutes = startHours * 60 + startMinutes
+      const fasciaEndMinutes = endHours * 60 + endMinutes
+      
+      return slotTimeInMinutes >= fasciaStartMinutes && slotTimeInMinutes < fasciaEndMinutes
+    })
+  }
+  
+  // Ottieni gli slot per la data selezionata e filtrali per fascia oraria
+  const rawSlots = selectedDate 
+    ? getSlotsForDate(selectedDate).filter(isSlotInAvailableTimeRange)
+    : []
   
   // ✅ Funzione per raggruppare slot occupati consecutivi
   const mergeOccupiedSlots = (slots) => {
@@ -314,7 +378,8 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
               const hasSlots = date && hasAvailableSlots(date)
               const holiday = date && isHoliday(date)
               const weekend = date && isWeekend(date)
-              const isDisabled = holiday || weekend
+              const isDayAvailable = date && isDayOfWeekAvailable(date)
+              const isDisabled = holiday || weekend || !isDayAvailable
               
               // Mostra puntino BLU solo se ci sono APPUNTAMENTI (slot occupati) in quel giorno
               const showDot = date && hasAppointments(date) && !isDisabled
@@ -324,7 +389,7 @@ function AppointmentCalendar({ notaryId, duration = 30, onSlotSelect, selectedSl
                   key={index}
                   className={`calendar-day ${!date ? 'empty' : ''} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''} ${hasSlots && !isDisabled ? 'available' : 'unavailable'} ${isDisabled ? 'holiday' : ''}`}
                   onClick={() => handleDateClick(date)}
-                  title={holiday ? holiday.name : (weekend ? 'Weekend' : '')}
+                  title={holiday ? holiday.name : (weekend ? 'Weekend' : (!isDayAvailable ? 'Non disponibile per questo tipo di atto' : ''))}
                 >
                   {date && (
                     <>

@@ -64,21 +64,26 @@ function Calendar({ selectedDate, onSelectDate, onAppointmentsUpdate }) {
           
           console.log(`📅 Giorno ${day}: Appuntamento con status="${app.status}" stato="${app.stato}" → statusLower="${statusLower}"`)
           
-          if (statusLower === 'provvisorio') {
+          // ✅ GIALLO: Provvisorio o Documenti in caricamento (non ancora caricati)
+          if (
+            statusLower === 'provvisorio' || 
+            statusLower === 'documenti_in_caricamento' ||
+            statusLower === 'documenti_parziali'  // ✅ Documenti rifiutati/parziali = giallo
+          ) {
             byDay[day].provvisorio++
-            console.log(`  ✅ Incrementato provvisorio per giorno ${day} → ${byDay[day].provvisorio}`)
-          } else if (
+            console.log(`  🟡 Incrementato provvisorio (giallo) per giorno ${day} → ${byDay[day].provvisorio}`)
+          } 
+          // ✅ BLU: Confermato con documenti verificati o atto pronto
+          else if (
             statusLower === 'confermato' || 
-            statusLower === 'documenti_in_caricamento' || 
             statusLower === 'documenti_in_verifica' ||
-            statusLower === 'documenti_parziali' ||  // ✅ Documenti rifiutati
             statusLower === 'documenti_verificati' ||
             statusLower === 'pronto_atto_virtuale' ||
             statusLower === 'in_corso' ||
             statusLower === 'completato'
           ) {
             byDay[day].confermato++
-            console.log(`  ✅ Incrementato confermato per giorno ${day} → ${byDay[day].confermato}`)
+            console.log(`  🔵 Incrementato confermato (blu) per giorno ${day} → ${byDay[day].confermato}`)
           } else {
             console.log(`  ⚠️ Status "${statusLower}" non riconosciuto per giorno ${day}`)
           }

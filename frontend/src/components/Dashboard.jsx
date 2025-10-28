@@ -24,7 +24,11 @@ function Dashboard({ onLogout, user: initialUser }) {
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [showAppointmentModal, setShowAppointmentModal] = useState(false)
   const [searchValue, setSearchValue] = useState('')
-  const [currentView, setCurrentView] = useState('dashboard') // 'dashboard' o 'atti'
+  // ✅ Ripristina currentView dal sessionStorage se disponibile
+  const [currentView, setCurrentView] = useState(() => {
+    const saved = sessionStorage.getItem('dashboard_currentView_cliente')
+    return saved || 'dashboard'
+  })
   const [attiFilter, setAttiFilter] = useState(null) // Filtro per gli atti (notaio/cliente)
   const [user, setUser] = useState(initialUser)
   const [currentAppointments, setCurrentAppointments] = useState([])
@@ -42,6 +46,11 @@ function Dashboard({ onLogout, user: initialUser }) {
   
   // ✅ State per tracciare l'appointment da selezionare da notifica
   const [pendingAppointmentId, setPendingAppointmentId] = useState(null)
+
+  // ✅ Salva currentView nel sessionStorage quando cambia
+  useEffect(() => {
+    sessionStorage.setItem('dashboard_currentView_cliente', currentView)
+  }, [currentView])
 
   // ✅ Reset selezione quando cambia giorno nel calendario
   // (previene che la detail card mostri un appuntamento di un altro giorno)
@@ -171,10 +180,17 @@ function Dashboard({ onLogout, user: initialUser }) {
       }
     })
     
+    // ✅ Ordina gli appuntamenti per orario (dal più vecchio al più recente)
+    const sortedAppointments = formattedAppointments.sort((a, b) => {
+      const dateA = new Date(a.rawData.start_time)
+      const dateB = new Date(b.rawData.start_time)
+      return dateA - dateB
+    })
+    
     // Aggiorna solo se ci sono cambiamenti (evita re-render inutili)
     setCurrentAppointments(prev => {
-      const hasChanged = JSON.stringify(prev) !== JSON.stringify(formattedAppointments)
-      return hasChanged ? formattedAppointments : prev
+      const hasChanged = JSON.stringify(prev) !== JSON.stringify(sortedAppointments)
+      return hasChanged ? sortedAppointments : prev
     })
     
   }, [])
@@ -615,35 +631,41 @@ function Dashboard({ onLogout, user: initialUser }) {
       
       // Ottieni la lista dei documenti richiesti per questo tipo di atto
       const documentiRichiesti = getDocumentiRichiestiPerAtto(codiceAtto)
-      const totale = documentiRichiesti.length
       
       // Carica i documenti caricati dal cliente
       const docsResult = await appointmentExtendedService.getDocumentiAppuntamento(appointment.id)
       const documentiDalBackend = docsResult?.data || docsResult
       
-      // ✅ Conta SOLO documenti con file effettivamente caricato
-      const caricati = Array.isArray(documentiDalBackend) 
-        ? documentiDalBackend.filter(doc => doc.file || doc.file_path).length 
-        : 0
+      // ✅ Conta solo documenti richiesti al cliente (ESCLUDI documenti del notaio)
+      const documentiCliente = Array.isArray(documentiDalBackend)
+        ? documentiDalBackend.filter(doc => doc.required_from !== 'notaio')
+        : []
       
-      // Conta documenti approvati (normalizza a uppercase per il confronto)
-      const approvati = Array.isArray(documentiDalBackend) 
-        ? documentiDalBackend.filter(doc => {
-            const statoUpper = (doc.stato || '').toUpperCase()
-            return statoUpper === 'VERIFICATO' || 
-                   statoUpper === 'ACCETTATO' || 
-                   statoUpper === 'APPROVATO'
-          }).length
-        : 0
+      const totale = documentiCliente.length || documentiRichiesti.length  // Fallback
+      
+      // ✅ Conta SOLO documenti CLIENTE con file effettivamente caricato
+      const caricati = documentiCliente.filter(doc => doc.file || doc.file_path).length
+      
+      // ✅ Conta SOLO documenti CLIENTE approvati
+      const approvati = documentiCliente.filter(doc => {
+        const statoUpper = (doc.stato || '').toUpperCase()
+        return statoUpper === 'VERIFICATO' || 
+               statoUpper === 'ACCETTATO' || 
+               statoUpper === 'APPROVATO'
+      }).length
       
       console.log('📊 Conteggio documenti (Cliente):', {
-        totale,
-        caricati,
-        approvati,
-        documentiDalBackend: documentiDalBackend.map(d => ({
+        totale: `${totale} documenti Cliente`,
+        caricati: `${caricati} documenti Cliente`,
+        approvati: `${approvati} documenti Cliente`,
+        'RISULTATO CONTATORE': `${caricati}/${totale} (Caricati) e ${approvati}/${totale} (Approvati)`,
+        '---': '---',
+        'Tutti i documenti (backend)': documentiDalBackend.map(d => ({
           nome: d.document_type_name,
+          required_from: d.required_from,
           stato: d.stato,
-          hasFile: !!(d.file || d.file_path)
+          hasFile: !!(d.file || d.file_path),
+          inclusoInConteggio: d.required_from !== 'notaio' ? '✅ Cliente' : '❌ Studio (escluso)'
         }))
       })
       
@@ -673,6 +695,22 @@ function Dashboard({ onLogout, user: initialUser }) {
   useEffect(() => {
     if (selectedAppointment && selectedAppointment.type !== 'empty') {
       calcolaContatori(selectedAppointment)
+    }
+  }, [selectedAppointment, calcolaContatori])
+
+  // ✅ Polling per aggiornare i contatori documenti ogni 5 secondi
+  useEffect(() => {
+    if (selectedAppointment && selectedAppointment.type !== 'empty') {
+      console.log('🔄 Polling contatori documenti avviato')
+      const interval = setInterval(() => {
+        console.log('🔄 Polling: aggiorno contatori documenti')
+        calcolaContatori(selectedAppointment)
+      }, 5000) // Ogni 5 secondi
+      
+      return () => {
+        console.log('🛑 Polling contatori documenti fermato')
+        clearInterval(interval)
+      }
     }
   }, [selectedAppointment, calcolaContatori])
 
@@ -823,7 +861,7 @@ function Dashboard({ onLogout, user: initialUser }) {
           </div>
 
               <div className="notary-section">
-                <NotaryCards />
+<NotaryCards initialDate={selectedDate} />
               </div>
             </>
           ) : currentView === 'atti' ? (

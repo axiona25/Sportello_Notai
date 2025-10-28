@@ -134,7 +134,10 @@ class ApiClient {
       // Ritorna risposta JSON
       return await response.json()
     } catch (error) {
-      console.error('API Request error:', error)
+      // Non loggare errori 404 (sono normali quando una risorsa non esiste)
+      if (error.response?.status !== 404) {
+        console.error('API Request error:', error)
+      }
       throw error
     }
   }

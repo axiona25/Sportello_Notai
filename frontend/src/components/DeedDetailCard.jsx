@@ -69,6 +69,21 @@ function DeedDetailCard({ appointment, onEnter, documentiCaricati = 0, documenti
   const canOpenDocuments = isConfirmed
   const canEnter = tuttiDocumentiApprovati
   
+  // ✅ Stato badge documenti: grigio / giallo / verde
+  const getDocumentsStatus = () => {
+    if (documentiCaricati === 0 && documentiApprovati === 0) {
+      return 'empty' // Grigio: niente caricato
+    } else if (tuttiDocumentiCaricati && tuttiDocumentiApprovati) {
+      return 'complete' // Verde: tutto caricato e approvato
+    } else if (tuttiDocumentiCaricati && !tuttiDocumentiApprovati) {
+      return 'pending' // Giallo: tutto caricato ma non tutto approvato
+    } else {
+      return 'incomplete' // Default: parziale
+    }
+  }
+  
+  const documentsStatus = getDocumentsStatus()
+  
   // ✅ Nomi da API (stesso formato delle mini-card)
   const clientName = appointmentData.client_name || appointment.clientName || 'Cliente'
   const notaryName = appointmentData.notaio_nome || appointment.notaryName || 'Notaio'
@@ -243,8 +258,8 @@ function DeedDetailCard({ appointment, onEnter, documentiCaricati = 0, documenti
             </div>
           </div>
           
-          {/* Badge contatore fuori dal box */}
-          <div className={`deed-documents-badge ${tuttiDocumentiCaricati ? 'complete' : 'incomplete'}`}>
+          {/* Badge contatore fuori dal box - 3 stati: empty (grigio), pending (giallo), complete (verde) */}
+          <div className={`deed-documents-badge ${documentsStatus}`}>
             <div className="badge-row">
               <span className="badge-label">Caricati:</span>
               <span className="badge-value">{documentiCaricati}/{documentiTotali}</span>

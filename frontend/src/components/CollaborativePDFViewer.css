@@ -18,6 +18,7 @@
   animation: pdfOverlayFadeIn 0.3s ease;
   justify-content: center;
   animation: fadeIn 0.3s ease;
+  overflow: visible !important; /* ✅ Permetti dropdown Office Editor di uscire */
 }
 
 @keyframes fadeIn {
@@ -47,13 +48,55 @@
   width: 95vw;
   height: 95vh;
   max-width: 1800px;
-  background: #FFFFFF;
-  border-radius: 16px;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  background: #F3F4F6; /* ✅ Grigio coordinato con sidebar */
   animation: slideUp 0.3s ease;
+  overflow: visible !important; /* ✅ Permetti dropdown Office Editor di uscire */
+}
+
+/* ✅ Modalità editing testo - Stile per gli span editabili */
+.textLayer span[contenteditable="true"] {
+  cursor: text !important;
+  caret-color: #2196F3 !important; /* Cursore blu visibile */
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  pointer-events: auto !important;
+  transition: outline 0.2s ease, background-color 0.2s ease;
+  position: relative !important;
+  z-index: 100 !important;
+  display: inline-block !important;
+  min-width: 1px !important;
+  min-height: 1em !important;
+}
+
+.textLayer span[contenteditable="true"]:hover {
+  outline: 2px dashed rgba(33, 150, 243, 0.5) !important;
+  background-color: rgba(33, 150, 243, 0.05) !important;
+}
+
+.textLayer span[contenteditable="true"]:focus {
+  outline: 2px solid #2196F3 !important;
+  background-color: rgba(33, 150, 243, 0.1) !important;
+}
+
+/* ✅ Assicura che il text layer sia interattivo durante editing */
+.react-pdf__Page__textContent.textLayer {
+  pointer-events: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  z-index: 100 !important; /* Aumentato da 10 a 100 */
+  position: absolute !important;
+  inset: 0 !important;
+}
+
+/* ✅ Durante editing, abbassa lo z-index del canvas per far passare i click al text layer */
+.pdf-page canvas,
+.pdf-page-left canvas,
+.pdf-page-right canvas {
+  position: relative !important;
+  z-index: 0 !important; /* Ridotto da 1 a 0 */
+  pointer-events: none !important; /* Canvas NON deve catturare i click */
 }
 
 @keyframes slideUp {
@@ -75,6 +118,7 @@
   padding: 16px 24px;
   background: linear-gradient(135deg, #1668B0 0%, #4FADFF 100%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative; /* ✅ Necessario per posizionamento assoluto del badge */
 }
 
 .pdf-viewer-title {
@@ -108,10 +152,29 @@
   letter-spacing: 0.5px;
 }
 
+/* ✅ Badge centrato nell'header con position: absolute */
+.pdf-viewer-badge-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-transform: none; /* ✅ Testo normale per data/ora */
+}
+
 .pdf-viewer-header-controls {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* Indicatore zoom nell'header per cliente */
+.pdf-zoom-indicator {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  min-width: 55px;
+  text-align: center;
+  padding: 0 8px;
 }
 
 .pdf-viewer-btn {
@@ -150,7 +213,7 @@
 .pdf-viewer-main {
   display: flex;
   flex: 1;
-  overflow: hidden;
+  overflow: visible !important; /* ✅ Permetti dropdown Office Editor di uscire */
 }
 
 /* Sidebar Partecipanti */
@@ -167,7 +230,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 16px;
+  padding: 24px 16px 16px 16px; /* ✅ Padding-top aumentato per allineare il testo */
   background: white;
   border-bottom: 1px solid #E5E7EB;
 }
@@ -294,7 +357,7 @@
   flex: 1;
   display: flex;
   flex-direction: row; /* ✅ Layout orizzontale per contenuto + sidebar */
-  overflow: hidden;
+  overflow: visible !important; /* ✅ Permetti dropdown Office Editor di uscire */
   background: #F3F4F6;
 }
 
@@ -303,7 +366,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible !important; /* ✅ Permetti dropdown Office Editor di uscire */
 }
 
 /* Toolbar */
@@ -405,7 +468,7 @@
 .pdf-pages-container {
   flex: 1;
   overflow: auto;
-  padding: 40px;
+  padding: 15px; /* ✅ Ridotto da 40px per meno margini bianchi */
   display: flex;
   justify-content: center;
   align-items: center; /* ✅ Centrato verticalmente per evitare taglio quando ingrandito */
@@ -413,6 +476,7 @@
   transition: transform 0.3s ease;
   perspective: 3000px; /* ✅ Prospettiva 3D per vedere l'effetto libro */
   perspective-origin: center center; /* ✅ Punto di vista centrato */
+  background: #F3F4F6; /* ✅ Grigio coordinato, no bianco */
 }
 
 .pdf-pages-container.flipping {
@@ -441,7 +505,7 @@
 
 .pdf-pages-wrapper {
   display: flex;
-  gap: 20px;
+  gap: 12px; /* ✅ Ridotto da 20px per meno spazio tra pagine */
   max-width: 100%;
   transform-style: preserve-3d;
   perspective: 2000px; /* Prospettiva 3D per effetto libro */
@@ -764,28 +828,27 @@
 /* PDF Page */
 .pdf-page {
   position: relative;
-  background: white;
-  border: 1px solid #D1D5DB;
+  background: transparent; /* ✅ Trasparente, solo il PDF è visibile */
+  border: none; /* ✅ Nessun bordo */
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: none; /* ✅ Nessuna ombra sul contenitore */
   overflow: hidden;
-  min-height: 800px;
-  width: 600px;
+  padding: 12px; /* ✅ Ridotto da 30px per massimizzare spazio contenuto */
   transition: all 0.3s ease;
   backface-visibility: hidden; /* Nasconde il retro della pagina durante la rotazione */
   transform-style: preserve-3d;
+  display: inline-block; /* ✅ Si adatta al contenuto del PDF */
 }
 
-/* Classi pagina sinistra/destra (rimosse animazioni vecchie, ora gestite dal wrapper) */
-.pdf-page-left,
-.pdf-page-right {
-  /* L'animazione è gestita dal wrapper .pdf-pages-wrapper */
+/* ✅ Padding ridotto per vista a due pagine */
+.pdf-double-page-wrapper .pdf-page {
+  padding: 8px; /* ✅ Ridotto da 15px per massimizzare spazio in vista doppia */
 }
 
 .pdf-page-number {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 24px; /* ✅ 12px padding + 12px margine = dentro il PDF */
+  right: 24px; /* ✅ 12px padding + 12px margine = dentro il PDF */
   padding: 4px 12px;
   background: rgba(79, 173, 255, 0.1);
   border: 1px solid rgba(79, 173, 255, 0.3);
@@ -797,10 +860,16 @@
   z-index: 10;
 }
 
+/* ✅ Badge per vista doppia pagina (padding ridotto) */
+.pdf-double-page-wrapper .pdf-page-number {
+  top: 20px; /* ✅ 8px padding + 12px margine */
+  right: 20px; /* ✅ 8px padding + 12px margine */
+}
+
 .pdf-page-content {
   width: 100%;
   height: 100%;
-  padding: 20px;
+  padding: 8px; /* ✅ Ridotto da 20px per massimizzare area testo */
   position: relative;
 }
 
@@ -1195,7 +1264,7 @@
 
 .pdf-double-page-wrapper {
   display: flex;
-  gap: 24px;
+  gap: 0; /* ✅ Nessun gap, le pagine si toccano */
   justify-content: center;
   align-items: flex-start;
 }
@@ -1441,5 +1510,63 @@
 .pdf-client-sign-btn:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================ */
+/* FABRIC.JS CANVAS */
+/* ============================================ */
+
+.pdf-fabric-canvas {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: auto !important;
+  z-index: 500 !important;
+}
+
+.pdf-fabric-canvas.read-only {
+  pointer-events: none !important;
+}
+
+/* Stili per gli strumenti Fabric.js nella toolbar */
+.pdf-toolbar-fabric {
+  border-left: 1px solid #E5E7EB;
+  border-right: 1px solid #E5E7EB;
+  padding: 0 8px;
+  margin: 0 8px;
+}
+
+.pdf-toolbar-fabric .pdf-toolbar-btn {
+  position: relative;
+}
+
+.pdf-toolbar-fabric .pdf-toolbar-btn.active {
+  background: #EBF5FF;
+  color: #2196F3;
+  box-shadow: inset 0 0 0 1px #2196F3;
+}
+
+.pdf-toolbar-fabric .pdf-toolbar-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  background: #2196F3;
+  border-radius: 1px;
+}
+
+/* Canvas Fabric.js - oggetti selezionati */
+.canvas-container {
+  position: relative !important;
+}
+
+/* Hide Fabric.js default selection controls in read-only */
+.pdf-fabric-canvas.read-only .canvas-container {
+  cursor: default !important;
 }
 

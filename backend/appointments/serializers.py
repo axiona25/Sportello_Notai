@@ -193,13 +193,15 @@ class AppuntamentoSerializer(serializers.ModelSerializer):
     created_by_email = serializers.SerializerMethodField()
     tipologia_atto_nome = serializers.CharField(source='tipologia_atto.name', read_only=True)
     tipologia_atto_codice = serializers.CharField(source='tipologia_atto.code', read_only=True)
+    tipologia_atto_code = serializers.CharField(source='tipologia_atto.code', read_only=True)  # Alias per frontend
+    tipologia_atto_icon = serializers.SerializerMethodField()
     
     class Meta:
         model = Appuntamento
         fields = [
             'id', 'notaio', 'notaio_nome', 'notaio_dettagli',
             'act', 'status', 'status_display', 'tipo', 'tipo_display',
-            'tipologia_atto', 'tipologia_atto_nome', 'tipologia_atto_codice',
+            'tipologia_atto', 'tipologia_atto_nome', 'tipologia_atto_codice', 'tipologia_atto_code', 'tipologia_atto_icon',
             'start_time', 'end_time',
             'titolo', 'descrizione',
             'location', 'is_online', 'meeting_url',
@@ -237,11 +239,14 @@ class AppuntamentoSerializer(serializers.ModelSerializer):
         return "N/A"
     
     def get_client_id(self, obj):
-        """Restituisce l'ID del cliente che ha richiesto l'appuntamento."""
+        """Restituisce l'ID del cliente (User) che ha richiesto l'appuntamento."""
         # Cerca il partecipante con ruolo 'richiedente'
         richiedente = obj.partecipanti.filter(ruolo='richiedente').first()
         if richiedente and richiedente.cliente:
-            return str(richiedente.cliente.id)  # Restituisce UUID come stringa
+            # ✅ Restituisce l'ID dell'User associato, non l'ID del record Client
+            if hasattr(richiedente.cliente, 'user') and richiedente.cliente.user:
+                return str(richiedente.cliente.user.id)
+            return str(richiedente.cliente.id)  # Fallback al Client ID
         return None
     
     def get_client_name(self, obj):
@@ -262,6 +267,37 @@ class AppuntamentoSerializer(serializers.ModelSerializer):
         if richiedente and richiedente.cliente and richiedente.cliente.user:
             return richiedente.cliente.user.email
         return "N/A"
+    
+    def get_tipologia_atto_icon(self, obj):
+        """
+        Restituisce il nome dell'icona per la tipologia atto.
+        Mapping basato sul code della tipologia, sincronizzato con frontend/src/config/tipologieAttiConfig.js
+        """
+        # Mapping code → icon name (lucide-react)
+        ICON_MAP = {
+            'rogito': 'Home',
+            'consulenza': 'MessageSquare',
+            'revisione': 'Search',
+            'firma': 'PenTool',
+            'procura': 'FileSignature',
+            'testamento': 'ScrollText',
+            'donazione': 'Gift',
+            'mutuo': 'Coins',
+            'costituzione': 'Building2',
+            'certificazione': 'Award',
+            'vidimazione': 'Stamp',
+            'altro': 'FileText',
+        }
+        
+        if obj.tipologia_atto and obj.tipologia_atto.code:
+            # Estrai il code base (es. 'rogito' da 'rogito_notarile')
+            code = obj.tipologia_atto.code.lower()
+            for key in ICON_MAP:
+                if key in code:
+                    return ICON_MAP[key]
+        
+        # Default icon
+        return 'FileText'
 
 
 class CreaRichiestaAppuntamentoSerializer(serializers.Serializer):
@@ -428,6 +464,7 @@ class DocumentoAppuntamentoSerializer(serializers.ModelSerializer):
     )
     # ✅ Campi flat per semplificare l'accesso nel frontend
     document_type_name = serializers.CharField(source='document_type.name', read_only=True)
+    required_from = serializers.CharField(source='document_type.required_from', read_only=True)  # ✅ Chi deve caricare il documento
     nome_file = serializers.SerializerMethodField()
     file_path = serializers.SerializerMethodField()
     dimensione = serializers.SerializerMethodField()
@@ -465,7 +502,7 @@ class DocumentoAppuntamentoSerializer(serializers.ModelSerializer):
         model = DocumentoAppuntamento
         fields = [
             'id', 'appuntamento',
-            'document_type', 'document_type_id', 'document_type_name',
+            'document_type', 'document_type_id', 'document_type_name', 'required_from',
             'file', 'nome_file', 'file_path', 'dimensione',
             'stato', 'stato_display',
             'is_obbligatorio',

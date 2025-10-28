@@ -1361,6 +1361,14 @@
   color: #1668B0;
 }
 
+.document-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
 .document-name {
   font-family: 'Poppins', sans-serif;
   font-size: 13px;
@@ -1369,6 +1377,13 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.document-date {
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  color: #6B7280;
+  white-space: nowrap;
 }
 
 /* Container e icone azioni documenti */
@@ -1411,6 +1426,130 @@
   width: 14px;
   height: 14px;
   flex-shrink: 0;
+}
+
+/* ========================================
+   Nuova struttura documenti con Template e Cartelle
+   ======================================== */
+
+.documents-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 12px;
+}
+
+/* Sezione Template Documento */
+.template-document-section {
+  background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+  border: 1px solid #4FADFF;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 4px;
+}
+
+.template-document-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.template-document-item:hover {
+  transform: translateX(4px);
+}
+
+.template-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: white;
+  border-radius: 10px;
+  color: #1668B0;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(22, 104, 176, 0.15);
+}
+
+.template-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.template-info strong {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1668B0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.template-client-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  color: #4B5563;
+}
+
+/* Sezione Documenti Cliente */
+.client-documents-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.document-folder {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.folder-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #F8FAFC;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.folder-header:hover {
+  background: #F1F5F9;
+}
+
+.folder-header svg {
+  flex-shrink: 0;
+  color: #1668B0;
+}
+
+.folder-header span {
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.folder-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: #FFFFFF;
+}
+
+.folder-content .document-item {
+  margin: 0;
 }
 
 /* === STILI ICONE STATO (Commentati - Disponibili per uso futuro) === */
@@ -1482,7 +1621,8 @@
 .meeting-room-card .card-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 10px;
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid #E5E7EB;
@@ -1532,7 +1672,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4FADFF 0%, #1668B0 100%);
+  background: #4FADFF; /* Fallback se nessun stile inline */
   color: white;
   display: flex;
   align-items: center;
@@ -1718,6 +1858,148 @@
   flex-shrink: 0;
 }
 
+/* ✅ Placeholder elegante quando nessuno è in sala d'attesa */
+.participant-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  min-height: 240px;
+  flex: 1;
+  background: linear-gradient(135deg, rgba(79, 173, 255, 0.03) 0%, rgba(22, 104, 176, 0.05) 100%);
+  border-radius: 16px;
+  border: 2px dashed rgba(79, 173, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.participant-placeholder::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(79, 173, 255, 0.08) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.participant-placeholder:hover::before {
+  opacity: 1;
+}
+
+.participant-placeholder svg {
+  color: #4FADFF;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 4px 12px rgba(79, 173, 255, 0.15));
+}
+
+.participant-placeholder:hover svg {
+  opacity: 0.85;
+  transform: scale(1.08);
+}
+
+.participant-placeholder p {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B7280;
+  margin-top: 20px;
+  text-align: center;
+  line-height: 1.6;
+  max-width: 220px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ✅ Badge decorativo (opzionale) */
+.participant-placeholder::after {
+  content: '';
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #4FADFF 0%, #1668B0 100%);
+  border-radius: 50%;
+  opacity: 0.08;
+}
+
+/* ✅ Placeholder Chat - Stile elegante come i partecipanti */
+.chat-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  flex: 1;
+  background: linear-gradient(135deg, rgba(79, 173, 255, 0.03) 0%, rgba(22, 104, 176, 0.05) 100%);
+  border-radius: 16px;
+  border: 2px dashed rgba(79, 173, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.chat-placeholder::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(79, 173, 255, 0.08) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.chat-placeholder:hover::before {
+  opacity: 1;
+}
+
+.chat-placeholder svg {
+  color: #4FADFF;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 4px 12px rgba(79, 173, 255, 0.15));
+}
+
+.chat-placeholder:hover svg {
+  opacity: 0.85;
+  transform: scale(1.08);
+}
+
+.chat-placeholder p {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B7280;
+  margin-top: 20px;
+  text-align: center;
+  line-height: 1.6;
+  max-width: 220px;
+  position: relative;
+  z-index: 1;
+}
+
+.chat-placeholder::after {
+  content: '';
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #4FADFF 0%, #1668B0 100%);
+  border-radius: 50%;
+  opacity: 0.08;
+}
+
 .create-room-btn {
   width: 100%;
   padding: 10px;
@@ -1758,7 +2040,8 @@
 .next-meeting-card .card-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 10px;
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid #E5E7EB;

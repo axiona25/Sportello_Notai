@@ -1,0 +1,1290 @@
+/* Office Editor Real-time - Stile Professionale Word-like */
+
+.office-editor-container {
+  width: 100%;
+  height: 100vh !important; /* Altezza viewport completa */
+  min-height: 100vh !important;
+  display: flex;
+  flex-direction: column;
+  background: #F3F4F6;
+  overflow: visible !important; /* ✅ Permette ai dropdown di uscire completamente */
+  position: relative;
+  max-height: none !important; /* NO limiti di altezza */
+}
+
+/* === TOOLBAR QUILL CUSTOMIZZATA - STILE WORD PROFESSIONALE === */
+
+/* Container principale toolbar - integrata con header */
+.office-editor-container .ql-toolbar.ql-snow {
+  border: none !important;
+  background: white !important;
+  padding: 8px 16px !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-family: 'Inter', sans-serif !important;
+  overflow: visible !important; /* ✅ Permette ai dropdown di uscire */
+  position: relative !important;
+  z-index: 100 !important;
+}
+
+/* Gruppi di pulsanti */
+.office-editor-container .ql-toolbar .ql-formats {
+  margin-right: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  padding: 0 8px !important;
+}
+
+.office-editor-container .ql-toolbar .ql-formats:last-child {
+  margin-right: 0 !important;
+}
+
+/* === DROPDOWN (Font, Size, etc.) === */
+.office-editor-container .ql-picker {
+  font-family: 'Inter', sans-serif !important;
+  border: 1px solid #D1D5DB !important;
+  border-radius: 6px !important;
+  background: #F9FAFB !important;
+  transition: all 0.2s ease !important;
+  position: relative !important; /* ✅ Necessario per il posizionamento assoluto delle options */
+}
+
+.office-editor-container .ql-picker:hover {
+  background: #F3F4F6 !important;
+  border-color: #9CA3AF !important;
+}
+
+.office-editor-container .ql-picker.ql-expanded {
+  border-color: #4FADFF !important;
+  background: white !important;
+}
+
+/* Dropdown label */
+.office-editor-container .ql-picker-label {
+  padding: 6px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 13px !important;
+  color: #374151 !important;
+  font-weight: 500 !important;
+}
+
+.office-editor-container .ql-picker-label::before {
+  font-size: 13px !important;
+}
+
+.office-editor-container .ql-picker-label svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Font picker - più largo */
+.office-editor-container .ql-font {
+  width: 140px !important;
+}
+
+/* Size picker */
+.office-editor-container .ql-size {
+  width: 80px !important;
+}
+
+/* Dropdown options - RIMOSSO FIXED, gestito da JavaScript */
+.office-editor-container .ql-picker-options {
+  background: white !important;
+  border: 1px solid #D1D5DB !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  padding: 4px !important;
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  /* Position e z-index gestiti da JavaScript per spostamento nel body */
+}
+
+.office-editor-container .ql-picker-item {
+  padding: 8px 12px !important;
+  border-radius: 4px !important;
+  font-size: 13px !important;
+  color: #374151 !important;
+  transition: all 0.15s ease !important;
+}
+
+.office-editor-container .ql-picker-item:hover {
+  background: #EFF6FF !important;
+  color: #1E40AF !important;
+}
+
+.office-editor-container .ql-picker-item.ql-selected {
+  background: #DBEAFE !important;
+  color: #1E40AF !important;
+  font-weight: 600 !important;
+}
+
+/* === PULSANTI - Stile Microsoft Office === */
+.office-editor-container .ql-toolbar button {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  color: #444444 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  margin: 0 1px !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+}
+
+.office-editor-container .ql-toolbar button:hover {
+  background: rgba(79, 173, 255, 0.1) !important;
+  border-color: rgba(79, 173, 255, 0.2) !important;
+  color: #0078D4 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+.office-editor-container .ql-toolbar button.ql-active {
+  background: rgba(0, 120, 212, 0.15) !important;
+  border-color: #0078D4 !important;
+  color: #0078D4 !important;
+  box-shadow: 0 0 0 1px rgba(0, 120, 212, 0.1) inset !important;
+}
+
+.office-editor-container .ql-toolbar button:active {
+  transform: scale(0.95);
+}
+
+/* ✅ Icone pulsanti Quill native (per i pulsanti che non sostituiamo) */
+.office-editor-container .ql-toolbar button svg.ql-stroke,
+.office-editor-container .ql-toolbar button .ql-stroke {
+  stroke: currentColor !important;
+}
+
+.office-editor-container .ql-toolbar button .ql-fill {
+  fill: currentColor !important;
+}
+
+/* ✅ Styling professionale per icone Font Awesome */
+.office-editor-container .ql-toolbar button .fa-icon-container {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  pointer-events: none !important;
+}
+
+.office-editor-container .ql-toolbar button .fa-icon-container svg {
+  color: #444444;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  display: block;
+  margin: auto;
+}
+
+/* Icone Bold e Italic più leggere e sottili */
+.office-editor-container .ql-toolbar button.ql-bold .fa-icon-container svg,
+.office-editor-container .ql-toolbar button.ql-italic .fa-icon-container svg {
+  opacity: 0.85;
+  font-weight: 400;
+}
+
+.office-editor-container .ql-toolbar button:hover .fa-icon-container svg {
+  color: #0078D4;
+}
+
+.office-editor-container .ql-toolbar button.ql-active .fa-icon-container svg {
+  color: #0078D4;
+  filter: drop-shadow(0 0 2px rgba(0, 120, 212, 0.3));
+}
+
+/* Assicura che i pulsanti con icone FA abbiano position relative */
+.office-editor-container .ql-toolbar button.ql-bold,
+.office-editor-container .ql-toolbar button.ql-italic,
+.office-editor-container .ql-toolbar button.ql-underline,
+.office-editor-container .ql-toolbar button.ql-strike,
+.office-editor-container .ql-toolbar button.ql-script,
+.office-editor-container .ql-toolbar button.ql-list,
+.office-editor-container .ql-toolbar button.ql-align,
+.office-editor-container .ql-toolbar button.ql-indent,
+.office-editor-container .ql-toolbar button.ql-textColor,
+.office-editor-container .ql-toolbar button.ql-highlightColor {
+  position: relative !important;
+}
+
+/* Styling per i pulsanti azioni rapide con icone Font Awesome */
+.office-editor-container .toolbar-btn-icon svg,
+.office-editor-container .toolbar-btn svg,
+.office-editor-container .save-btn svg {
+  color: #444444;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.office-editor-container .toolbar-btn-icon:hover svg,
+.office-editor-container .toolbar-btn:hover svg {
+  color: #0078D4;
+}
+
+.office-editor-container .save-btn svg {
+  color: white;
+}
+
+.office-editor-container .save-btn:hover svg {
+  color: white;
+}
+
+/* ✨ Stile professionale ed elegante per icone azioni rapide */
+.office-editor-container .toolbar-btn-icon.professional-icon {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.office-editor-container .toolbar-btn-icon.professional-icon svg {
+  color: #4B5563;
+  stroke-width: 1.5;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05));
+}
+
+.office-editor-container .toolbar-btn-icon.professional-icon:hover {
+  background: linear-gradient(135deg, rgba(0, 120, 212, 0.08) 0%, rgba(79, 173, 255, 0.08) 100%);
+  border-color: rgba(0, 120, 212, 0.2);
+  transform: translateY(-1px);
+}
+
+.office-editor-container .toolbar-btn-icon.professional-icon:hover svg {
+  color: #0078D4;
+  filter: drop-shadow(0 2px 4px rgba(0, 120, 212, 0.2));
+}
+
+.office-editor-container .toolbar-btn-icon.professional-icon:active {
+  transform: translateY(0);
+  background: rgba(0, 120, 212, 0.12);
+}
+
+.office-editor-container .toolbar-btn-icon.professional-icon.active {
+  background: linear-gradient(135deg, rgba(0, 120, 212, 0.15) 0%, rgba(79, 173, 255, 0.15) 100%);
+  border-color: #0078D4;
+}
+
+.office-editor-container .toolbar-btn-icon.professional-icon.active svg {
+  color: #0078D4;
+}
+
+/* ✅ TUTTE LE ICONE ORA USANO FONT AWESOME - Gestite via JavaScript */
+
+/* === PULSANTI CUSTOM FONT SIZE & CASE === */
+
+/* Aumenta/Diminuisci Font Size */
+#quill-toolbar-custom .font-size-increase,
+#quill-toolbar-custom .font-size-decrease,
+#quill-toolbar-custom .change-case {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: #4B5563 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+#quill-toolbar-custom .font-size-increase:hover,
+#quill-toolbar-custom .font-size-decrease:hover,
+#quill-toolbar-custom .change-case:hover {
+  background: #F3F4F6 !important;
+  border-color: #E5E7EB !important;
+  color: #1F2937 !important;
+}
+
+/* Aumenta/Diminuisci dimensione font - A+/A− */
+#quill-toolbar-custom .font-size-increase,
+#quill-toolbar-custom .font-size-decrease {
+  display: flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+}
+
+/* Lettera "A" nera */
+#quill-toolbar-custom .font-size-increase .letter,
+#quill-toolbar-custom .font-size-decrease .letter {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1F2937; /* Nero */
+  font-family: 'Inter', sans-serif;
+}
+
+/* Simbolo "+/-" blu */
+#quill-toolbar-custom .font-size-increase .symbol,
+#quill-toolbar-custom .font-size-decrease .symbol {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4FADFF; /* Blu stile progetto */
+  font-family: 'Inter', sans-serif;
+}
+
+#quill-toolbar-custom .font-size-increase:hover .symbol,
+#quill-toolbar-custom .font-size-decrease:hover .symbol {
+  color: #3B8FCC; /* Blu più scuro al hover */
+}
+
+#quill-toolbar-custom .font-size-increase:active,
+#quill-toolbar-custom .font-size-decrease:active {
+  transform: scale(0.95);
+}
+
+/* Cambia maiuscole - Aa pulito senza pattern */
+#quill-toolbar-custom .change-case {
+  width: 32px !important;
+  padding: 0 !important;
+  position: relative !important;
+}
+
+#quill-toolbar-custom .change-case span {
+  font-size: 16px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  color: #1F2937; /* Nero pulito */
+}
+
+/* === COLOR PICKERS - Senza bordi === */
+.office-editor-container .ql-color-picker,
+.office-editor-container .ql-background {
+  width: auto !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.office-editor-container .ql-color-picker:hover,
+.office-editor-container .ql-background:hover {
+  border: none !important;
+  background: transparent !important;
+}
+
+.office-editor-container .ql-color-picker.ql-expanded,
+.office-editor-container .ql-background.ql-expanded {
+  border: none !important;
+  background: transparent !important;
+}
+
+.office-editor-container .ql-color-picker .ql-picker-label,
+.office-editor-container .ql-background .ql-picker-label {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Nascondi solo gli SVG principali (icone), non la freccia */
+.office-editor-container .ql-color-picker .ql-picker-label svg:not(.ql-stroke),
+.office-editor-container .ql-background .ql-picker-label svg:not(.ql-stroke) {
+  display: none !important;
+}
+
+/* === EVIDENZIATORE (Background) - Icona Pennarello verso sinistra === */
+.office-editor-container .ql-background .ql-picker-label::before {
+  content: '' !important;
+  width: 14px !important;
+  height: 12px !important;
+  background: linear-gradient(135deg, #6B7280 0%, #6B7280 60%, #9CA3AF 60%, #9CA3AF 100%) !important;
+  clip-path: polygon(
+    0% 40%,
+    15% 20%,
+    40% 0%,
+    70% 0%,
+    100% 30%,
+    100% 70%,
+    70% 100%,
+    40% 100%,
+    15% 80%,
+    0% 60%
+  ) !important;
+  transform: rotate(135deg) !important;
+  margin-bottom: 3px !important;
+}
+
+.office-editor-container .ql-background .ql-picker-label::after {
+  content: '' !important;
+  width: 18px !important;
+  height: 3px !important;
+  background: var(--ql-bg-color, #FFEB3B) !important;
+  border-radius: 0 !important;
+  position: absolute !important;
+  bottom: 3px !important;
+}
+
+/* === COLORE TESTO - Lettera A con barra rossa === */
+.office-editor-container .ql-color .ql-picker-label::before {
+  content: 'A' !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  font-family: 'Inter', sans-serif !important;
+  color: #1F2937 !important;
+  margin-bottom: 3px !important;
+}
+
+.office-editor-container .ql-color .ql-picker-label::after {
+  content: '' !important;
+  width: 18px !important;
+  height: 3px !important;
+  background: var(--ql-text-color, #EF4444) !important;
+  border-radius: 0 !important;
+  position: absolute !important;
+  bottom: 3px !important;
+}
+
+/* Aggiungi spazio per la freccia */
+.office-editor-container .ql-color,
+.office-editor-container .ql-background {
+  position: relative !important;
+  padding-right: 12px !important;
+}
+
+/* Piccola freccia in basso a destra usando l'SVG originale ma ridimensionato */
+.office-editor-container .ql-color .ql-picker-label svg.ql-stroke,
+.office-editor-container .ql-background .ql-picker-label svg.ql-stroke {
+  display: block !important;
+  position: absolute !important;
+  right: 2px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 8px !important;
+  height: 8px !important;
+  stroke: #6B7280 !important;
+}
+
+/* Color picker dropdown */
+.office-editor-container .ql-color-picker .ql-picker-options,
+.office-editor-container .ql-background .ql-picker-options {
+  width: 160px !important;
+  padding: 8px !important;
+}
+
+.office-editor-container .ql-picker.ql-color .ql-picker-item {
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 4px !important;
+  border: 1px solid #E5E7EB !important;
+  margin: 2px !important;
+}
+
+/* === FONT LABELS CUSTOM === */
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="arial"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="arial"]::before {
+  content: 'Arial' !important;
+  font-family: Arial, sans-serif !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="courier"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="courier"]::before {
+  content: 'Courier' !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="georgia"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="georgia"]::before {
+  content: 'Georgia' !important;
+  font-family: Georgia, serif !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="times"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="times"]::before {
+  content: 'Times New Roman' !important;
+  font-family: 'Times New Roman', serif !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="verdana"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="verdana"]::before {
+  content: 'Verdana' !important;
+  font-family: Verdana, sans-serif !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="tahoma"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="tahoma"]::before {
+  content: 'Tahoma' !important;
+  font-family: Tahoma, sans-serif !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="trebuchet"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="trebuchet"]::before {
+  content: 'Trebuchet MS' !important;
+  font-family: 'Trebuchet MS', sans-serif !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="comic-sans"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="comic-sans"]::before {
+  content: 'Comic Sans' !important;
+  font-family: 'Comic Sans MS', cursive !important;
+}
+
+/* Default font */
+.office-editor-container .ql-snow .ql-picker.ql-font .ql-picker-label:not([data-value])::before {
+  content: 'Sans Serif' !important;
+}
+
+/* === SIZE LABELS CUSTOM (stile Word - pt) === */
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="8pt"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="8pt"]::before {
+  content: '8' !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="9pt"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="9pt"]::before {
+  content: '9' !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="10pt"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="10pt"]::before {
+  content: '10' !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="11pt"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="11pt"]::before {
+  content: '11' !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="12pt"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="12pt"]::before {
+  content: '12' !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="14pt"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="14pt"]::before {
+  content: '14' !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="16pt"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="16pt"]::before {
+  content: '16' !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="18pt"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="18pt"]::before {
+  content: '18' !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="20pt"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="20pt"]::before {
+  content: '20' !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="22pt"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="22pt"]::before {
+  content: '22' !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="24pt"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="24pt"]::before {
+  content: '24' !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="26pt"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="26pt"]::before {
+  content: '26' !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="28pt"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="28pt"]::before {
+  content: '28' !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="36pt"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="36pt"]::before {
+  content: '36' !important;
+}
+
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="48pt"]::before,
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="48pt"]::before {
+  content: '48' !important;
+}
+
+/* Default size (12pt - standard Word) */
+.office-editor-container .ql-snow .ql-picker.ql-size .ql-picker-label:not([data-value])::before {
+  content: '12' !important;
+}
+
+/* === TOOLTIPS === */
+.office-editor-container .ql-toolbar button:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1F2937;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.office-editor-container .ql-toolbar button:hover::after {
+  opacity: 0.9;
+}
+
+/* === SCROLLBAR DROPDOWN === */
+.office-editor-container .ql-picker-options::-webkit-scrollbar {
+  width: 6px;
+}
+
+.office-editor-container .ql-picker-options::-webkit-scrollbar-track {
+  background: #F3F4F6;
+  border-radius: 3px;
+}
+
+.office-editor-container .ql-picker-options::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 3px;
+}
+
+.office-editor-container .ql-picker-options::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* === EDITOR CONTENT - FORMATO A4 CON PAGINE SEPARATE === */
+.office-editor-content {
+  flex: 1 1 auto !important; /* Permette crescita E riduzione */
+  overflow-y: scroll !important; /* FORZATO scroll sempre visibile */
+  overflow-x: hidden !important;
+  background: #E5E7EB !important; /* Sfondo grigio come Word */
+  display: block !important; /* Cambio da flex a block per evitare limitazioni */
+  text-align: center !important; /* Centro il contenuto */
+  padding: 30px 20px 100px 20px !important; /* Padding MOLTO aumentato in basso per vedere bordo inferiore */
+  max-height: none !important; /* NO limiti di altezza */
+  height: auto !important;
+  min-height: 0 !important; /* Permette che flex funzioni correttamente */
+}
+
+/* Visualizzazione pagina singola - una pagina alla volta, centrata */
+.office-editor-content.view-mode-single {
+  align-items: center;
+}
+
+.office-editor-content.view-mode-single .ql-container.ql-snow {
+  margin: 0 auto; /* Centrato */
+}
+
+/* Visualizzazione doppia - due pagine affiancate */
+.office-editor-content.view-mode-double {
+  justify-content: center;
+  align-items: flex-start;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 20px; /* Spazio tra le pagine */
+  max-width: calc(210mm * 2 + 40px); /* Due pagine A4 + spazio */
+  margin: 0 auto;
+}
+
+.office-editor-content.view-mode-double .ql-container.ql-snow {
+  margin: 0 0 30px 0;
+  flex: 0 0 210mm; /* Larghezza fissa A4 */
+}
+
+/* Scrollbar custom già definita più avanti - rimossa duplicato */
+
+.office-editor-container .ql-container.ql-snow {
+  border: none !important;
+  font-family: 'Times New Roman', Times, serif !important;
+  font-size: 14pt !important; /* CORRETTO: 14pt come da Word */
+  line-height: 1.3 !important; /* Aumentato per distribuire meglio */
+  width: 210mm !important;
+  max-width: 210mm !important;
+  min-height: auto !important; /* Lascia che l'editor gestisca l'altezza */
+  height: auto !important;
+  margin: 0 auto !important;
+  padding-bottom: 50px !important; /* Spazio dopo ultima pagina per vedere bordo */
+  background: transparent !important;
+  box-shadow: none !important;
+  display: inline-block !important; /* inline-block per centrare con text-align del parent */
+  overflow: visible !important; /* Permette di vedere tutto il contenuto */
+  
+  /* ZOOM AUTOMATICO: scala al 70% per mostrare A4 completo ma leggibile */
+  transform: scale(0.70) !important;
+  transform-origin: top center !important; /* Scala dal centro in alto */
+}
+
+/* ========================================================================
+   EDITOR A4 STILE ONLYOFFICE/WORD - SEMPLICE E FUNZIONANTE
+   Una pagina A4 bianca con margini, il contenuto scorre naturalmente
+   ======================================================================== */
+
+.office-editor-container .ql-editor {
+  /* DIMENSIONI PAGINA A4 */
+  width: 210mm !important;
+  min-height: 297mm !important;
+  max-width: 210mm !important;
+  
+  /* MARGINI WORD: 25mm su tutti i lati */
+  padding: 25mm !important;
+  box-sizing: border-box !important;
+  
+  /* POSIZIONE E CENTRAGGIO */
+  position: relative !important;
+  margin: 0 auto 20mm auto !important;
+  
+  /* SFONDO BIANCO */
+  background: white !important;
+  
+  /* BORDO E OMBRA PAGINA */
+  box-shadow: 
+    0 0 0 1px #D1D5DB,
+    0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  
+  border: none !important;
+  border-radius: 0 !important;
+  
+  /* FORMATTAZIONE TESTO WORD */
+  font-family: 'Times New Roman', Times, serif !important;
+  font-size: 14pt !important;
+  line-height: 1.3 !important;
+  color: #000000 !important;
+  
+  /* Contenuto visibile */
+  overflow: visible !important;
+  
+  /* SIMULAZIONE PAGINE MULTIPLE: background pattern */
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      white 0mm,
+      white 297mm,
+      #F3F4F6 297mm, /* Grigio chiaro tra pagine */
+      #F3F4F6 317mm,
+      white 317mm
+    ) !important;
+  
+  /* Box shadow per ogni pagina */
+  box-shadow:
+    /* Bordo e ombra pagina principale */
+    0 0 0 1px #D1D5DB,
+    0 2px 8px rgba(0, 0, 0, 0.15),
+    /* Linee separazione tra pagine */
+    0 297mm 0 1px #D1D5DB,
+    0 614mm 0 1px #D1D5DB,
+    0 931mm 0 1px #D1D5DB !important;
+}
+
+/* Stile placeholder quando l'editor è vuoto */
+.office-editor-container .ql-editor.ql-blank::before {
+  color: #9CA3AF !important;
+  font-style: italic !important;
+  left: 25mm !important;
+  top: 25mm !important;
+}
+
+/* ⚠️ IMPORTANTE: Forza display completo dell'editor senza clip */
+.office-editor-container .ql-container,
+.office-editor-container .ql-container.ql-snow,
+.office-editor-container .ql-editor {
+  overflow: visible !important;
+  max-height: none !important;
+  clip: none !important;
+  clip-path: none !important;
+}
+
+/* ⚠️ CRITICO: Assicura che ReactQuill wrapper non limiti l'altezza */
+.office-editor-content .quill,
+.office-editor-content .ql-container {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Scrollbar professionale (non più debug) */
+.office-editor-content::-webkit-scrollbar {
+  width: 12px !important;
+  background: #D1D5DB !important; /* Grigio chiaro come Word */
+}
+
+.office-editor-content::-webkit-scrollbar-thumb {
+  background: #9CA3AF !important; /* Grigio medio */
+  border-radius: 6px;
+  border: 2px solid #D1D5DB;
+}
+
+.office-editor-content::-webkit-scrollbar-thumb:hover {
+  background: #6B7280 !important; /* Più scuro al hover */
+}
+
+/* Nota: il bordo inferiore finale viene gestito automaticamente dal border-bottom quando necessario */
+
+/* === FORMATTAZIONE TESTO STILE WORD === */
+
+/* Paragrafi: gli stili inline dal documento hanno precedenza */
+.office-editor-container .ql-editor p {
+  /* Valori di default se non specificati inline */
+  margin-top: 0;
+  margin-bottom: 8pt;
+  line-height: 1.3;
+  font-size: 14pt;
+}
+
+/* Titoli: stili di default */
+.office-editor-container .ql-editor h1 {
+  font-size: 20pt;
+  font-weight: bold;
+  margin-top: 12pt;
+  margin-bottom: 6pt;
+}
+
+.office-editor-container .ql-editor h2 {
+  font-size: 16pt;
+  font-weight: bold;
+  margin-top: 10pt;
+  margin-bottom: 4pt;
+}
+
+.office-editor-container .ql-editor h3 {
+  font-size: 14pt;
+  font-weight: bold;
+  margin-top: 8pt;
+  margin-bottom: 4pt;
+}
+
+/* Allineamenti da Quill (se non specificati inline) */
+.office-editor-container .ql-editor .ql-align-center {
+  text-align: center;
+}
+
+.office-editor-container .ql-editor .ql-align-right {
+  text-align: right;
+}
+
+.office-editor-container .ql-editor .ql-align-justify {
+  text-align: justify;
+}
+
+/* Grassetto */
+.office-editor-container .ql-editor strong,
+.office-editor-container .ql-editor .ql-bold {
+  font-weight: 700;
+}
+
+/* Corsivo */
+.office-editor-container .ql-editor em,
+.office-editor-container .ql-editor .ql-italic {
+  font-style: italic;
+}
+
+/* Sottolineato */
+.office-editor-container .ql-editor .ql-underline {
+  text-decoration: underline;
+}
+
+/* Liste numerate */
+.office-editor-container .ql-editor ol {
+  padding-left: 30px !important;
+  margin-top: 0 !important;
+  margin-bottom: 8pt !important;
+}
+
+.office-editor-container .ql-editor ol li {
+  padding-left: 6px !important;
+  margin-bottom: 4pt !important;
+}
+
+/* Liste puntate */
+.office-editor-container .ql-editor ul {
+  padding-left: 30px !important;
+  margin-top: 0 !important;
+  margin-bottom: 8pt !important;
+}
+
+.office-editor-container .ql-editor ul li {
+  padding-left: 6px !important;
+  margin-bottom: 4pt !important;
+}
+
+/* Rientro paragrafi */
+.office-editor-container .ql-editor .ql-indent-1 {
+  padding-left: 3em !important;
+}
+
+.office-editor-container .ql-editor .ql-indent-2 {
+  padding-left: 6em !important;
+}
+
+/* Spaziatura tra righe */
+.office-editor-container .ql-editor br {
+  margin-bottom: 0 !important;
+}
+
+/* === APPLICAZIONE FONT === */
+.office-editor-container .ql-editor .ql-font-arial {
+  font-family: Arial, sans-serif !important;
+}
+
+.office-editor-container .ql-editor .ql-font-courier {
+  font-family: 'Courier New', monospace !important;
+}
+
+.office-editor-container .ql-editor .ql-font-georgia {
+  font-family: Georgia, serif !important;
+}
+
+.office-editor-container .ql-editor .ql-font-times {
+  font-family: 'Times New Roman', serif !important;
+}
+
+.office-editor-container .ql-editor .ql-font-verdana {
+  font-family: Verdana, sans-serif !important;
+}
+
+.office-editor-container .ql-editor .ql-font-tahoma {
+  font-family: Tahoma, sans-serif !important;
+}
+
+.office-editor-container .ql-editor .ql-font-trebuchet {
+  font-family: 'Trebuchet MS', sans-serif !important;
+}
+
+.office-editor-container .ql-editor .ql-font-comic-sans {
+  font-family: 'Comic Sans MS', cursive !important;
+}
+
+/* === APPLICAZIONE SIZE (stile Word - in pt) === */
+.office-editor-container .ql-editor .ql-size-8pt {
+  font-size: 8pt !important;
+}
+
+.office-editor-container .ql-editor .ql-size-9pt {
+  font-size: 9pt !important;
+}
+
+.office-editor-container .ql-editor .ql-size-10pt {
+  font-size: 10pt !important;
+}
+
+.office-editor-container .ql-editor .ql-size-11pt {
+  font-size: 11pt !important;
+}
+
+.office-editor-container .ql-editor .ql-size-12pt {
+  font-size: 12pt !important;
+}
+
+.office-editor-container .ql-editor .ql-size-14pt {
+  font-size: 14pt !important;
+}
+
+.office-editor-container .ql-editor .ql-size-16pt {
+  font-size: 16pt !important;
+}
+
+.office-editor-container .ql-editor .ql-size-18pt {
+  font-size: 18pt !important;
+}
+
+.office-editor-container .ql-editor .ql-size-20pt {
+  font-size: 20pt !important;
+}
+
+.office-editor-container .ql-editor .ql-size-22pt {
+  font-size: 22pt !important;
+}
+
+.office-editor-container .ql-editor .ql-size-24pt {
+  font-size: 24pt !important;
+}
+
+.office-editor-container .ql-editor .ql-size-26pt {
+  font-size: 26pt !important;
+}
+
+.office-editor-container .ql-editor .ql-size-28pt {
+  font-size: 28pt !important;
+}
+
+.office-editor-container .ql-editor .ql-size-36pt {
+  font-size: 36pt !important;
+}
+
+.office-editor-container .ql-editor .ql-size-48pt {
+  font-size: 48pt !important;
+}
+
+/* === RESPONSIVE A4 === */
+@media screen and (max-width: 900px) {
+  .office-editor-content {
+    padding: 10px;
+  }
+  
+  /* Su mobile, sempre visualizzazione singola */
+  .office-editor-content.view-mode-double {
+    flex-direction: column;
+    max-width: 100%;
+  }
+  
+  .office-editor-container .ql-container.ql-snow {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .office-editor-container .ql-editor {
+    width: 100% !important;
+    padding: 20px 15px !important;
+    height: auto !important;
+    min-height: 500px !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+@media print {
+  .office-editor-toolbar,
+  .office-editor-footer {
+    display: none !important;
+  }
+  
+  .office-editor-content {
+    background: white !important;
+    padding: 0 !important;
+  }
+  
+  .office-editor-container .ql-container.ql-snow {
+    box-shadow: none !important;
+    max-width: 100%;
+  }
+  
+  .office-editor-container .ql-editor {
+    padding: 0 !important;
+  }
+}
+
+.office-editor-loading {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.office-editor-loading .spinner {
+  color: #4FADFF;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.office-editor-loading p {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #6B7280;
+}
+
+/* Toolbar - Header con Quill integrato */
+.office-editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: white;
+  border-bottom: 1px solid #D1D5DB;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  gap: 16px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: visible !important; /* ✅ Permette ai dropdown di uscire verso il basso */
+  position: relative;
+  z-index: 100;
+}
+
+/* Toolbar Quill custom inline nell'header */
+#quill-toolbar-custom {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  flex: 1 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important; /* ✅ Permette ai dropdown di uscire */
+  position: relative !important;
+}
+
+#quill-toolbar-custom::-webkit-scrollbar {
+  height: 4px;
+}
+
+#quill-toolbar-custom::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 2px;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #F8F9FA;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  color: #1F2937;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toolbar-btn:hover {
+  background: #E5E7EB;
+  border-color: #4FADFF;
+  color: #4FADFF;
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ✅ Stile toolbar-btn-icon ora gestito solo da .professional-icon - Vecchio stile rimosso */
+
+.toolbar-separator {
+  width: 1px;
+  height: 24px;
+  background: #E5E7EB;
+  margin: 0 4px;
+}
+
+.save-btn {
+  background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+  border-color: #10B981;
+  color: white;
+}
+
+.save-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  border-color: #059669;
+  color: white;
+}
+
+.spinner-sm {
+  animation: spin 1s linear infinite;
+}
+
+/* Editor Content */
+
+/* === SELEZIONE RIGA CON CLICK MARGINE SINISTRO (come Word) === */
+/* Uso z-index più alto per sovrapporre all'editor e permettere il line selection */
+.office-editor-container .ql-editor {
+  position: relative;
+}
+
+/* Area cliccabile per line selection sul margine sinistro */
+.office-editor-container .office-editor-content::before {
+  content: '';
+  position: absolute;
+  left: calc(50% - 105mm); /* Centro dell'editor - metà larghezza A4 (210mm/2) */
+  top: 30px; /* Offset dall'alto per header */
+  width: 20mm; /* Margine sinistro cliccabile */
+  height: calc(100% - 30px);
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath fill='%23444' d='M14 4L6 10l8 6V4z'/%3E%3C/svg%3E") 10 10, ne-resize;
+  pointer-events: auto;
+  z-index: 50;
+  transition: background 0.15s ease;
+}
+
+/* Visual feedback hover sul margine sinistro */
+.office-editor-container .office-editor-content::before:hover {
+  background: linear-gradient(to right, rgba(0, 120, 212, 0.04), transparent);
+}
+
+/* === FOOTER === */
+.office-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: white;
+  border-top: 1px solid #E5E7EB;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #6B7280;
+}
+
+.edit-mode {
+  color: #10B981;
+  font-weight: 600;
+}
+
+.view-mode {
+  color: #6B7280;
+  font-weight: 600;
+}
+
+/* === PULSANTI COLOR PICKER CUSTOM === */
+.custom-color-btn:hover {
+  background: #F3F4F6 !important;
+  border-color: #E5E7EB !important;
+}
+
+.custom-color-btn:active {
+  transform: scale(0.95);
+}
+
+/* Le icone React nei pulsanti custom non devono bloccare i click */
+.custom-color-btn svg,
+.custom-color-btn div,
+.custom-color-btn span {
+  pointer-events: none !important;
+}
+
+/* Styling professionale Microsoft Office per icone Font Awesome (Type e Highlighter) */
+.custom-color-btn svg {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-color-btn:hover {
+  background: rgba(79, 173, 255, 0.08) !important;
+  border-color: rgba(0, 120, 212, 0.3) !important;
+}
+
+.custom-color-btn:hover svg {
+  color: #0078D4 !important;
+}
+

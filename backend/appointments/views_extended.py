@@ -428,6 +428,96 @@ class DocumentoAppuntamentoViewSet(viewsets.ModelViewSet):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    @action(detail=False, methods=['post'], url_path='appuntamento/(?P<appuntamento_id>[^/.]+)/upload-studio')
+    def upload_studio_document(self, request, appuntamento_id=None):
+        """
+        Upload di un documento generico per "Documenti di Studio" (solo Notaio/Admin).
+        POST /api/appointments/documenti-appuntamento/appuntamento/{appuntamento_id}/upload-studio/
+        Body: FormData with 'file' and optional 'document_name'
+        """
+        print(f"🔍 Upload Studio Document - User role: {request.user.role}")
+        print(f"🔍 Appuntamento ID: {appuntamento_id}")
+        
+        # ✅ Verifica permessi: solo notaio o admin
+        if request.user.role not in ['notaio', 'admin']:
+            return Response(
+                {'error': f'Solo notai/admin possono caricare documenti di studio (ruolo attuale: {request.user.role})'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Verifica che l'appuntamento esista
+        try:
+            appuntamento = Appuntamento.objects.get(id=appuntamento_id)
+            print(f"✅ Appuntamento trovato: {appuntamento.id}, status: {appuntamento.status}")
+        except Appuntamento.DoesNotExist:
+            print(f"❌ Appuntamento non trovato per ID: {appuntamento_id}")
+            return Response(
+                {'error': 'Appuntamento non trovato'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Ottieni il file
+        file = request.FILES.get('file')
+        print(f"📎 File ricevuto: {file.name if file else 'None'}")
+        if not file:
+            print(f"❌ File mancante. Files ricevuti: {request.FILES.keys()}")
+            return Response(
+                {'error': 'Nessun file fornito'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Nome documento (opzionale, default al nome file)
+        document_name = request.data.get('document_name', file.name)
+        print(f"📄 Nome documento: {document_name}")
+        
+        # ✅ Crea o trova il DocumentType per "Documenti di Studio"
+        from acts.models import DocumentType
+        import uuid
+        
+        # Cerca prima se esiste già un DocumentType con quel nome per il notaio
+        document_type = DocumentType.objects.filter(
+            name=document_name,
+            required_from='notaio'
+        ).first()
+        
+        if not document_type:
+            # Genera un code univoco basato sul nome file
+            code_base = document_name.replace(' ', '_').replace('.', '_').lower()
+            code = f"studio_{code_base}_{str(uuid.uuid4())[:8]}"
+            
+            document_type = DocumentType.objects.create(
+                name=document_name,
+                code=code,
+                required_from='notaio',  # ✅ NON conta nel totale cliente
+                category='altro',
+                description=f'Documento di studio: {document_name}'
+            )
+            print(f"✅ DocumentType CREATO: {document_type.name} (code={document_type.code})")
+        else:
+            print(f"✅ DocumentType TROVATO: {document_type.name} (code={document_type.code})")
+        
+        # Crea o aggiorna il documento
+        documento, created = DocumentoAppuntamento.objects.update_or_create(
+            appuntamento=appuntamento,
+            document_type=document_type,
+            defaults={
+                'file': file,
+                'stato': DocumentoStato.ACCETTATO,  # ✅ Già accettato perché caricato dal notaio
+                'caricato_da': request.user,
+                'caricato_at': timezone.now(),
+                'verificato_da': request.user,
+                'verificato_at': timezone.now()
+            }
+        )
+        
+        action_text = "creato" if created else "aggiornato"
+        print(f"✅ Documento {action_text}: {document_type.name} - {file.name}")
+        
+        return Response({
+            'message': f'Documento di studio {action_text} con successo',
+            'documento': DocumentoAppuntamentoSerializer(documento).data
+        }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+    
     @action(detail=True, methods=['post'], url_path='verifica')
     def verifica_documento(self, request, pk=None):
         """

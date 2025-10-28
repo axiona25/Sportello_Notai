@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { 
   Settings as SettingsIcon, 
   Calendar, 
@@ -8,19 +8,36 @@ import {
   Archive, 
   FileText,
   Save,
+  Edit,
+  Clock,
+  Upload,
+  Trash2,
+  Paperclip,
   User,
   Store,
-  Upload,
   Image,
   FolderOpen,
   CalendarCheck,
   MessageSquare,
   Video,
   FileCheck,
-  ShieldCheck
+  ShieldCheck,
+  ChevronDown,
+  Download
 } from 'lucide-react'
 import Header from './Header'
 import notaryProfileService from '../services/notaryProfileService'
+import { 
+  getTipologieAtti, 
+  saveTipologieAtti, 
+  aggiungiTipologiaAtto, 
+  aggiornaTipologiaAtto, 
+  eliminaTipologiaAtto,
+  DURATE_PREDEFINITE,
+  GIORNI_SETTIMANA,
+  SLOT_ORARI,
+  AVAILABLE_ICONS 
+} from '../config/tipologieAttiConfig'
 import './Settings.css'
 
 // Logo placeholder per profili senza immagine
@@ -144,7 +161,7 @@ function Settings({ searchValue, onSearchChange, user }) {
     { id: 4, label: 'Firma Digitale', icon: FileSignature },
     { id: 5, label: 'PEC', icon: Mail },
     { id: 6, label: 'Conservazione', icon: Archive },
-    { id: 7, label: 'Modelli', icon: FileText }
+    { id: 7, label: 'Tipologia Atti', icon: FileText }
   ]
 
   const handleSaveOrEdit = async () => {
@@ -250,7 +267,7 @@ function Settings({ searchValue, onSearchChange, user }) {
         case 4: // Firma Digitale
         case 5: // PEC
         case 6: // Conservazione
-        case 7: // Modelli
+        case 7: // Tipologia Atti
           // TODO: implementare salvataggio backend per queste tab
           break
       }
@@ -1298,85 +1315,163 @@ function ConservazioneTab({ isEditing }) {
   )
 }
 
-// Tab 6: Modelli
+// Tab 7: Tipologia Atti
 function ModelliTab({ isEditing }) {
+  const [tipologieAtti, setTipologieAtti] = useState([])
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showDurationModal, setShowDurationModal] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [attoSelezionato, setAttoSelezionato] = useState(null)
+  const [templateStates, setTemplateStates] = useState({}) // { attoId: { hasTemplate: bool, filename: string } }
+  
+  useEffect(() => {
+    // Carica tipologie atti
+    const tipologie = getTipologieAtti()
+    setTipologieAtti(tipologie)
+    
+    // Carica info template per ogni tipologia
+    loadAllTemplateStates(tipologie)
+  }, [])
+  
+  const loadAllTemplateStates = async (tipologie) => {
+    const templateService = (await import('../services/templateService')).default
+    const states = {}
+    
+    for (const atto of tipologie) {
+      if (atto.attivo) {
+        const result = await templateService.getTemplateByActType(atto.id)
+        if (result.success) {
+          states[atto.id] = {
+            hasTemplate: true,
+            filename: result.data.original_filename,
+            id: result.data.id
+          }
+        } else {
+          states[atto.id] = { hasTemplate: false }
+        }
+      }
+    }
+    
+    setTemplateStates(states)
+  }
+  
+  const handleModifica = (atto) => {
+    setAttoSelezionato(atto)
+    setShowEditModal(true)
+  }
+  
+  const handleDurata = (atto) => {
+    setAttoSelezionato(atto)
+    setShowDurationModal(true)
+  }
+  
+  const handleUpload = (atto) => {
+    setAttoSelezionato(atto)
+    setShowUploadModal(true)
+  }
+  
+  const handleUploadSuccess = async (attoId) => {
+    // Ricarica lo stato del template per questo atto
+    const templateService = (await import('../services/templateService')).default
+    const result = await templateService.getTemplateByActType(attoId)
+    
+    if (result.success) {
+      setTemplateStates(prev => ({
+        ...prev,
+        [attoId]: {
+          hasTemplate: true,
+          filename: result.data.original_filename,
+          id: result.data.id
+        }
+      }))
+    }
+  }
+  
+  const handleElimina = (attoId) => {
+    if (confirm('Vuoi davvero disattivare questa tipologia atto?')) {
+      eliminaTipologiaAtto(attoId)
+      setTipologieAtti(getTipologieAtti())
+    }
+  }
+  
   return (
     <div className="settings-tab two-columns">
       <div className="settings-section">
         <div className="section-header-with-action">
-          <h3 className="section-title">Modelli Disponibili</h3>
+          <h3 className="section-title">Tipologie Atti Disponibili</h3>
           {isEditing && (
-            <button className="btn-add-inline">
-              + Carica Modello
+            <button 
+              className="btn-add-inline"
+              onClick={() => setShowAddModal(true)}
+            >
+              + Aggiungi Tipologia
             </button>
           )}
         </div>
         <div className="models-compact-list">
-          <div className="model-compact-item">
-            <FileText size={20} className="model-compact-icon" />
-            <div className="model-compact-info">
-              <span className="model-compact-name">Atto di Compravendita Immobiliare</span>
-              <span className="model-compact-usage">145 utilizzi</span>
-            </div>
-            <div className="model-compact-actions">
-              {isEditing && <button className="btn-text-sm">Modifica</button>}
-            </div>
-          </div>
-          <div className="model-compact-item">
-            <FileText size={20} className="model-compact-icon" />
-            <div className="model-compact-info">
-              <span className="model-compact-name">Costituzione Società</span>
-              <span className="model-compact-usage">67 utilizzi</span>
-            </div>
-            <div className="model-compact-actions">
-              {isEditing && <button className="btn-text-sm">Modifica</button>}
-            </div>
-          </div>
-          <div className="model-compact-item">
-            <FileText size={20} className="model-compact-icon" />
-            <div className="model-compact-info">
-              <span className="model-compact-name">Procura Notarile</span>
-              <span className="model-compact-usage">89 utilizzi</span>
-            </div>
-            <div className="model-compact-actions">
-              {isEditing && <button className="btn-text-sm">Modifica</button>}
-            </div>
-          </div>
-          <div className="model-compact-item">
-            <FileText size={20} className="model-compact-icon" />
-            <div className="model-compact-info">
-              <span className="model-compact-name">Testamento Olografo</span>
-              <span className="model-compact-usage">23 utilizzi</span>
-            </div>
-            <div className="model-compact-actions">
-              {isEditing && <button className="btn-text-sm">Modifica</button>}
-            </div>
-          </div>
-          <div className="model-compact-item">
-            <FileText size={20} className="model-compact-icon" />
-            <div className="model-compact-info">
-              <span className="model-compact-name">Donazione</span>
-              <span className="model-compact-usage">34 utilizzi</span>
-            </div>
-            <div className="model-compact-actions">
-              {isEditing && <button className="btn-text-sm">Modifica</button>}
-            </div>
-          </div>
-          <div className="model-compact-item">
-            <FileText size={20} className="model-compact-icon" />
-            <div className="model-compact-info">
-              <span className="model-compact-name">Mutuo Ipotecario</span>
-              <span className="model-compact-usage">112 utilizzi</span>
-            </div>
-            <div className="model-compact-actions">
-              {isEditing && <button className="btn-text-sm">Modifica</button>}
-            </div>
-          </div>
+          {tipologieAtti.filter(a => a.attivo).map(atto => {
+            const IconComponent = atto.icon || FileText
+            return (
+              <div key={atto.id} className="model-compact-item">
+                <IconComponent size={20} className="model-compact-icon" />
+                <div className="model-compact-info">
+                  <span className="model-compact-name">{atto.nome}</span>
+                  <span className="model-compact-usage">{atto.durata_minuti} minuti</span>
+                </div>
+                <div className="model-compact-actions">
+                  {isEditing && (
+                    <>
+                      {/* Icona Modifica Nome */}
+                      <button 
+                        className="btn-icon-sm" 
+                        onClick={() => handleModifica(atto)}
+                        title="Rinomina atto"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      
+                      {/* Icona Tempo (Durata) */}
+                      <button 
+                        className="btn-icon-sm" 
+                        onClick={() => handleDurata(atto)}
+                        title="Imposta durata"
+                      >
+                        <Clock size={16} />
+                      </button>
+                      
+                      {/* Icona Upload/Allegato Template */}
+                      <button 
+                        className="btn-icon-sm" 
+                        onClick={() => handleUpload(atto)}
+                        title={templateStates[atto.id]?.hasTemplate ? `Template: ${templateStates[atto.id]?.filename}` : "Carica template"}
+                      >
+                        {templateStates[atto.id]?.hasTemplate ? (
+                          <Paperclip size={16} className="has-attachment" />
+                        ) : (
+                          <Upload size={16} />
+                        )}
+                      </button>
+                      
+                      {/* Icona Elimina */}
+                      <button 
+                        className="btn-icon-sm btn-icon-danger" 
+                        onClick={() => handleElimina(atto.id)}
+                        title="Disattiva atto"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
       <div className="settings-section">
-        <h3 className="section-title">Impostazioni Modelli</h3>
+        <h3 className="section-title">Impostazioni Tipologie Atti</h3>
         <div className="form-grid">
           <div className="form-group full-width">
             <label className="form-label">Formato Predefinito</label>
@@ -1406,6 +1501,491 @@ function ModelliTab({ isEditing }) {
               <span>Numerazione automatica atti</span>
             </label>
           </div>
+        </div>
+      </div>
+      
+      {/* Modali */}
+      {showAddModal && <ModalAggiungiTipologia onClose={() => setShowAddModal(false)} onSave={() => setTipologieAtti(getTipologieAtti())} />}
+      {showEditModal && attoSelezionato && <ModalModificaNome atto={attoSelezionato} onClose={() => setShowEditModal(false)} onSave={() => setTipologieAtti(getTipologieAtti())} />}
+      {showDurationModal && attoSelezionato && <ModalDurata atto={attoSelezionato} onClose={() => setShowDurationModal(false)} onSave={() => setTipologieAtti(getTipologieAtti())} />}
+      {showUploadModal && attoSelezionato && <ModalUploadTemplate atto={attoSelezionato} onClose={() => setShowUploadModal(false)} onSave={() => setTipologieAtti(getTipologieAtti())} onUploadSuccess={() => handleUploadSuccess(attoSelezionato.id)} />}
+    </div>
+  )
+}
+
+// ===== ICON PICKER COMPONENT =====
+function IconPicker({ selectedIconName, onSelectIcon }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const pickerRef = useRef(null)
+
+  // Chiudi quando si clicca fuori
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (pickerRef.current && !pickerRef.current.contains(event.target)) {
+        setIsOpen(false)
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
+
+  const selectedIcon = AVAILABLE_ICONS.find(i => i.name === selectedIconName) || AVAILABLE_ICONS[0]
+  const SelectedIconComponent = selectedIcon.icon
+
+  return (
+    <div className="icon-picker-container" style={{ position: 'relative' }} ref={pickerRef}>
+      <div 
+        className="icon-picker-trigger"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div className="icon-picker-preview">
+          <SelectedIconComponent size={20} />
+        </div>
+        <span>{selectedIcon.label}</span>
+        <ChevronDown size={16} style={{ marginLeft: 'auto' }} />
+      </div>
+
+      {isOpen && (
+        <>
+          <div className="icon-picker-overlay" onClick={() => setIsOpen(false)} />
+          <div className="icon-picker-dropdown">
+            <div className="icon-picker-dropdown-header">
+              <h4>Seleziona Icona</h4>
+              <button 
+                className="icon-picker-dropdown-close"
+                onClick={() => setIsOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="icon-picker-grid">
+              {AVAILABLE_ICONS.map((iconItem) => {
+                const IconComponent = iconItem.icon
+                const isSelected = iconItem.name === selectedIconName
+                
+                return (
+                  <div
+                    key={iconItem.name}
+                    className={`icon-picker-item ${isSelected ? 'selected' : ''}`}
+                    onClick={() => {
+                      onSelectIcon(iconItem.name)
+                      setIsOpen(false)
+                    }}
+                  >
+                    <div className="icon-picker-item-icon">
+                      <IconComponent size={24} />
+                    </div>
+                    <div className="icon-picker-item-label">
+                      {iconItem.label}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ===== MODALI PER GESTIONE TIPOLOGIE ATTI =====
+
+// Modale Aggiungi Tipologia
+function ModalAggiungiTipologia({ onClose, onSave }) {
+  const [nome, setNome] = useState('')
+  const [descrizione, setDescrizione] = useState('')
+  const [durata, setDurata] = useState(60)
+  const [iconName, setIconName] = useState('FileText')
+  
+  const handleSave = () => {
+    if (nome.trim()) {
+      aggiungiTipologiaAtto({ nome, descrizione, durata_minuti: durata, iconName })
+      onSave()
+      onClose()
+    }
+  }
+  
+  return (
+    <div className="tipologia-modal-overlay" onClick={onClose}>
+      <div className="tipologia-modal" onClick={e => e.stopPropagation()}>
+        <div className="tipologia-modal-header">
+          <h3>Aggiungi Nuova Tipologia Atto</h3>
+          <button className="tipologia-modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="tipologia-modal-body">
+          <div className="form-group">
+            <label className="form-label">Nome Atto *</label>
+            <input type="text" className="form-input" value={nome} onChange={e => setNome(e.target.value)} placeholder="Es. Costituzione SRL" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Descrizione</label>
+            <textarea className="form-textarea" value={descrizione} onChange={e => setDescrizione(e.target.value)} placeholder="Breve descrizione..." rows={3} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Icona</label>
+            <IconPicker selectedIconName={iconName} onSelectIcon={setIconName} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Durata Appuntamento (minuti)</label>
+            <input type="number" className="form-input" value={durata} onChange={e => setDurata(parseInt(e.target.value))} min={15} step={15} />
+          </div>
+        </div>
+        <div className="tipologia-modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Annulla</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={!nome.trim()}>Aggiungi</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Modale Modifica Nome
+function ModalModificaNome({ atto, onClose, onSave }) {
+  const [nome, setNome] = useState(atto.nome)
+  const [descrizione, setDescrizione] = useState(atto.descrizione || '')
+  const [iconName, setIconName] = useState(atto.iconName || 'FileText')
+  
+  const handleSave = () => {
+    if (nome.trim()) {
+      aggiornaTipologiaAtto(atto.id, { nome, descrizione, iconName })
+      onSave()
+      onClose()
+    }
+  }
+  
+  return (
+    <div className="tipologia-modal-overlay" onClick={onClose}>
+      <div className="tipologia-modal" onClick={e => e.stopPropagation()}>
+        <div className="tipologia-modal-header">
+          <h3>Modifica Tipologia Atto</h3>
+          <button className="tipologia-modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="tipologia-modal-body">
+          <div className="form-group">
+            <label className="form-label">Nome Atto *</label>
+            <input type="text" className="form-input" value={nome} onChange={e => setNome(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Descrizione</label>
+            <textarea className="form-textarea" value={descrizione} onChange={e => setDescrizione(e.target.value)} rows={3} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Icona</label>
+            <IconPicker selectedIconName={iconName} onSelectIcon={setIconName} />
+          </div>
+        </div>
+        <div className="tipologia-modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Annulla</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={!nome.trim()}>Salva</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Modale Durata
+function ModalDurata({ atto, onClose, onSave }) {
+  const [durata, setDurata] = useState(atto.durata_minuti)
+  const [giorniDisponibili, setGiorniDisponibili] = useState(atto.giorni_disponibili || [1, 2, 3, 4, 5])
+  const [slotDisponibili, setSlotDisponibili] = useState(atto.slot_disponibili || [1, 2, 3])
+  
+  const toggleGiorno = (giornoId) => {
+    setGiorniDisponibili(prev => 
+      prev.includes(giornoId) 
+        ? prev.filter(id => id !== giornoId)
+        : [...prev, giornoId].sort((a, b) => a - b)
+    )
+  }
+  
+  const toggleSlot = (slotId) => {
+    setSlotDisponibili(prev => 
+      prev.includes(slotId) 
+        ? prev.filter(id => id !== slotId)
+        : [...prev, slotId].sort((a, b) => a - b)
+    )
+  }
+  
+  const handleSave = () => {
+    aggiornaTipologiaAtto(atto.id, { 
+      durata_minuti: durata,
+      giorni_disponibili: giorniDisponibili,
+      slot_disponibili: slotDisponibili
+    })
+    onSave()
+    onClose()
+  }
+  
+  return (
+    <div className="tipologia-modal-overlay" onClick={onClose}>
+      <div className="tipologia-modal" style={{ maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
+        <div className="tipologia-modal-header">
+          <h3>Imposta Disponibilità Appuntamento</h3>
+          <button className="tipologia-modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="tipologia-modal-body">
+          <div className="tipologia-modal-atto-title">
+            {atto.icon && <atto.icon size={24} />}
+            <strong>{atto.nome.toUpperCase()}</strong>
+          </div>
+          
+          {/* Durata */}
+          <div className="form-group">
+            <label className="form-label">Durata (minuti)</label>
+            <input type="number" className="form-input" value={durata} onChange={e => setDurata(parseInt(e.target.value))} min={15} step={15} />
+          </div>
+          <div className="tipologia-duration-presets">
+            <button className="tipologia-btn-preset" onClick={() => setDurata(DURATE_PREDEFINITE.BREVE)}>30 min</button>
+            <button className="tipologia-btn-preset" onClick={() => setDurata(DURATE_PREDEFINITE.STANDARD)}>60 min</button>
+            <button className="tipologia-btn-preset" onClick={() => setDurata(DURATE_PREDEFINITE.LUNGA)}>90 min</button>
+            <button className="tipologia-btn-preset" onClick={() => setDurata(DURATE_PREDEFINITE.MOLTO_LUNGA)}>120 min</button>
+          </div>
+          
+          {/* Giorni disponibili */}
+          <div className="form-group availability-section">
+            <label className="form-label">Giorni Disponibili</label>
+            <div className="availability-checkboxes">
+              {GIORNI_SETTIMANA.map(giorno => (
+                <label key={giorno.id} className="availability-checkbox-item">
+                  <input 
+                    type="checkbox" 
+                    checked={giorniDisponibili.includes(giorno.id)}
+                    onChange={() => toggleGiorno(giorno.id)}
+                  />
+                  <span>{giorno.nome}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          
+          {/* Slot orari */}
+          <div className="form-group availability-section">
+            <label className="form-label">Fasce Orarie Disponibili</label>
+            <div className="availability-checkboxes">
+              {SLOT_ORARI.map(slot => (
+                <label key={slot.id} className="availability-checkbox-item">
+                  <input 
+                    type="checkbox" 
+                    checked={slotDisponibili.includes(slot.id)}
+                    onChange={() => toggleSlot(slot.id)}
+                  />
+                  <span>{slot.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="tipologia-modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Annulla</button>
+          <button className="btn btn-primary" onClick={handleSave}>Salva</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Modale Upload Template
+function ModalUploadTemplate({ atto, onClose, onSave, onUploadSuccess }) {
+  const [file, setFile] = useState(null)
+  const [templateInfo, setTemplateInfo] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  
+  // Carica info template esistente
+  useEffect(() => {
+    loadTemplateInfo()
+  }, [atto.id])
+  
+  const loadTemplateInfo = async () => {
+    setLoading(true)
+    const templateService = (await import('../services/templateService')).default
+    const result = await templateService.getTemplateByActType(atto.id)
+    
+    if (result.success) {
+      setTemplateInfo(result.data)
+    } else if (!result.notFound) {
+      console.error('Errore caricamento template:', result.error)
+    }
+    setLoading(false)
+  }
+  
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0]
+    if (selectedFile) {
+      setFile(selectedFile)
+    }
+  }
+  
+  const handleUpload = async () => {
+    if (!file) return
+    
+    setUploading(true)
+    const templateService = (await import('../services/templateService')).default
+    
+    const result = await templateService.uploadTemplate({
+      actTypeCode: atto.id,
+      actTypeName: atto.nome,
+      file: file,
+      description: `Template per ${atto.nome}`,
+      version: '1.0'
+    })
+    
+    if (result.success) {
+      // Aggiorna anche la configurazione locale
+      aggiornaTipologiaAtto(atto.id, { 
+        template_documento: result.data?.original_filename || 'Template caricato'
+      })
+      
+      // Ricarica le info del template
+      await loadTemplateInfo()
+      
+      // Notifica il parent component del successo
+      if (onUploadSuccess) {
+        await onUploadSuccess()
+      }
+      
+      onSave()
+      onClose()
+    } else {
+      alert(`Errore: ${result.error}`)
+    }
+    
+    setUploading(false)
+  }
+  
+  return (
+    <div className="tipologia-modal-overlay" onClick={onClose}>
+      <div className="tipologia-modal" onClick={e => e.stopPropagation()}>
+        <div className="tipologia-modal-header">
+          <h3>Carica Template Documento</h3>
+          <button className="tipologia-modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="tipologia-modal-body">
+          <div className="tipologia-modal-atto-title">
+            {atto.icon && <atto.icon size={24} />}
+            <strong>{atto.nome.toUpperCase()}</strong>
+          </div>
+          
+          {loading ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: '#6B7280' }}>
+              Caricamento informazioni template...
+            </div>
+          ) : (
+            <>
+              {/* Template corrente */}
+              {templateInfo && (
+                <div className="template-info-box">
+                  <div className="template-info-header">
+                    <FileText size={20} />
+                    <strong>Documento Template Caricato</strong>
+                  </div>
+                  <div className="template-info-content">
+                    <div className="template-info-row">
+                      <span className="template-info-label">File:</span>
+                      <a 
+                        href={templateInfo.template_url}
+                        download={templateInfo.original_filename}
+                        className="template-info-value"
+                        style={{ 
+                          color: '#3B82F6', 
+                          textDecoration: 'none', 
+                          cursor: 'pointer',
+                          fontWeight: '500'
+                        }}
+                        onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                        onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                      >
+                        {templateInfo.original_filename}
+                      </a>
+                    </div>
+                    <div className="template-info-row">
+                      <span className="template-info-label">Dimensione:</span>
+                      <span className="template-info-value">{(templateInfo.file_size / 1024).toFixed(1)} KB</span>
+                    </div>
+                    <div className="template-info-row">
+                      <span className="template-info-label">Caricato il:</span>
+                      <span className="template-info-value">
+                        {new Date(templateInfo.created_at).toLocaleDateString('it-IT', { 
+                          day: 'numeric', 
+                          month: 'long', 
+                          year: 'numeric' 
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Separatore visivo */}
+              {templateInfo && (
+                <div style={{ 
+                  borderTop: '2px dashed #E5E7EB', 
+                  margin: '24px 0', 
+                  position: 'relative' 
+                }}>
+                  <span style={{ 
+                    position: 'absolute', 
+                    top: '-12px', 
+                    left: '50%', 
+                    transform: 'translateX(-50%)', 
+                    background: 'white', 
+                    padding: '0 12px', 
+                    fontSize: '12px', 
+                    color: '#9CA3AF',
+                    fontWeight: '500'
+                  }}>
+                    OPPURE
+                  </span>
+                </div>
+              )}
+              
+              {/* Upload nuovo template */}
+              <div className="form-group" style={{ marginTop: templateInfo ? '0' : '0' }}>
+                <label className="form-label">
+                  {templateInfo ? '🔄 Sostituisci Template (opzionale)' : '📤 Carica Template Documento (DOCX, PDF, ODT)'}
+                </label>
+                {templateInfo && (
+                  <p style={{ fontSize: '13px', color: '#6B7280', marginBottom: '8px', marginTop: '4px' }}>
+                    Seleziona un file solo se vuoi sostituire il template esistente
+                  </p>
+                )}
+                <input 
+                  type="file" 
+                  className="form-file" 
+                  accept=".docx,.pdf,.odt,.doc" 
+                  onChange={handleFileChange} 
+                />
+              </div>
+              
+              {file && (
+                <div className="tipologia-file-preview">
+                  <Paperclip size={16} />
+                  <span>{file.name}</span>
+                  <span className="tipologia-file-size">({(file.size / 1024).toFixed(1)} KB)</span>
+                </div>
+              )}
+              
+              {!templateInfo && !file && (
+                <p className="tipologia-modal-description" style={{ marginTop: '12px' }}>
+                  Nessun template caricato per questa tipologia. Carica un file per iniziare.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+        <div className="tipologia-modal-footer">
+          <button className="btn btn-secondary" onClick={onClose} disabled={uploading}>
+            Annulla
+          </button>
+          <button 
+            className="btn btn-primary" 
+            onClick={handleUpload} 
+            disabled={!file || uploading || loading}
+          >
+            {uploading ? 'Caricamento...' : (templateInfo ? 'Sostituisci' : 'Carica')}
+          </button>
         </div>
       </div>
     </div>

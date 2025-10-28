@@ -338,7 +338,7 @@ function AppointmentDetailModal({ appointment, onClose }) {
               {/* Contatore documenti caricati */}
               <div className="documents-counter">
                 <span className="counter-badge">
-                  {documentiCaricati.filter(doc => doc.file || doc.file_path).length}/{documentiRichiesti.length}
+                  {documentiCaricati.filter(doc => doc.file || doc.file_path).length}/{documentiRichiesti.filter(doc => doc.required_from !== 'notaio').length}
                 </span>
                 <span className="counter-label">documenti caricati</span>
               </div>

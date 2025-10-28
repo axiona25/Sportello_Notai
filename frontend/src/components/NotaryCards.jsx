@@ -11,7 +11,8 @@ import {
   UserX,
   SlidersHorizontal,
   X,
-  Search
+  Search,
+  MapPin
 } from 'lucide-react'
 import notaryProfileService from '../services/notaryProfileService'
 import NotaryModal from './NotaryModal'
@@ -21,7 +22,7 @@ import './NotaryCards.css'
 // Logo placeholder per profili senza immagine
 const DEFAULT_PROFILE_PHOTO = 'data:image/png;base64,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'
 
-function NotaryCards() {
+function NotaryCards({ initialDate }) {
   const [profiles, setProfiles] = useState([])
   const [blockedCount, setBlockedCount] = useState(0)
   const [selectedNotary, setSelectedNotary] = useState(null)
@@ -268,32 +269,32 @@ function NotaryCards() {
           </button>
         </div>
         
-        {/* Modale Filtri */}
+        {/* Modale Filtri - Layout Orizzontale Compatto */}
         {showFilters && (
           <div className="filter-modal-overlay" onClick={() => setShowFilters(false)}>
-            <div className="filter-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="filter-modal filter-modal-horizontal" onClick={(e) => e.stopPropagation()}>
               <div className="filter-modal-header">
                 <h3 className="filter-modal-title">
-                  <SlidersHorizontal size={20} />
+                  <SlidersHorizontal size={18} />
                   Filtra Notai
                 </h3>
                 <button 
                   className="filter-modal-close"
                   onClick={() => setShowFilters(false)}
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
               
-              <div className="filter-modal-body">
+              <div className="filter-modal-body filter-modal-body-horizontal">
                 {/* Campo Ricerca Nome */}
-                <div className="filter-section">
-                  <label className="filter-label">Cerca per Nome e Cognome</label>
+                <div className="filter-section filter-section-horizontal">
+                  <label className="filter-label">Nome</label>
                   <div className="search-input-wrapper">
-                    <Search size={18} />
+                    <Search size={16} />
                     <input
                       type="text"
-                      placeholder="Inserisci nome o cognome..."
+                      placeholder="Cerca..."
                       value={searchName}
                       onChange={(e) => setSearchName(e.target.value)}
                       className="search-input"
@@ -303,85 +304,99 @@ function NotaryCards() {
                         className="search-clear"
                         onClick={() => setSearchName('')}
                       >
-                        <X size={16} />
+                        <X size={14} />
                       </button>
                     )}
                   </div>
                 </div>
                 
                 {/* Filtro Rating */}
-                <div className="filter-section">
+                <div className="filter-section filter-section-horizontal">
                   <label className="filter-label">Rating</label>
-                  <div className="filter-options">
+                  <div className="filter-options filter-options-horizontal">
                     <button 
-                      className={`filter-option ${filterRating === 'all' ? 'active' : ''}`}
+                      className={`filter-option filter-option-compact ${filterRating === 'all' ? 'active' : ''}`}
                       onClick={() => setFilterRating('all')}
                     >
                       Tutti
                     </button>
                     <button 
-                      className={`filter-option ${filterRating === '5' ? 'active' : ''}`}
+                      className={`filter-option filter-option-compact ${filterRating === '5' ? 'active' : ''}`}
                       onClick={() => setFilterRating('5')}
                     >
-                      <Star size={14} fill="#FFB800" stroke="#FFB800" />
-                      5 stelle
+                      <Star size={12} fill="#FFB800" stroke="#FFB800" />
+                      5
                     </button>
                     <button 
-                      className={`filter-option ${filterRating === '4' ? 'active' : ''}`}
+                      className={`filter-option filter-option-compact ${filterRating === '4' ? 'active' : ''}`}
                       onClick={() => setFilterRating('4')}
                     >
-                      <Star size={14} fill="#FFB800" stroke="#FFB800" />
-                      4+ stelle
+                      <Star size={12} fill="#FFB800" stroke="#FFB800" />
+                      4+
                     </button>
                     <button 
-                      className={`filter-option ${filterRating === '3' ? 'active' : ''}`}
+                      className={`filter-option filter-option-compact ${filterRating === '3' ? 'active' : ''}`}
                       onClick={() => setFilterRating('3')}
                     >
-                      <Star size={14} fill="#FFB800" stroke="#FFB800" />
-                      3+ stelle
+                      <Star size={12} fill="#FFB800" stroke="#FFB800" />
+                      3+
                     </button>
                   </div>
                 </div>
                 
                 {/* Filtro Città */}
-                <div className="filter-section">
+                <div className="filter-section filter-section-horizontal">
                   <label className="filter-label">Città</label>
-                  <div className="filter-options">
+                  <div className="filter-options filter-options-horizontal">
                     <button 
-                      className={`filter-option ${filterCity === 'all' ? 'active' : ''}`}
+                      className={`filter-option filter-option-compact ${filterCity === 'all' ? 'active' : ''}`}
                       onClick={() => setFilterCity('all')}
                     >
                       Tutte
                     </button>
-                    {uniqueCities.map(city => (
+                    {uniqueCities.slice(0, 3).map(city => (
                       <button 
                         key={city}
-                        className={`filter-option ${filterCity === city ? 'active' : ''}`}
+                        className={`filter-option filter-option-compact ${filterCity === city ? 'active' : ''}`}
                         onClick={() => setFilterCity(city)}
                       >
+                        <MapPin size={12} />
                         {city}
                       </button>
                     ))}
+                    {uniqueCities.length > 3 && (
+                      <select 
+                        className="filter-select-compact"
+                        value={filterCity !== 'all' && !uniqueCities.slice(0, 3).includes(filterCity) ? filterCity : 'more'}
+                        onChange={(e) => e.target.value !== 'more' && setFilterCity(e.target.value)}
+                      >
+                        <option value="more">Altre...</option>
+                        {uniqueCities.slice(3).map(city => (
+                          <option key={city} value={city}>{city}</option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 </div>
-              </div>
-              
-              <div className="filter-modal-footer">
-                {activeFiltersCount > 0 && (
+
+                {/* Pulsanti Azioni */}
+                <div className="filter-section filter-section-actions">
+                  {activeFiltersCount > 0 && (
+                    <button 
+                      className="filter-reset-btn-compact"
+                      onClick={resetFilters}
+                      title="Resetta filtri"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
                   <button 
-                    className="filter-reset-btn"
-                    onClick={resetFilters}
+                    className="filter-apply-btn-compact"
+                    onClick={() => setShowFilters(false)}
                   >
-                    <X size={16} />
-                    Resetta filtri
+                    Applica
                   </button>
-                )}
-                <button 
-                  className="filter-apply-btn"
-                  onClick={() => setShowFilters(false)}
-                >
-                  Applica
-                </button>
+                </div>
               </div>
             </div>
           </div>
@@ -513,6 +528,7 @@ function NotaryCards() {
     {showBooking && selectedNotary && (
       <AppointmentBooking
         notary={selectedNotary}
+        initialDate={initialDate}
         onClose={() => setShowBooking(false)}
         onSuccess={() => {
           setShowBooking(false)

@@ -1,0 +1,209 @@
+.office-viewer-container {
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;  /* ✅ Altezza minima = viewport completo */
+  display: flex;
+  flex-direction: column;
+  background: #F3F4F6;
+  position: relative;  /* ✅ Serve per posizionamento assoluto dei child */
+  overflow: visible;  /* ✅ NON nascondere status bar che esce dai bordi */
+}
+
+.office-viewer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: white;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.office-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.office-document-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.office-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.office-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  background: #F8F9FA;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  color: #1F2937;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.office-toolbar-btn:hover {
+  background: #E5E7EB;
+  border-color: #4FADFF;
+  color: #4FADFF;
+}
+
+.office-toolbar-btn.active {
+  background: linear-gradient(135deg, #1668B0 0%, #4FADFF 100%);
+  border-color: #1668B0;
+  color: white;
+}
+
+.office-viewer-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto; /* Cambiato da hidden ad auto per permettere scroll */
+  position: relative;
+}
+
+.office-viewer-notice {
+  text-align: center;
+  padding: 48px 40px;
+  max-width: 650px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+}
+
+.office-notice-icon {
+  color: #4FADFF;
+  margin-bottom: 20px;
+}
+
+.office-viewer-notice h3 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1F2937;
+  margin: 0 0 8px 0;
+}
+
+.office-doc-type {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: #6B7280;
+  margin: 8px 0 24px 0;
+  font-weight: 500;
+}
+
+.office-preview-info {
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.office-notice-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #4B5563;
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+.office-notice-text code {
+  background: #E5E7EB;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #1F2937;
+}
+
+.office-download-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #1668B0 0%, #4FADFF 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(70, 173, 255, 0.3);
+}
+
+.office-download-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(70, 173, 255, 0.4);
+}
+
+.office-download-primary:active {
+  transform: translateY(0);
+}
+
+.office-production-note {
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 24px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #065F46;
+}
+
+/* Iframe rimosso - non necessario per localhost */
+
+.office-viewer-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: white;
+  border-top: 1px solid #E5E7EB;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #6B7280;
+}
+
+.office-separator {
+  color: #D1D5DB;
+}
+
+.office-edit-mode {
+  color: #10B981;
+  font-weight: 600;
+}
+
+.office-sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 999;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+

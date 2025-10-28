@@ -23,9 +23,10 @@ import appointmentService from '../services/appointmentService'
 import appointmentExtendedService from '../services/appointmentExtendedService'
 import { useToast } from '../contexts/ToastContext'
 import { formatDateItalian } from '../utils/dateUtils'
+import { getTipologieAttiAttive } from '../config/tipologieAttiConfig'
 import './AppointmentBooking.css'
 
-function AppointmentBooking({ notary, onClose, onSuccess }) {
+function AppointmentBooking({ notary, onClose, onSuccess, initialDate }) {
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedActType, setSelectedActType] = useState(null) // Cambiato da selectedService
   const [actCategories, setActCategories] = useState([]) // Tipologie di atto dal backend
@@ -40,10 +41,27 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
   
   const CARDS_PER_PAGE = 12 // Mostra 12 card per pagina
 
-  // Carica le tipologie di atto dal backend
+  // ✅ Carica le tipologie di atto dalla configurazione centralizzata
   useEffect(() => {
     loadActCategories()
-  }, [])
+    
+    // ✅ Listener per ricaricamento dinamico quando cambiano le tipologie nelle Impostazioni
+    const handleTipologieUpdate = () => {
+      console.log('🔄 Wizard - Ricaricamento tipologie atti')
+      loadActCategories()
+      // Reset selezione corrente se non più disponibile
+      const tipologieAggiornate = getTipologieAttiAttive()
+      if (selectedActType && !tipologieAggiornate.find(t => t.id === selectedActType.id)) {
+        setSelectedActType(null)
+      }
+    }
+    
+    window.addEventListener('tipologie-atti-updated', handleTipologieUpdate)
+    
+    return () => {
+      window.removeEventListener('tipologie-atti-updated', handleTipologieUpdate)
+    }
+  }, [selectedActType])
 
   // ✅ Ricarica calendario quando si passa allo step 2
   useEffect(() => {
@@ -53,38 +71,27 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
     }
   }, [currentStep])
 
-  const loadActCategories = async () => {
+  const loadActCategories = () => {
     try {
       setLoadingCategories(true)
-      const response = await appointmentExtendedService.getTipologieAtto()
       
-      // Gestisci vari formati di risposta API
-      let categoriesArray = []
-      if (Array.isArray(response)) {
-        categoriesArray = response
-      } else if (response?.results) {
-        categoriesArray = response.results
-      } else if (response?.data) {
-        categoriesArray = response.data
-      }
+      // ✅ Carica tipologie attive dalla configurazione centralizzata
+      const tipologieAttive = getTipologieAttiAttive()
+      console.log('📋 Wizard - Tipologie atti caricate da config:', tipologieAttive.length)
       
-      
-      if (categoriesArray.length === 0) {
-        setActCategories([])
-        return
-      }
-      
-      // Converte le tipologie atto nel formato dei servizi esistenti
-      const servicesFromBackend = categoriesArray.map(cat => ({
-        id: cat.code,
-        label: cat.name,
-        duration: cat.estimated_duration_minutes || 60, // ✅ Usa durata dal backend
-        icon: FileSignature, // Default icon, può essere mappata
-        description: cat.description || '',
-        tipologia_atto_id: cat.id // ID per il backend
+      // Converte nel formato richiesto dal wizard
+      const servicesFromConfig = tipologieAttive.map(atto => ({
+        id: atto.id,
+        code: atto.code, // ✅ CODE sarà usato per il backend
+        label: atto.nome,
+        duration: atto.durata_minuti,
+        icon: atto.icon,
+        description: atto.descrizione || '',
+        giorni_disponibili: atto.giorni_disponibili || null,
+        slot_disponibili: atto.slot_disponibili || null
       }))
       
-      setActCategories(servicesFromBackend)
+      setActCategories(servicesFromConfig)
     } catch (error) {
       console.error('❌ Errore caricamento tipologie atto:', error)
       setActCategories([])
@@ -92,94 +99,6 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
       setLoadingCategories(false)
     }
   }
-
-  // Servizi disponibili con durata (FALLBACK se backend non disponibile)
-  const services = [
-    { 
-      id: 'rogito', 
-      label: 'Rogito Notarile', 
-      duration: 90,
-      icon: FileSignature,
-      description: 'Atto pubblico compravendita'
-    },
-    { 
-      id: 'consulenza', 
-      label: 'Consulenza Legale', 
-      duration: 45,
-      icon: Users,
-      description: 'Supporto e consulenza'
-    },
-    { 
-      id: 'revisione', 
-      label: 'Revisione Documenti', 
-      duration: 30,
-      icon: FileText,
-      description: 'Verifica documentale'
-    },
-    { 
-      id: 'firma', 
-      label: 'Firma Digitale', 
-      duration: 20,
-      icon: FileSignature,
-      description: 'Apposizione firma'
-    },
-    { 
-      id: 'procura', 
-      label: 'Procura', 
-      duration: 30,
-      icon: Users,
-      description: 'Atto di procura'
-    },
-    { 
-      id: 'testamento', 
-      label: 'Testamento', 
-      duration: 60,
-      icon: FileText,
-      description: 'Redazione testamento'
-    },
-    { 
-      id: 'donazione', 
-      label: 'Donazione', 
-      duration: 60,
-      icon: FileSignature,
-      description: 'Atto di donazione'
-    },
-    { 
-      id: 'mutuo', 
-      label: 'Mutuo', 
-      duration: 45,
-      icon: FileText,
-      description: 'Stipula contratto mutuo'
-    },
-    { 
-      id: 'costituzione', 
-      label: 'Costituzione Società', 
-      duration: 90,
-      icon: Users,
-      description: 'Costituzione società'
-    },
-    { 
-      id: 'certificazione', 
-      label: 'Certificazione', 
-      duration: 20,
-      icon: FileSignature,
-      description: 'Certificati e autentiche'
-    },
-    { 
-      id: 'vidimazione', 
-      label: 'Vidimazione', 
-      duration: 15,
-      icon: FileText,
-      description: 'Vidimazione libri sociali'
-    },
-    { 
-      id: 'altro', 
-      label: 'Altro', 
-      duration: 30,
-      icon: Calendar,
-      description: 'Altri servizi notarili'
-    }
-  ]
 
   // Servizi di appuntamento
   const modes = [
@@ -242,10 +161,9 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
       setCurrentPage(currentPage - 1)
       // Reset selezione se non è visibile nella nuova pagina
       if (selectedActType) {
-        const allServices = actCategories.length > 0 ? actCategories : services
         const newPageStart = (currentPage - 1) * CARDS_PER_PAGE
         const newPageEnd = newPageStart + CARDS_PER_PAGE
-        const visibleServices = allServices.slice(newPageStart, newPageEnd)
+        const visibleServices = actCategories.slice(newPageStart, newPageEnd)
         const isSelectedVisible = visibleServices.some(s => s.id === selectedActType.id)
         if (!isSelectedVisible) {
           setSelectedActType(null)
@@ -255,15 +173,14 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
   }
 
   const handleNextPage = () => {
-    const totalPages = Math.ceil((actCategories.length > 0 ? actCategories : services).length / CARDS_PER_PAGE)
+    const totalPages = Math.ceil(actCategories.length / CARDS_PER_PAGE)
     if (currentPage < totalPages - 1) {
       setCurrentPage(currentPage + 1)
       // Reset selezione se non è visibile nella nuova pagina
       if (selectedActType) {
-        const allServices = actCategories.length > 0 ? actCategories : services
         const newPageStart = (currentPage + 1) * CARDS_PER_PAGE
         const newPageEnd = newPageStart + CARDS_PER_PAGE
-        const visibleServices = allServices.slice(newPageStart, newPageEnd)
+        const visibleServices = actCategories.slice(newPageStart, newPageEnd)
         const isSelectedVisible = visibleServices.some(s => s.id === selectedActType.id)
         if (!isSelectedVisible) {
           setSelectedActType(null)
@@ -274,18 +191,16 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
 
   // Calcola card da mostrare nella pagina corrente
   const getPaginatedServices = () => {
-    const allServices = actCategories.length > 0 ? actCategories : services
     const startIndex = currentPage * CARDS_PER_PAGE
     const endIndex = startIndex + CARDS_PER_PAGE
-    const paginatedServices = allServices.slice(startIndex, endIndex)
+    const paginatedServices = actCategories.slice(startIndex, endIndex)
     
     
     return paginatedServices
   }
 
   const getTotalPages = () => {
-    const allServices = actCategories.length > 0 ? actCategories : services
-    return Math.ceil(allServices.length / CARDS_PER_PAGE)
+    return Math.ceil(actCategories.length / CARDS_PER_PAGE)
   }
 
   const toggleMode = (modeId) => {
@@ -335,8 +250,8 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
 
     const appointmentData = {
       notary: notary.id,
-      appointment_type: selectedActType.id,
-      tipologia_atto: selectedActType.tipologia_atto_id, // Nuovo campo per il backend
+      appointment_type: selectedActType.code, // ✅ Usa il CODE invece dell'ID stringa
+      tipologia_atto: selectedActType.code, // ✅ Backend cercherà per codice
       date: dateStr, // Usa la data convertita
       start_time: selectedSlot.start_time,
       end_time: selectedSlot.end_time,
@@ -540,8 +455,11 @@ function AppointmentBooking({ notary, onClose, onSuccess }) {
                     key={calendarKey}
                     notaryId={notary.id}
                     duration={selectedActType?.duration || 30}
+                    giorniDisponibili={selectedActType?.giorni_disponibili}
+                    slotDisponibili={selectedActType?.slot_disponibili}
                     onSlotSelect={handleSlotSelect}
                     selectedSlot={selectedSlot}
+                    initialDate={initialDate}
                   />
                 </div>
               )}

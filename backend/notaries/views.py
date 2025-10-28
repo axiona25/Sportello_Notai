@@ -572,7 +572,22 @@ class AppointmentCreateView(generics.CreateAPIView):
             )
         
         # Crea l'appuntamento manualmente perché il serializer ha campi non compatibili
-        tipologia_atto_id = request.data.get('tipologia_atto')
+        tipologia_atto_code = request.data.get('tipologia_atto')
+        
+        # ✅ Cerca la tipologia atto per CODE invece che per ID
+        tipologia_atto_id = None
+        if tipologia_atto_code:
+            from acts.models import NotarialActCategory
+            try:
+                tipologia_atto = NotarialActCategory.objects.get(code=tipologia_atto_code)
+                tipologia_atto_id = tipologia_atto.id
+            except NotarialActCategory.DoesNotExist:
+                # Se non trova per code, prova a cercare per ID (retrocompatibilità)
+                try:
+                    tipologia_atto = NotarialActCategory.objects.get(id=tipologia_atto_code)
+                    tipologia_atto_id = tipologia_atto.id
+                except (NotarialActCategory.DoesNotExist, ValueError):
+                    pass
         
         # ✅ Gestione servizi selezionati (modes from Step 3 wizard)
         modes = request.data.get('modes', [])

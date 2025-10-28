@@ -44,7 +44,11 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
   }, [])
   const [showVerificationModal, setShowVerificationModal] = useState(false)
   const [searchValue, setSearchValue] = useState('')
-  const [currentView, setCurrentView] = useState('dashboard') // 'dashboard', 'settings', 'documenti', o 'atti'
+  // ✅ Ripristina currentView dal sessionStorage se disponibile
+  const [currentView, setCurrentView] = useState(() => {
+    const saved = sessionStorage.getItem('dashboard_currentView_notaio')
+    return saved || 'dashboard'
+  })
   const [attiFilter, setAttiFilter] = useState(null) // Filtro per gli atti (cliente)
   const [user, setUser] = useState(initialUser)
   const [provisionalAppointments, setProvisionalAppointments] = useState([]) // Appuntamenti provvisori
@@ -64,6 +68,11 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
   const [documentiCaricati, setDocumentiCaricati] = useState(0)
   const [documentiTotali, setDocumentiTotali] = useState(0)
   const [documentiApprovati, setDocumentiApprovati] = useState(0)
+
+  // ✅ Salva currentView nel sessionStorage quando cambia
+  useEffect(() => {
+    sessionStorage.setItem('dashboard_currentView_notaio', currentView)
+  }, [currentView])
 
   // ✅ Carica TUTTI gli appuntamenti dal backend (non solo provvisori)
   // Necessario perché le notifiche possono riguardare appuntamenti in qualsiasi stato
@@ -347,8 +356,15 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
             }
           })
         
-        console.log('📋 Appuntamenti per il giorno selezionato:', appointmentsForDay.length)
-        setCurrentAppointments(appointmentsForDay)
+        // ✅ Ordina gli appuntamenti per orario (dal più vecchio al più recente)
+        const sortedAppointmentsForDay = appointmentsForDay.sort((a, b) => {
+          const dateA = new Date(a.rawData.start_time)
+          const dateB = new Date(b.rawData.start_time)
+          return dateA - dateB
+        })
+        
+        console.log('📋 Appuntamenti per il giorno selezionato:', sortedAppointmentsForDay.length)
+        setCurrentAppointments(sortedAppointmentsForDay)
         
         // ✅ NON selezionare ancora - aspetta che currentAppointments sia renderizzato
         // Il prossimo useEffect lo farà automaticamente
@@ -452,7 +468,14 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
       }
     })
     
-    setCurrentAppointments(formattedAppointments)
+    // ✅ Ordina gli appuntamenti per orario (dal più vecchio al più recente)
+    const sortedAppointments = formattedAppointments.sort((a, b) => {
+      const dateA = new Date(a.rawData.start_time)
+      const dateB = new Date(b.rawData.start_time)
+      return dateA - dateB
+    })
+    
+    setCurrentAppointments(sortedAppointments)
   }, [])
 
   // Auto-refresh intelligente ogni 30 secondi (silenzioso, senza loader)
@@ -771,37 +794,41 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
         return
       }
       
-      // Ottieni la lista dei documenti richiesti per questo tipo di atto
-      const documentiRichiestiConfig = await import('../config/documentiRichiestiConfig')
-      const documentiRichiesti = documentiRichiestiConfig.getDocumentiRichiestiPerAtto(codiceAtto)
-      const totale = documentiRichiesti.length
-      
-      // Carica i documenti caricati dal cliente
+      // Carica i documenti dall'appuntamento
       const docsResult = await appointmentExtendedService.getDocumentiAppuntamento(appointment.id)
       const documentiDalBackend = docsResult?.data || docsResult
-      // ✅ Conta SOLO documenti con file effettivamente caricato
-      const caricati = Array.isArray(documentiDalBackend) 
-        ? documentiDalBackend.filter(doc => doc.file || doc.file_path).length 
-        : 0
       
-      // Conta documenti approvati (normalizza a uppercase per il confronto)
-      const approvati = Array.isArray(documentiDalBackend) 
-        ? documentiDalBackend.filter(doc => {
-            const statoUpper = (doc.stato || '').toUpperCase()
-            return statoUpper === 'VERIFICATO' || 
-                   statoUpper === 'ACCETTATO' || 
-                   statoUpper === 'APPROVATO'
-          }).length 
-        : 0
+      // ✅ FILTRA solo documenti del Cliente (ESCLUDI documenti di Studio/notaio)
+      const documentiCliente = Array.isArray(documentiDalBackend) 
+        ? documentiDalBackend.filter(doc => doc.required_from !== 'notaio')
+        : []
       
-      console.log('📊 Conteggio documenti (Notaio):', {
-        totale,
-        caricati,
-        approvati,
-        documentiDalBackend: documentiDalBackend.map(d => ({
+      // ✅ Conta documenti Cliente richiesti
+      const totale = documentiCliente.length
+      
+      // ✅ Conta SOLO documenti Cliente con file effettivamente caricato
+      const caricati = documentiCliente.filter(doc => doc.file || doc.file_path).length
+      
+      // ✅ Conta SOLO documenti Cliente approvati
+      const approvati = documentiCliente.filter(doc => {
+        const statoUpper = (doc.stato || '').toUpperCase()
+        return statoUpper === 'VERIFICATO' || 
+               statoUpper === 'ACCETTATO' || 
+               statoUpper === 'APPROVATO'
+      }).length
+      
+      console.log('📊 Conteggio documenti (Notaio - FILTRATI):', {
+        totale: `${totale} documenti Cliente`,
+        caricati: `${caricati} documenti Cliente`,
+        approvati: `${approvati} documenti Cliente`,
+        'RISULTATO CONTATORE': `${caricati}/${totale} (Caricati) e ${approvati}/${totale} (Approvati)`,
+        '---': '---',
+        'Tutti i documenti (backend)': documentiDalBackend.map(d => ({
           nome: d.document_type_name,
+          required_from: d.required_from,
           stato: d.stato,
-          hasFile: !!(d.file || d.file_path)
+          hasFile: !!(d.file || d.file_path),
+          inclusoInConteggio: d.required_from !== 'notaio' ? '✅ Cliente' : '❌ Studio (escluso)'
         }))
       })
       
@@ -831,6 +858,22 @@ function DashboardNotaio({ onLogout, user: initialUser }) {
     if (selectedAppointment && selectedAppointment.type !== 'empty') {
       console.log('🔢 Ricalcolo contatori per appointment selezionato:', selectedAppointment.id)
       calcolaContatori(selectedAppointment)
+    }
+  }, [selectedAppointment, calcolaContatori])
+
+  // ✅ Polling per aggiornare i contatori documenti ogni 5 secondi (Notaio)
+  useEffect(() => {
+    if (selectedAppointment && selectedAppointment.type !== 'empty') {
+      console.log('🔄 Polling contatori documenti avviato (Notaio)')
+      const interval = setInterval(() => {
+        console.log('🔄 Polling: aggiorno contatori documenti (Notaio)')
+        calcolaContatori(selectedAppointment)
+      }, 5000) // Ogni 5 secondi
+      
+      return () => {
+        console.log('🛑 Polling contatori documenti fermato (Notaio)')
+        clearInterval(interval)
+      }
     }
   }, [selectedAppointment, calcolaContatori])
 

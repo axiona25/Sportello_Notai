@@ -1,0 +1,294 @@
+/* LibreOffice Collabora Online Viewer */
+
+.libreoffice-viewer-container {
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;  /* ✅ FORZA altezza minima = viewport completo */
+  display: flex;
+  flex-direction: column;
+  background: #F3F4F6;
+  flex: 1;
+  overflow: visible;  /* ✅ IMPORTANTE: NON nascondere status bar che esce dai bordi */
+}
+
+/* ✅ Header blu custom VUOTO (stile simile a Collabora) */
+.libreoffice-custom-header {
+  width: 100%;
+  height: 48px;  /* Altezza standard header */
+  background: linear-gradient(90deg, #0E4C92 0%, #0B6BB5 100%);  /* Gradiente blu elegante */
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;  /* Non si restringe mai */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);  /* Ombra sottile */
+  z-index: 10;  /* Sopra l'iframe */
+}
+
+.libreoffice-custom-header .header-left,
+.libreoffice-custom-header .header-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.libreoffice-custom-header .header-right {
+  justify-content: flex-end;
+}
+
+.libreoffice-custom-header .header-center {
+  flex: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.libreoffice-custom-header .document-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 400px;
+}
+
+/* ✅ Wrapper che contiene l'iframe */
+.libreoffice-iframe-wrapper {
+  width: 100%;
+  flex: 1;  /* ✅ Occupa tutto lo spazio rimanente */
+  min-height: 100vh;  /* ✅ Forza altezza minima per mostrare tutto */
+  position: relative;
+  background: white;
+  overflow: auto;  /* ✅ PERMETTE SCROLL per vedere status bar in fondo */
+}
+
+/* Iframe Collabora - visualizzazione completa CON SPAZIO EXTRA per status bar */
+.libreoffice-iframe {
+  width: 100%;
+  height: 100%;  /* ✅ Prende l'altezza del wrapper */
+  min-height: calc(100vh + 50px);  /* ✅ EXTRA 50px per assicurare che status bar sia visibile */
+  border: none;
+  background: white;
+  display: block;
+}
+
+/* ✅ STATUS BAR CUSTOM (replica quello di Collabora nascosto) */
+.libreoffice-custom-statusbar {
+  width: 100%;
+  height: 32px;
+  background: #FFD700;  /* ✅ GIALLO VIVACE per DEBUG - poi cambieremo */
+  border-top: 2px solid #FF0000;  /* ✅ BORDO ROSSO per DEBUG */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  font-size: 12px;
+  color: #000;  /* ✅ NERO per contrasto */
+  font-weight: bold;  /* ✅ GRASSETTO per visibilità */
+  flex-shrink: 0;
+  z-index: 9999;  /* ✅ Z-INDEX MASSIMO */
+  position: relative;  /* ✅ Assicura stacking context */
+}
+
+.libreoffice-custom-statusbar .statusbar-left,
+.libreoffice-custom-statusbar .statusbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.libreoffice-custom-statusbar .statusbar-item {
+  color: #555;
+}
+
+.libreoffice-custom-statusbar .statusbar-separator {
+  color: #CCC;
+  margin: 0 4px;
+}
+
+.libreoffice-custom-statusbar .statusbar-zoom {
+  font-weight: 600;
+  min-width: 40px;
+  text-align: center;
+}
+
+.libreoffice-custom-statusbar .statusbar-zoom-btn {
+  background: transparent;
+  border: 1px solid #CCC;
+  border-radius: 3px;
+  padding: 2px 8px;
+  cursor: pointer;
+  color: #555;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.libreoffice-custom-statusbar .statusbar-zoom-btn:hover {
+  background: #E8E8E8;
+  border-color: #AAA;
+}
+
+/* ✅ OVERLAY DISABILITATI - Toolbar di Collabora visibile */
+/* .libreoffice-iframe-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 110px;
+  background: white;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.libreoffice-iframe-wrapper::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: white;
+  z-index: 5;
+  pointer-events: none;
+} */
+
+/* ========================================================================
+   LOADING OVERLAY
+   ======================================================================== */
+
+.libreoffice-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(243, 244, 246, 0.98);
+  color: #6B7280;
+  z-index: 100;
+  padding: 20px;
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 5px solid #E5E7EB;
+  border-top-color: #3B82F6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 24px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ✅ Animazione per messaggio informativo modalità read-only */
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+  10% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+}
+
+.libreoffice-loading-overlay p {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 8px 0;
+  text-align: center;
+}
+
+.loading-hint {
+  font-size: 14px !important;
+  color: #9CA3AF !important;
+  font-weight: 400 !important;
+}
+
+/* ========================================================================
+   ERROR OVERLAY
+   ======================================================================== */
+
+.libreoffice-error-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(243, 244, 246, 0.98);
+  color: #DC2626;
+  padding: 40px;
+  text-align: center;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+.libreoffice-error-overlay h3 {
+  font-size: 24px;
+  margin-bottom: 16px;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #DC2626;
+}
+
+.libreoffice-error-overlay > p {
+  font-size: 16px;
+  color: #6B7280;
+  margin-bottom: 24px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.error-hint {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 500px;
+  text-align: left;
+  margin-top: 20px;
+}
+
+.error-hint p {
+  font-size: 14px;
+  color: #374151;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.error-hint ul {
+  list-style: disc;
+  padding-left: 24px;
+  margin: 0;
+}
+
+.error-hint li {
+  font-size: 14px;
+  color: #6B7280;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+/* ========================================================================
+   RESPONSIVE
+   ======================================================================== */
+
+@media screen and (max-width: 768px) {
+  .libreoffice-error-overlay {
+    padding: 20px;
+  }
+
+  .error-hint {
+    max-width: 100%;
+  }
+}
+

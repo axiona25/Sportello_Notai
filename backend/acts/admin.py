@@ -1,6 +1,9 @@
 from django.contrib import admin
 from .models import Act, NotarialActMainCategory, NotarialActCategory, DocumentType, NotarialActCategoryDocument
 
+# Import admin per protocolli
+from .admin_protocollo import ProtocolloAttoNotarialeAdmin
+
 
 @admin.register(NotarialActMainCategory)
 class NotarialActMainCategoryAdmin(admin.ModelAdmin):

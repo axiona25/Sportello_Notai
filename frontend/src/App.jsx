@@ -55,6 +55,14 @@ function AppContent() {
   }
 
   const handleLogout = async () => {
+    // ✅ Pulisci lo stato salvato nel sessionStorage
+    sessionStorage.removeItem('dashboard_currentView_cliente')
+    sessionStorage.removeItem('dashboard_currentView_notaio')
+    sessionStorage.removeItem('dashboard_currentView_admin')
+    sessionStorage.removeItem('appointmentRoom_activeAppointment')
+    sessionStorage.removeItem('appointmentRoom_isMinimized')
+    sessionStorage.removeItem('appointmentRoom_isFloating')
+    
     await logout()
     // Torna alla pagina di login dopo il logout
     setCurrentView('login')

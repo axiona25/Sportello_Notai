@@ -40,6 +40,9 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
         self.appointment_id = self.scope['url_route']['kwargs']['appointment_id']
         self.room_group_name = f'pdf_collaboration_{self.appointment_id}'
         self.user = self.scope.get('user')
+        self.user_role = None  # ✅ Salva il ruolo dell'utente (verrà impostato da JOIN_CALL)
+        self.user_id = None    # ✅ Salva l'ID utente per usarlo durante disconnessione
+        self.user_name = None  # ✅ Salva il nome utente per usarlo durante disconnessione
         
         # Log connessione
         user_id = self.user.id if self.user and self.user.is_authenticated else 'Anonymous'
@@ -70,18 +73,33 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
         """
         Disconnessione WebSocket - L'utente esce dalla room PDF.
         """
-        logger.info(f"🔌 WebSocket PDF - Disconnessione user {self.user.id if self.user and self.user.is_authenticated else 'Anonymous'} da room {self.room_group_name} (code: {close_code})")
+        logger.info(f"🔌 WebSocket PDF - Disconnessione da room {self.room_group_name} (code: {close_code})")
+        logger.info(f"   - User ID salvato: {self.user_id}")
+        logger.info(f"   - User Name salvato: {self.user_name}")
+        logger.info(f"   - User Role salvato: {self.user_role}")
         
-        # Notifica agli altri che l'utente è uscito
-        if self.user and self.user.is_authenticated:
+        # ✅ NUOVA LOGICA: Usa i dati salvati da JOIN_CALL invece di self.user
+        # Questo risolve il problema di self.user che diventa None durante la disconnessione
+        if self.user_id and self.user_name:
+            logger.info(f"📤 Invio USER_LEFT al gruppo {self.room_group_name}:")
+            logger.info(f"   - userId: {self.user_id}")
+            logger.info(f"   - userName: {self.user_name}")
+            logger.info(f"   - userRole: {self.user_role or 'client'}")
+            
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     'type': 'user_left',
-                    'userId': self.user.id,
-                    'userName': self.get_user_name(self.user)
+                    'userId': str(self.user_id),  # ✅ Usa l'ID salvato durante JOIN_CALL
+                    'userName': self.user_name,    # ✅ Usa il nome salvato durante JOIN_CALL
+                    'userRole': self.user_role or 'client'  # ✅ Usa il ruolo salvato durante JOIN_CALL
                 }
             )
+            logger.info(f"✅ USER_LEFT inviato al gruppo per user {self.user_name} ({self.user_role})")
+        else:
+            logger.warning(f"⚠️ User ID o Name non salvati (JOIN_CALL non chiamato?), skip invio USER_LEFT")
+            logger.warning(f"   - self.user_id: {self.user_id}")
+            logger.warning(f"   - self.user_name: {self.user_name}")
         
         # Rimuovi il canale dal gruppo
         await self.channel_layer.group_discard(
@@ -109,19 +127,33 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
             #     }))
             #     return
             
-            # Aggiungi info utente al messaggio
+            # Aggiungi info utente al messaggio (converti UUID in stringa)
             try:
-                data['userId'] = self.user.id if self.user and self.user.is_authenticated else data.get('userId', 'anonymous')
+                data['userId'] = str(self.user.id) if self.user and self.user.is_authenticated else data.get('userId', 'anonymous')
                 data['userName'] = self.get_user_name(self.user) if self.user and self.user.is_authenticated else data.get('userName', 'Anonymous User')
-                data['userRole'] = await self.get_user_role()
+                # ✅ Mantieni il userRole dal payload del client se presente
+                if not data.get('userRole'):
+                    data['userRole'] = await self.get_user_role()
             except Exception as e:
                 logger.error(f'❌ Errore ottenimento info utente: {e}')
                 data['userId'] = data.get('userId', 'anonymous')
                 data['userName'] = data.get('userName', 'Anonymous User')
-                data['userRole'] = 'notary'  # Default per test
+                # ✅ Usa il userRole dal payload se presente, altrimenti fallback
+                if not data.get('userRole'):
+                    data['userRole'] = 'client'  # Fallback generico
             
             # Gestione messaggi speciali
             if message_type in ['JOIN', 'JOIN_CALL']:
+                # ✅ Salva le informazioni dell'utente per usarle durante la disconnessione
+                self.user_id = data.get('userId')
+                self.user_name = data.get('userName', 'Anonymous User')
+                self.user_role = data.get('userRole', 'client')
+                
+                logger.info(f"✅ Salvato info utente per disconnessione:")
+                logger.info(f"   - userId: {self.user_id}")
+                logger.info(f"   - userName: {self.user_name}")
+                logger.info(f"   - userRole: {self.user_role}")
+                
                 # Notifica ingresso utente
                 await self.channel_layer.group_send(
                     self.room_group_name,
@@ -145,6 +177,21 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
                 )
                 logger.info(f"📄 {message_type} broadcast da {data.get('userName', 'Unknown')} in room {self.appointment_id}")
             
+            elif message_type == 'ACCESS_CHANGE':
+                # Solo notaio/admin può modificare gli accessi
+                if data['userRole'] in ['notaio', 'notary', 'admin']:
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            'type': 'pdf_action',
+                            'action': data
+                        }
+                    )
+                    access_status = "CONCESSO" if data.get('hasAccess') else "REVOCATO"
+                    logger.info(f"🔐 Notaio modifica accessi: participant {data.get('participantId')} -> {access_status}")
+                else:
+                    logger.warning(f"⚠️ Cliente {data['userId']} ha tentato di modificare accessi (non autorizzato)")
+            
             elif message_type == 'PAGE_CHANGE':
                 # Solo notaio/admin può cambiare pagina
                 if data['userRole'] in ['notaio', 'notary', 'admin']:
@@ -158,6 +205,20 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
                     logger.info(f"📄 Notaio cambia pagina: {data.get('page')}")
                 else:
                     logger.warning(f"⚠️ Cliente {data['userId']} ha tentato di cambiare pagina (non autorizzato)")
+            
+            elif message_type == 'PAGE_FLIP':
+                # 📖 Solo notaio/admin può voltare pagina con animazione
+                if data['userRole'] in ['notaio', 'notary', 'admin']:
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            'type': 'pdf_action',
+                            'action': data
+                        }
+                    )
+                    logger.info(f"📖 Notaio volta pagina (animazione): {data.get('newPage')} ({data.get('direction')})")
+                else:
+                    logger.warning(f"⚠️ Cliente {data['userId']} ha tentato di voltare pagina (non autorizzato)")
             
             elif message_type == 'ZOOM_CHANGE':
                 # Solo notaio/admin può cambiare zoom
@@ -232,8 +293,8 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
                 highlight = data.get('highlight', {})
                 logger.info(f"✨ {data['userName']} evidenzia testo (colore: {highlight.get('color')}, pagina: {highlight.get('page')})")
             
-            elif message_type == 'ACCESS_CHANGE':
-                # Solo notaio/admin può gestire accessi
+            elif message_type == 'HIGHLIGHT_REMOVE':
+                # Solo notaio/admin può rimuovere evidenziazioni
                 if data['userRole'] in ['notaio', 'notary', 'admin']:
                     await self.channel_layer.group_send(
                         self.room_group_name,
@@ -242,7 +303,67 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
                             'action': data
                         }
                     )
-                    logger.info(f"🔐 Notaio modifica accessi: participant {data.get('participantId')} -> {data.get('hasAccess')}")
+                    logger.info(f"🗑️ {data.get('userName', 'Notaio')} rimuove evidenziazione: {data.get('highlightId')}")
+                else:
+                    logger.warning(f"⚠️ Cliente {data['userId']} ha tentato di rimuovere evidenziazione (non autorizzato)")
+            
+            elif message_type == 'TEXT_EDIT_ADD':
+                # Solo notaio/admin può modificare testo
+                if data['userRole'] in ['notaio', 'notary', 'admin']:
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            'type': 'pdf_action',
+                            'action': data
+                        }
+                    )
+                    text_edit = data.get('textEdit', {})
+                    logger.info(f"✏️ {data.get('userName', 'Notaio')} modifica testo (pagina: {text_edit.get('page')}, testo: {text_edit.get('text')[:50]}...)")
+                else:
+                    logger.warning(f"⚠️ Cliente {data['userId']} ha tentato di modificare testo (non autorizzato)")
+            
+            elif message_type == 'FABRIC_OBJECT_ADD':
+                # Solo notaio/admin può aggiungere oggetti Fabric.js
+                if data['userRole'] in ['notaio', 'notary', 'admin']:
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            'type': 'pdf_action',
+                            'action': data
+                        }
+                    )
+                    obj = data.get('object', {})
+                    logger.info(f"✨ Fabric - {data.get('userName', 'Notaio')} aggiunge oggetto tipo {obj.get('type')} (pagina: {data.get('pageNumber')})")
+                else:
+                    logger.warning(f"⚠️ Cliente {data['userId']} ha tentato di aggiungere oggetto Fabric (non autorizzato)")
+            
+            elif message_type == 'FABRIC_OBJECT_MODIFY':
+                # Solo notaio/admin può modificare oggetti Fabric.js
+                if data['userRole'] in ['notaio', 'notary', 'admin']:
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            'type': 'pdf_action',
+                            'action': data
+                        }
+                    )
+                    logger.info(f"✏️ Fabric - {data.get('userName', 'Notaio')} modifica oggetto (pagina: {data.get('pageNumber')})")
+                else:
+                    logger.warning(f"⚠️ Cliente {data['userId']} ha tentato di modificare oggetto Fabric (non autorizzato)")
+            
+            elif message_type == 'FABRIC_OBJECT_REMOVE':
+                # Solo notaio/admin può rimuovere oggetti Fabric.js
+                if data['userRole'] in ['notaio', 'notary', 'admin']:
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            'type': 'pdf_action',
+                            'action': data
+                        }
+                    )
+                    logger.info(f"🗑️ Fabric - {data.get('userName', 'Notaio')} rimuove oggetto (pagina: {data.get('pageNumber')})")
+                else:
+                    logger.warning(f"⚠️ Cliente {data['userId']} ha tentato di rimuovere oggetto Fabric (non autorizzato)")
             
             elif message_type == 'SIGNATURE_ENABLED':
                 # Solo notaio/admin può abilitare/disabilitare firma
@@ -312,7 +433,7 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
         Notifica che un utente è entrato nella room.
         """
         # Non notificare a se stesso
-        current_user_id = self.user.id if self.user and hasattr(self.user, 'id') else None
+        current_user_id = str(self.user.id) if self.user and hasattr(self.user, 'id') else None
         if event['userId'] != current_user_id:
             await self.send(text_data=json.dumps({
                 'type': 'USER_JOINED',
@@ -325,14 +446,27 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
         """
         Notifica che un utente è uscito dalla room.
         """
+        logger.info(f"📥 user_left ricevuto per broadcast:")
+        logger.info(f"   - userId: {event.get('userId')}")
+        logger.info(f"   - userName: {event.get('userName')}")
+        logger.info(f"   - userRole: {event.get('userRole', 'client')}")
+        
         # Non notificare a se stesso
-        current_user_id = self.user.id if self.user and hasattr(self.user, 'id') else None
+        current_user_id = str(self.user.id) if self.user and hasattr(self.user, 'id') else None
+        logger.info(f"   - Current user ID: {current_user_id}")
+        logger.info(f"   - Stesso utente? {event['userId'] == current_user_id}")
+        
         if event['userId'] != current_user_id:
-            await self.send(text_data=json.dumps({
+            message = {
                 'type': 'USER_LEFT',
                 'userId': event['userId'],
-                'userName': event['userName']
-            }))
+                'userName': event['userName'],
+                'userRole': event.get('userRole', 'client')  # ✅ Includi il ruolo dell'utente
+            }
+            logger.info(f"📤 Invio USER_LEFT a client {current_user_id}: {message}")
+            await self.send(text_data=json.dumps(message))
+        else:
+            logger.info(f"⏭️ Skip invio USER_LEFT (stesso utente)")
     
     # ============================================
     # Helper methods
@@ -367,13 +501,16 @@ class PDFCollaborationConsumer(AsyncWebsocketConsumer):
         if self.user.is_superuser:
             return 'admin'
         
-        user_type = getattr(self.user, 'user_type', None)
-        if user_type == 'notaio':
-            return 'notary'
-        elif user_type == 'cliente':
+        # ✅ Usa 'role' invece di 'user_type' (campo corretto nel modello User)
+        role = getattr(self.user, 'role', None)
+        if role == 'notaio':
+            return 'notaio'  # ✅ Restituisci 'notaio' invece di 'notary'
+        elif role == 'cliente':
             return 'client'
-        elif user_type == 'partner':
+        elif role == 'partner':
             return 'partner'
+        elif role == 'admin':
+            return 'admin'
         else:
             return 'unknown'
 

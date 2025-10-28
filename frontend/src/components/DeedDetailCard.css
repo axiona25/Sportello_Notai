@@ -626,14 +626,44 @@
   box-sizing: border-box;
 }
 
-.deed-documents-badge.incomplete {
-  /* Mantieni lo stesso stile del box */
+/* ✅ Badge grigio: nessun documento caricato (0/N - 0/N) */
+.deed-documents-badge.empty {
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
 }
 
+.deed-documents-badge.empty .badge-value {
+  color: #64748B;
+}
+
+/* ✅ Badge incompleto: documenti parzialmente caricati */
+.deed-documents-badge.incomplete {
+  background: #F8FAFC;
+  border: 1px solid #E5E7EB;
+}
+
+.deed-documents-badge.incomplete .badge-value {
+  color: #1F2937;
+}
+
+/* ✅ Badge giallo: tutti caricati ma non tutti approvati (N/N - <N/N) */
+.deed-documents-badge.pending {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.deed-documents-badge.pending .badge-value {
+  color: #D97706;
+}
+
+/* ✅ Badge verde: tutto caricato e approvato (N/N - N/N) */
 .deed-documents-badge.complete {
-  /* Badge verde quando tutti i documenti sono caricati */
   background: rgba(16, 185, 129, 0.08);
   border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.deed-documents-badge.complete .badge-value {
+  color: #059669;
 }
 
 .badge-row {

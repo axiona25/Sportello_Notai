@@ -9,12 +9,12 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
+  z-index: 999999;
   padding: 20px;
   animation: fadeIn 0.2s ease;
 }
@@ -35,13 +35,141 @@
   max-width: 550px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
   animation: modalSlideIn 0.3s ease;
   overflow: hidden;
+  position: relative;
+  z-index: 1000000;
 }
 
 .confirm-modal-compact {
   max-width: 480px;
+}
+
+/* Container per ConfirmModal.jsx (stesso stile di .confirm-modal) */
+.confirm-modal-container {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 550px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+  animation: modalSlideIn 0.3s ease;
+  overflow: hidden;
+  position: relative;
+  z-index: 1000000;
+  padding: 32px 28px;
+}
+
+.confirm-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #6B7280;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.confirm-modal-close:hover {
+  background-color: #F3F4F6;
+  transform: rotate(90deg);
+}
+
+.confirm-modal-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.confirm-modal-icon.danger {
+  background-color: #EF4444;
+  color: white;
+}
+
+.confirm-modal-icon.warning {
+  background-color: #F59E0B;
+  color: white;
+}
+
+.confirm-modal-icon.success {
+  background-color: #10B981;
+  color: white;
+}
+
+.confirm-modal-content {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.confirm-modal-item {
+  background: #F9FAFB;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.confirm-modal-item-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6B7280;
+}
+
+.confirm-modal-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.confirm-btn-cancel,
+.confirm-btn-confirm {
+  padding: 11px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.confirm-btn-cancel {
+  background-color: white;
+  color: #4B5563;
+  border: 1px solid #D1D5DB;
+}
+
+.confirm-btn-cancel:hover {
+  background-color: #F3F4F6;
+}
+
+.confirm-btn-confirm.danger {
+  background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+  color: white;
+}
+
+.confirm-btn-confirm.danger:hover {
+  background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
 @keyframes modalSlideIn {
@@ -536,6 +664,65 @@
 }
 
 .confirm-modal-btn-approve:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ✅ Stili per modale successo */
+.modal-icon-container.success {
+  background-color: #10B981;
+  color: white;
+}
+
+.modal-icon-container.warning {
+  background-color: #F59E0B;
+  color: white;
+}
+
+.btn-success {
+  padding: 11px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-success:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-warning {
+  padding: 11px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  color: white;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.btn-warning:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
