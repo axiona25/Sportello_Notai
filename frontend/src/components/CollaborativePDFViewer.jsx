@@ -211,10 +211,10 @@ function CollaborativePDFViewer({ document, appointmentId, onClose, userRole, pa
     const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token')
     console.log('🔑 Token JWT trovato?', !!token, 'Length:', token?.length)
     const wsUrl = token 
-      ? `ws://localhost:8000/ws/pdf/${appointmentId}/?token=${token}`
-      : `ws://localhost:8000/ws/pdf/${appointmentId}/`
+      ? `ws://localhost:8010/ws/pdf/${appointmentId}/?token=${token}`
+      : `ws://localhost:8010/ws/pdf/${appointmentId}/`
     console.log('🔌 PDF Viewer: Creo nuovo WebSocket')
-    console.log('   URL (senza token):', `ws://localhost:8000/ws/pdf/${appointmentId}/?token=...`)
+    console.log('   URL (senza token):', `ws://localhost:8010/ws/pdf/${appointmentId}/?token=...`)
     
     try {
       wsRef.current = new WebSocket(wsUrl)
@@ -523,7 +523,7 @@ function CollaborativePDFViewer({ document, appointmentId, onClose, userRole, pa
       console.log(`📥 Caricamento annotazioni per documento: ${documentId}`)
       
       const response = await fetch(
-        `http://localhost:8000/api/documents/annotations/by_document/${documentId}/`,
+        `http://localhost:8010/api/documents/annotations/by_document/${documentId}/`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -585,7 +585,7 @@ function CollaborativePDFViewer({ document, appointmentId, onClose, userRole, pa
         console.log(`💾 Salvataggio annotazioni pagina ${pageNumber} per documento ${documentId}`)
         
         const response = await fetch(
-          'http://localhost:8000/api/documents/annotations/bulk_save/',
+          'http://localhost:8010/api/documents/annotations/bulk_save/',
           {
             method: 'POST',
             headers: {

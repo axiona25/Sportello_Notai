@@ -47,7 +47,7 @@ const DocxPreviewViewer = ({ documentId, documentPath }) => {
       setLoading(true)
       setError(null)
       
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8010'
       
       // Determina se il file è .doc o .docx
       const isOldDoc = documentPath && documentPath.toLowerCase().endsWith('.doc') && !documentPath.toLowerCase().endsWith('.docx')

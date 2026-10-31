@@ -7,6 +7,7 @@ function Login({ onLogin, onForgotPassword }) {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
 
   const validateForm = () => {
     const newErrors = {}
@@ -27,13 +28,30 @@ function Login({ onLogin, onForgotPassword }) {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (validateForm()) {
-      const result = onLogin && onLogin({ email, password })
+    if (!validateForm()) {
+      return
+    }
+    
+    if (!onLogin) {
+      console.error('onLogin callback non disponibile')
+      return
+    }
+
+    setLoading(true)
+    setErrors(prev => ({ ...prev, submit: null }))
+    
+    try {
+      const result = await onLogin({ email, password })
       if (result && !result.success) {
-        setErrors({ ...errors, submit: result.error })
+        setErrors(prev => ({ ...prev, submit: result.error || 'Errore durante il login' }))
       }
+    } catch (error) {
+      console.error('Errore login:', error)
+      setErrors(prev => ({ ...prev, submit: error.message || 'Errore durante il login' }))
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -130,9 +148,9 @@ function Login({ onLogin, onForgotPassword }) {
             </div>
           )}
 
-          <button type="submit" className="login-btn">
-            <span>Accedi</span>
-            <ArrowRight size={20} />
+          <button type="submit" className="login-btn" disabled={loading}>
+            <span>{loading ? 'Accesso in corso...' : 'Accedi'}</span>
+            {!loading && <ArrowRight size={20} />}
           </button>
         </form>
 

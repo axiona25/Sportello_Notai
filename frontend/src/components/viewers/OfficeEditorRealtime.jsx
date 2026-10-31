@@ -253,7 +253,7 @@ function OfficeEditorRealtime({ document: officeDocument, appointmentId, userRol
     
     try {
       const token = authService.getAccessToken()
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8010'
       
       const response = await fetch(
         `${baseURL}/api/documents/office/${documentId}/to-html/`,
@@ -302,7 +302,7 @@ function OfficeEditorRealtime({ document: officeDocument, appointmentId, userRol
     if (!appointmentId || !documentId) return
     
     const token = authService.getAccessToken()
-    const wsURL = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000'
+    const wsURL = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8010'
     const url = `${wsURL}/ws/office/${appointmentId}/`
     
     console.log('🔌 Connessione WebSocket Office Editor...')
@@ -404,7 +404,7 @@ function OfficeEditorRealtime({ document: officeDocument, appointmentId, userRol
     
     try {
       const token = authService.getAccessToken()
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8010'
       
       const response = await fetch(
         `${baseURL}/api/documents/office/${documentId}/save/`,
@@ -440,7 +440,7 @@ function OfficeEditorRealtime({ document: officeDocument, appointmentId, userRol
   const handleDownload = async () => {
     try {
       const token = authService.getAccessToken()
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8010'
       
       const response = await fetch(
         `${baseURL}/api/documents/office/${documentId}/download/`,

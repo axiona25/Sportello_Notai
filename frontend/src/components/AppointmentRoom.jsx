@@ -216,7 +216,7 @@ function AppointmentRoom() {
       if ((userRole === 'notaio' || userRole === 'notary' || userRole === 'admin') && appointmentId && connectionStatus === 'connected') {
         try {
           const token = localStorage.getItem('access_token')
-          const response = await fetch(`http://localhost:8000/api/appointments/documenti-appuntamento/appuntamento/${appointmentId}/`, {
+          const response = await fetch(`http://localhost:8010/api/appointments/documenti-appuntamento/appuntamento/${appointmentId}/`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -510,7 +510,7 @@ function AppointmentRoom() {
     try {
       // Chiamata API Django per accettare il cliente
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`http://localhost:8000/api/appointments/appuntamenti/${appointmentId}/accept-client/`, {
+      const response = await fetch(`http://localhost:8010/api/appointments/appuntamenti/${appointmentId}/accept-client/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -581,7 +581,7 @@ function AppointmentRoom() {
     
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`http://localhost:8000/api/appointments/appuntamenti/${appointmentId}/block-client/`, {
+      const response = await fetch(`http://localhost:8010/api/appointments/appuntamenti/${appointmentId}/block-client/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -701,7 +701,7 @@ function AppointmentRoom() {
                        activeAppointment.clientName || 
                        'Cliente'
     
-    const wsUrl = `ws://localhost:8000/ws/pdf/${appointmentData.id}/`
+    const wsUrl = `ws://localhost:8010/ws/pdf/${appointmentData.id}/`
     console.log('🔌 [VIDEO CALL WS] Inizializzo per:', {
       appointmentId: appointmentData.id,
       userRole,
@@ -1053,7 +1053,7 @@ function AppointmentRoom() {
       formData.append('file', file)
       formData.append('document_name', file.name)
 
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8010/api'
       const response = await fetch(
         `${apiUrl}/appointments/documenti-appuntamento/appuntamento/${appointmentId}/upload-studio/`,
         {
@@ -1128,7 +1128,7 @@ function AppointmentRoom() {
     console.log('🗑️ Eliminazione documento:', documentToDelete.id, documentToDelete.name)
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8010/api'
       const response = await fetch(
         `${apiUrl}/appointments/documenti-appuntamento/${documentToDelete.id}/`,
         {
@@ -1777,7 +1777,7 @@ function AppointmentRoom() {
                                       console.error('   Tentativo di riconnessione...')
                                       
                                       // Riconnetti WebSocket
-                                      const wsUrl = `ws://localhost:8000/ws/pdf/${activeAppointment?.id || appointmentData?.id}/`
+                                      const wsUrl = `ws://localhost:8010/ws/pdf/${activeAppointment?.id || appointmentData?.id}/`
                                       const newWs = new WebSocket(wsUrl)
                                       
                                       newWs.onopen = () => {
@@ -2060,7 +2060,7 @@ function AppointmentRoom() {
                                       console.error('   Tentativo di riconnessione...')
                                       
                                       // Riconnetti WebSocket
-                                      const wsUrl = `ws://localhost:8000/ws/pdf/${activeAppointment?.id || appointmentData?.id}/`
+                                      const wsUrl = `ws://localhost:8010/ws/pdf/${activeAppointment?.id || appointmentData?.id}/`
                                       const newWs = new WebSocket(wsUrl)
                                       
                                       newWs.onopen = () => {
@@ -2484,7 +2484,7 @@ function AppointmentRoom() {
                     
                     try {
                       console.log('🔄 Conversione Word → PDF in corso...')
-                      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+                      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8010/api'
                       const token = authService.getAccessToken()
                       
                       if (!token) {

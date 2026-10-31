@@ -168,7 +168,7 @@ const LibreOfficeViewer = ({ documentId, documentPath, appointmentId, editable =
       setError(null)
 
       // ✅ Backend host SENZA /api (per WOPI endpoints)
-      const backendHost = import.meta.env.VITE_BACKEND_HOST || 'http://localhost:8000'
+      const backendHost = import.meta.env.VITE_BACKEND_HOST || 'http://localhost:8010'
       const collaboraHost = import.meta.env.VITE_COLLABORA_URL || 'http://localhost:9980'
       
       // ✅ WOPI host: Collabora in Docker usa host.docker.internal per raggiungere l'host

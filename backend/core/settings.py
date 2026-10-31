@@ -117,6 +117,12 @@ DATABASES = {
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
 
+# Custom Authentication Backend
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.EmailAuthBackend',  # Email-based authentication
+    'django.contrib.auth.backends.ModelBackend',  # Fallback to default
+]
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -228,10 +234,16 @@ SIMPLE_JWT = {
 
 CORS_ALLOWED_ORIGINS = os.getenv(
     'CORS_ALLOWED_ORIGINS',
-    'http://localhost:3001,http://localhost:3000'
+    'http://localhost:3010'
 ).split(',')
 
+# CORS configuration per ASGI/Daphne
+CORS_ORIGIN_WHITELIST = CORS_ALLOWED_ORIGINS
+CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
+
+# Debug CORS
+CORS_DEBUG = DEBUG
 
 CORS_ALLOW_METHODS = [
     'DELETE',
